@@ -109,6 +109,12 @@ def main():
 
         versions = get(f"apps/{app_id}/appStoreVersions?limit=200", token)["data"]
         remote_versions = [v["attributes"]["versionString"] for v in versions]
+        # A version that is still being prepared (or was rejected) accepts new
+        # builds, so keep uploading to it instead of opening a new train.
+        editable_states = {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED",
+                           "METADATA_REJECTED", "INVALID_BINARY"}
+        editable = [v["attributes"]["versionString"] for v in versions
+                    if v["attributes"].get("appStoreState") in editable_states]
 
         # TestFlight trains. A build uploaded here never becomes an App Store
         # version until it is released, so this is the list that actually says
@@ -131,6 +137,14 @@ def main():
     log(f"App Store versions: {sorted(remote_versions) or 'none'}")
     log(f"TestFlight trains: {sorted(remote_trains) or 'none'}")
     log(f"Highest existing build number: {max(remote_builds) if remote_builds else 'none'}")
+
+    build_number = manual_number or str(
+        max(remote_builds + [int(os.environ.get("GITHUB_RUN_NUMBER", "0"))]) + 1
+    )
+    if editable and not manual_name:
+        log(f"App Store version {editable[0]} is still editable; uploading to that train.")
+        emit(editable[0], build_number)
+        return
 
     taken = {parse_version(v) for v in remote_versions + remote_trains}
     highest = max(taken, default=(0, 0, 0))
