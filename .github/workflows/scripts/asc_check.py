@@ -412,7 +412,7 @@ def cmd_configure(client):
         ("content rights", set_content_rights, True),
         ("age rating", set_age_rating, True),
         ("price", set_free_price, True),
-        ("review details", set_review_details, True),
+        ("review details", set_review_details, False),
         ("primary locale", set_primary_locale, False),
     ]:
         try:
