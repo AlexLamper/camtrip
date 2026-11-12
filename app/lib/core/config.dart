@@ -41,7 +41,7 @@ class AppConfig {
 class RevenueCatConfig {
   RevenueCatConfig._();
 
-  static const String appleKey = String.fromEnvironment('REVENUECAT_APPLE_KEY', defaultValue: '');
+  static const String appleKey = String.fromEnvironment('REVENUECAT_APPLE_KEY', defaultValue: 'appl_MafqCLjFYzpBvbMcvBUulZjZyaz');
   static const String googleKey = String.fromEnvironment('REVENUECAT_GOOGLE_KEY', defaultValue: '');
   static const String testKey = String.fromEnvironment('REVENUECAT_TEST_KEY', defaultValue: '');
 

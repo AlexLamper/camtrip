@@ -40,7 +40,7 @@ cd app && flutter run --dart-define=API_BASE_URL=http://localhost:3000/api/mobil
 
 **Vercel (web/)** - zie `web/.env.example`: `MONGODB_URI`, `JWT_SECRET`, `APPLE_CLIENT_IDS`, `GOOGLE_CLIENT_IDS`, `R2_*`, `REVENUECAT_*`, `APNS_KEY_ID`, `APNS_KEY_P8`, `CRON_SECRET`, `APPLE_TEAM_ID`, `ANDROID_SHA256_FINGERPRINTS`.
 
-**GitHub Actions secrets** (zelfde als BijbelQuiz): `BUILD_CERTIFICATE_BASE64`, `P12_PASSWORD`, `BUILD_PROVISION_PROFILE_BASE64`, `KEYCHAIN_PASSWORD`, `APPLE_TEAM_ID`, `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_API_KEY_P8`, `REVENUECAT_APPLE_KEY`.
+**GitHub Actions secret**: alleen `APP_STORE_CONNECT_API_KEY_P8` (inhoud van AuthKey_QS5UXPB9HY.p8, API key "CamTrip CI", Admin). Signing gaat automatisch via die key (`-allowProvisioningUpdates`); Key ID, Issuer ID en de RevenueCat public key hebben defaults.
 
 **GitHub Actions variables**: `GOOGLE_IOS_CLIENT_ID`, `GOOGLE_SERVER_CLIENT_ID`.
 

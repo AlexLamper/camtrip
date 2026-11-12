@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     locale: 'nl_NL',
     type: 'website',
   },
-  other: { 'apple-itunes-app': 'app-id=0000000000' },
+  other: { 'apple-itunes-app': 'app-id=6833896075' },
 };
 
 export const viewport: Viewport = { themeColor: '#fbfaf7' };
