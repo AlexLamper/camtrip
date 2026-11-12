@@ -152,8 +152,8 @@ def cmd_status(client):
         except RuntimeError as exc:
             log(f"    categories: lookup failed ({exc})")
     try:
-        trains = client.get(f"apps/{APP_ID}/preReleaseVersions",
-                            params={"limit": 50, "filter[platform]": "IOS"})["data"]
+        trains = client.get("preReleaseVersions",
+                            params={"limit": 50, "filter[app]": APP_ID, "filter[platform]": "IOS"})["data"]
         log("TestFlight trains: " + (", ".join(t["attributes"]["version"] for t in trains) or "none"))
     except RuntimeError as exc:
         log(f"TestFlight trains: lookup failed ({exc})")
@@ -188,8 +188,8 @@ def cmd_prepare(client):
 
     version = requested
     if not version:
-        trains = client.get(f"apps/{APP_ID}/preReleaseVersions",
-                            params={"limit": 200, "filter[platform]": "IOS"})["data"]
+        trains = client.get("preReleaseVersions",
+                            params={"limit": 200, "filter[app]": APP_ID, "filter[platform]": "IOS"})["data"]
         names = [t["attributes"]["version"] for t in trains]
         live = {parse_version(v["attributes"]["versionString"]) for v in versions}
         candidates = [n for n in names if parse_version(n) not in live]
@@ -217,8 +217,8 @@ def attach_build(client, version_id, version_string):
     Writes BUILD_NUMBER to $GITHUB_ENV so deliver submits exactly that build.
     """
     trains = client.get(
-        f"apps/{APP_ID}/preReleaseVersions",
-        params={"limit": 200, "filter[platform]": "IOS", "filter[version]": version_string},
+        "preReleaseVersions",
+        params={"limit": 200, "filter[app]": APP_ID, "filter[platform]": "IOS", "filter[version]": version_string},
     )["data"]
     if not trains:
         log(f"::warning::No TestFlight train {version_string}; no build to attach. "
