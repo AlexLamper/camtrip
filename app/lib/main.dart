@@ -24,7 +24,6 @@ Future<void> main() async {
   await initializeDateFormatting('nl_NL');
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
   final prefs = await Prefs.load();
-  await PushService.init();
 
   final container = ProviderContainer(overrides: [prefsProvider.overrideWithValue(prefs)]);
   unawaited(container.read(premiumProvider.notifier).configure());
@@ -49,6 +48,7 @@ class _CamTripAppState extends ConsumerState<CamTripApp> {
     final appLinks = AppLinks();
     _links = appLinks.uriLinkStream.listen(_handleLink);
     _pushOpens = ref.read(pushOpenProvider).stream.listen((groupId) => ref.read(routerProvider).push('/group/$groupId'));
+    ref.read(pushProvider); // registers the APNs channel handler
     // Keep the upload queue alive for the whole session.
     ref.read(uploadQueueProvider);
   }

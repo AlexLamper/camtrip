@@ -50,7 +50,7 @@ export default function Privacy() {
           <li>MongoDB Atlas (database, EU-regio)</li>
           <li>Cloudflare R2 (opslag van foto’s en video’s)</li>
           <li>RevenueCat (abonnementen)</li>
-          <li>Google Firebase Cloud Messaging (pushmeldingen)</li>
+          <li>Apple Push Notification service (pushmeldingen)</li>
         </ul>
 
         <h2>Je rechten</h2>

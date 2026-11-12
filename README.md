@@ -23,7 +23,7 @@ Een app van AL Design.
 - **Recap**: video 9:16 met 4 templates en 3 eigen (rechtenvrije) muziekstukken in `app/assets/music`.
 - **Pro** (RevenueCat, entitlement `pro`): €7,99/maand of €49,99/jaar, 7 dagen proef. Alle stijlen, onbeperkt leden, altijd bewaard, geen watermerk, originele kwaliteit.
 - **Gratis groepen** worden 30 dagen na de einddatum verwijderd (Vercel Cron, dagelijks).
-- **Push** (Firebase Cloud Messaging): gebundeld - één melding per persoon per groep per 20 minuten - en "recap klaar".
+- **Push** (rechtstreeks via Apple APNs, geen Firebase): gebundeld - één melding per persoon per groep per 20 minuten - en "recap klaar".
 
 ## Lokaal draaien
 
@@ -38,10 +38,10 @@ cd app && flutter run --dart-define=API_BASE_URL=http://localhost:3000/api/mobil
 
 ## Configuratie
 
-**Vercel (web/)** - zie `web/.env.example`: `MONGODB_URI`, `JWT_SECRET`, `APPLE_CLIENT_IDS`, `GOOGLE_CLIENT_IDS`, `R2_*`, `REVENUECAT_*`, `FIREBASE_SERVICE_ACCOUNT_JSON`, `CRON_SECRET`, `APPLE_TEAM_ID`, `ANDROID_SHA256_FINGERPRINTS`.
+**Vercel (web/)** - zie `web/.env.example`: `MONGODB_URI`, `JWT_SECRET`, `APPLE_CLIENT_IDS`, `GOOGLE_CLIENT_IDS`, `R2_*`, `REVENUECAT_*`, `APNS_KEY_ID`, `APNS_KEY_P8`, `CRON_SECRET`, `APPLE_TEAM_ID`, `ANDROID_SHA256_FINGERPRINTS`.
 
 **GitHub Actions secrets** (zelfde als BijbelQuiz): `BUILD_CERTIFICATE_BASE64`, `P12_PASSWORD`, `BUILD_PROVISION_PROFILE_BASE64`, `KEYCHAIN_PASSWORD`, `APPLE_TEAM_ID`, `APP_STORE_CONNECT_KEY_ID`, `APP_STORE_CONNECT_ISSUER_ID`, `APP_STORE_CONNECT_API_KEY_P8`, `REVENUECAT_APPLE_KEY`.
 
-**GitHub Actions variables**: `GOOGLE_IOS_CLIENT_ID`, `GOOGLE_SERVER_CLIENT_ID`, `FIREBASE_PROJECT_ID`, `FIREBASE_SENDER_ID`, `FIREBASE_IOS_API_KEY`, `FIREBASE_IOS_APP_ID`.
+**GitHub Actions variables**: `GOOGLE_IOS_CLIENT_ID`, `GOOGLE_SERVER_CLIENT_ID`.
 
 **App ID** `app.camtrip.camtrip` met Sign in with Apple, Push Notifications en Associated Domains (`applinks:camtrip.app`).
