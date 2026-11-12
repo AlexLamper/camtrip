@@ -19,7 +19,7 @@ EVERYTHING IN ONE PLACE
 • Reactions and favorites
 • Filter by person: see every photo from one friend
 • Download other people's photos with one tap
-• Every photo you take is also saved to your own album "CamTrip - <group>"
+• Every photo you take is also saved to your own album "CamTrip - [group name]"
 
 AUTOMATIC RECAP VIDEO
 At the end, CamTrip makes a recap video of your best moments. Pick a template and royalty-free music, and share it right away.
