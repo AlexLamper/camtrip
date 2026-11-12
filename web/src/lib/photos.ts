@@ -1,6 +1,19 @@
 import type { Types } from 'mongoose';
-import type { PhotoDoc } from './models';
+import { Report, type PhotoDoc, type UserDoc } from './models';
 import { readUrl } from './storage';
+
+/**
+ * Extra photo filter for what a viewer must not see: photos of people they
+ * blocked and photos they reported (App Store guideline 1.2).
+ */
+export async function hiddenForViewer(viewer: Pick<UserDoc, '_id' | 'blockedUserIds'>): Promise<Record<string, unknown>> {
+  const filter: Record<string, unknown> = {};
+  const blocked = viewer.blockedUserIds ?? [];
+  if (blocked.length) filter.userId = { $nin: blocked };
+  const reported = await Report.find({ reporterId: viewer._id }, { photoId: 1 }).lean();
+  if (reported.length) filter._id = { $nin: reported.map((r) => r.photoId) };
+  return filter;
+}
 
 export async function serializePhoto(p: PhotoDoc, viewerId: Types.ObjectId | string) {
   const viewer = String(viewerId);

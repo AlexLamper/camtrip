@@ -26,6 +26,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   bool _selecting = false;
   final Set<String> _selected = {};
   DownloadProgress? _download;
+  String? _groupError;
 
   @override
   void initState() {
@@ -35,7 +36,17 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
         ref.read(galleryProvider(widget.groupId).notifier).loadMore();
       }
     });
-    Future.microtask(() => ref.read(groupsProvider.notifier).refreshOne(widget.groupId).ignore());
+    Future.microtask(_refreshGroup);
+  }
+
+  /// Also covers opening a group from a push or link that is not in the list (yet).
+  Future<void> _refreshGroup() async {
+    try {
+      await ref.read(groupsProvider.notifier).refreshOne(widget.groupId);
+      if (mounted && _groupError != null) setState(() => _groupError = null);
+    } on ApiException catch (e) {
+      if (mounted) setState(() => _groupError = e.status == 404 ? 'Deze groep bestaat niet meer, of je bent geen lid meer.' : e.message);
+    }
   }
 
   @override
@@ -50,7 +61,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     setState(() => _download = DownloadProgress(0, ids.isEmpty ? group.totalCount : ids.length));
     try {
       final n = await Downloader.save(ref.read(apiProvider), group, ids, onProgress: (p) => mounted ? setState(() => _download = p) : null);
-      if (mounted) showMessage(context, '$n ${n == 1 ? 'foto' : 'foto\'s'} opgeslagen in "CamTrip - ${group.name}"');
+      if (!mounted) return;
+      showMessage(context, '$n ${n == 1 ? 'foto' : 'foto\'s'} opgeslagen in "CamTrip - ${group.name}"');
       setState(() {
         _selecting = false;
         _selected.clear();
@@ -63,33 +75,49 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   }
 
   Future<void> _uploadFromRoll(Group group) async {
-    final picker = ImagePicker();
-    final files = await picker.pickMultiImage(imageQuality: 95);
-    if (files.isEmpty) return;
-    if (mounted) showMessage(context, '${files.length} foto\'s worden toegevoegd');
-    for (final f in files) {
-      final bytes = await f.readAsBytes();
-      final processed = await processPhoto(bytes, styleId: 'none', applyStyle: false);
-      DateTime takenAt;
-      try {
-        takenAt = await f.lastModified();
-      } catch (_) {
-        takenAt = DateTime.now();
-      }
-      await ref.read(uploadQueueProvider.notifier).enqueue(
-            groupId: group.id,
-            kind: 'photo',
-            style: 'roll',
-            mime: 'image/jpeg',
-            takenAt: takenAt,
-            fromRoll: true,
-            width: processed.width,
-            height: processed.height,
-            original: processed.original,
-            display: processed.display,
-            thumb: processed.thumb,
-          );
+    final List<XFile> files;
+    try {
+      files = await ImagePicker().pickMultiImage(imageQuality: 95, limit: 50);
+    } catch (_) {
+      if (mounted) showMessage(context, 'Geef CamTrip toegang tot je foto\'s in Instellingen');
+      return;
     }
+    if (files.isEmpty) return;
+    if (mounted) showMessage(context, '${Fmt.count(files.length, 'foto wordt', 'foto\'s worden')} toegevoegd');
+    var failed = 0;
+    for (final f in files) {
+      try {
+        await _enqueueRoll(group, f);
+      } catch (e) {
+        debugPrint('roll upload failed: $e');
+        failed++;
+      }
+    }
+    if (failed > 0 && mounted) showMessage(context, '${Fmt.count(failed, 'foto kon', 'foto\'s konden')} niet worden gelezen');
+  }
+
+  Future<void> _enqueueRoll(Group group, XFile f) async {
+    final bytes = await f.readAsBytes();
+    final processed = await processPhoto(bytes, styleId: 'none', applyStyle: false);
+    DateTime takenAt;
+    try {
+      takenAt = await f.lastModified();
+    } catch (_) {
+      takenAt = DateTime.now();
+    }
+    await ref.read(uploadQueueProvider.notifier).enqueue(
+          groupId: group.id,
+          kind: 'photo',
+          style: 'roll',
+          mime: 'image/jpeg',
+          takenAt: takenAt,
+          fromRoll: true,
+          width: processed.width,
+          height: processed.height,
+          original: processed.original,
+          display: processed.display,
+          thumb: processed.thumb,
+        );
   }
 
   @override
@@ -99,7 +127,22 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     final pending = ref.watch(uploadQueueProvider).where((i) => i.groupId == widget.groupId).length;
 
     if (group == null) {
-      return Scaffold(appBar: AppBar(), body: const Center(child: CircularProgressIndicator(color: CT.ink)));
+      return Scaffold(
+        appBar: AppBar(),
+        body: _groupError == null
+            ? const Center(child: CircularProgressIndicator(color: CT.ink))
+            : EmptyState(
+                title: 'Groep niet geladen',
+                message: _groupError!,
+                action: SizedBox(
+                  width: 200,
+                  child: CTButton('Opnieuw', onTap: () {
+                    setState(() => _groupError = null);
+                    _refreshGroup();
+                  }),
+                ),
+              ),
+      );
     }
 
     return Scaffold(
@@ -108,7 +151,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
           color: CT.ink,
           onRefresh: () async {
             await ref.read(galleryProvider(widget.groupId).notifier).refresh();
-            await ref.read(groupsProvider.notifier).refreshOne(widget.groupId);
+            await _refreshGroup();
           },
           child: CustomScrollView(
             controller: _scroll,

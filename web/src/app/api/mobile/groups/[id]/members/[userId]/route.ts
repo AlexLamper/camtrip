@@ -25,7 +25,13 @@ export const PATCH = handler<P>(async (req, { params }) => {
   const { id, userId } = await params;
   const group = await requireAdmin(id, user._id);
   const { role } = await body(req, z.object({ role: z.enum(['admin', 'member']) }));
+  if (!Types.ObjectId.isValid(userId) || !group.members.some((m) => String(m.userId) === userId)) {
+    throw new HttpError(404, 'Lid niet gevonden');
+  }
   if (String(group.ownerId) === userId && role === 'member') throw new HttpError(400, 'De maker blijft beheerder');
+  if (role === 'member' && !group.members.some((m) => m.role === 'admin' && String(m.userId) !== userId)) {
+    throw new HttpError(400, 'Een groep heeft minstens één beheerder nodig');
+  }
   await Group.updateOne(
     { _id: group._id, 'members.userId': new Types.ObjectId(userId) },
     { $set: { 'members.$.role': role } },

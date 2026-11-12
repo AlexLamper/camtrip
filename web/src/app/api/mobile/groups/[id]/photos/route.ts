@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { Types } from 'mongoose';
-import { Photo, FREE_STYLES, CAMERA_STYLES, type PhotoDoc } from '@/lib/models';
+import { Photo, FREE_STYLES, PHOTO_STYLES, type PhotoDoc } from '@/lib/models';
 import { body, handler, HttpError, json, type Params } from '@/lib/http';
 import { isPro, requireUser } from '@/lib/auth';
 import { requireMember } from '@/lib/groups';
-import { serializePhoto } from '@/lib/photos';
+import { hiddenForViewer, serializePhoto } from '@/lib/photos';
 import { mediaKeys, uploadUrl } from '@/lib/storage';
 
 type P = Params<{ id: string }>;
@@ -20,15 +20,23 @@ export const GET = handler<P>(async (req, { params }) => {
   const userFilter = url.searchParams.get('userId');
   const favorites = url.searchParams.get('favorites') === '1';
 
-  const filter: Record<string, unknown> = { groupId: group._id, status: 'ready' };
-  if (userFilter && Types.ObjectId.isValid(userFilter)) filter.userId = new Types.ObjectId(userFilter);
-  if (favorites) filter.favoritedBy = user._id;
+  const hidden = await hiddenForViewer(user);
+  const and: Record<string, unknown>[] = [{ groupId: group._id, status: 'ready' }];
+  if (hidden.userId) and.push({ userId: hidden.userId });
+  if (hidden._id) and.push({ _id: hidden._id });
+  if (userFilter && Types.ObjectId.isValid(userFilter)) and.push({ userId: new Types.ObjectId(userFilter) });
+  if (favorites) and.push({ favoritedBy: user._id });
   if (before) {
     const d = new Date(before);
-    filter.$or = beforeId && Types.ObjectId.isValid(beforeId)
-      ? [{ takenAt: { $lt: d } }, { takenAt: d, _id: { $lt: new Types.ObjectId(beforeId) } }]
-      : [{ takenAt: { $lt: d } }];
+    if (Number.isNaN(d.getTime())) throw new HttpError(400, 'Ongeldige cursor');
+    and.push({
+      $or:
+        beforeId && Types.ObjectId.isValid(beforeId)
+          ? [{ takenAt: { $lt: d } }, { takenAt: d, _id: { $lt: new Types.ObjectId(beforeId) } }]
+          : [{ takenAt: { $lt: d } }],
+    });
   }
+  const filter = { $and: and };
 
   const photos = await Photo.find(filter).sort({ takenAt: -1, _id: -1 }).limit(PAGE + 1).lean<PhotoDoc[]>();
   const page = photos.slice(0, PAGE);
@@ -41,8 +49,8 @@ export const GET = handler<P>(async (req, { params }) => {
 
 const Init = z.object({
   kind: z.enum(['photo', 'video']).default('photo'),
-  style: z.enum(CAMERA_STYLES).default('instant'),
-  mime: z.string().default('image/jpeg'),
+  style: z.enum(PHOTO_STYLES).default('instant'),
+  mime: z.string().regex(/^(image|video)\/[\w.+-]+$/).default('image/jpeg'),
   width: z.number().int().nonnegative().default(0),
   height: z.number().int().nonnegative().default(0),
   durationMs: z.number().int().nonnegative().default(0),
@@ -61,7 +69,8 @@ export const POST = handler<P>(async (req, { params }) => {
   const group = await requireMember((await params).id, user._id);
   if (group.status === 'archived') throw new HttpError(410, 'Deze groep is afgesloten', 'archived');
   const input = await body(req, Init);
-  if (!FREE_STYLES.includes(input.style) && !isPro(user) && !input.fromRoll) {
+  // Same rule as the camera: Pro styles need Pro. Camera-roll photos ('roll') have no style.
+  if (input.style !== 'roll' && !FREE_STYLES.includes(input.style) && !isPro(user)) {
     throw new HttpError(402, 'Deze camerastijl hoort bij CamTrip Pro', 'pro_required');
   }
 

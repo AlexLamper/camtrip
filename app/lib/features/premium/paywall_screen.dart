@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -53,12 +55,30 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
   String _price(Package? p, String fallback) => p?.storeProduct.priceString ?? fallback;
 
+  /// "7 dagen" / "1 maand" from the store's introductory offer, if it is free.
+  static String? _trialText(Package? p) {
+    final intro = p?.storeProduct.introductoryPrice;
+    if (intro == null || intro.price > 0) return null;
+    final n = intro.periodNumberOfUnits * intro.cycles;
+    return switch (intro.periodUnit) {
+      PeriodUnit.day => '$n ${n == 1 ? 'dag' : 'dagen'}',
+      PeriodUnit.week => n == 1 ? '7 dagen' : '$n weken',
+      PeriodUnit.month => '$n ${n == 1 ? 'maand' : 'maanden'}',
+      PeriodUnit.year => '$n jaar',
+      _ => null,
+    };
+  }
+
+  void _open(String url) => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+
   @override
   Widget build(BuildContext context) {
     final s = ref.watch(premiumProvider);
     final isPro = ref.watch(isProProvider);
     final annual = s.annual, monthly = s.monthly;
-    final trial = (annual ?? monthly)?.storeProduct.introductoryPrice;
+    final selected = _annual ? annual : monthly;
+    final trial = _trialText(selected);
+    final unavailable = s.configured && s.offering == null;
 
     Widget plan({required bool selected, required String title, required String price, required String sub, String? badge, required VoidCallback onTap}) {
       return Expanded(
@@ -134,7 +154,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     selected: _annual,
                     title: 'Jaar',
                     price: _price(annual, '€49,99'),
-                    sub: annual != null ? '${(annual.storeProduct.price / 12).toStringAsFixed(2).replaceAll('.', ',')} per maand' : '€4,17 per maand',
+                    sub: '${annual?.storeProduct.pricePerMonthString ?? '€4,17'} per maand',
                     badge: 'BESPAAR 48%',
                     onTap: () => setState(() => _annual = true),
                   ),
@@ -154,7 +174,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(22, 8, 22, 4),
               child: CTButton(
-                trial != null && _annual ? 'Probeer 7 dagen gratis' : 'Word Pro',
+                trial != null ? 'Probeer $trial gratis' : 'Word Pro',
                 kind: CTButtonKind.primary,
                 loading: s.busy,
                 onTap: () => _buy(_annual ? annual : monthly),
@@ -163,21 +183,34 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(22, 6, 22, 10),
             child: Column(children: [
+              if (unavailable)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Text('Abonnementen konden niet geladen worden. Controleer je verbinding.',
+                      textAlign: TextAlign.center, style: CT.text(12, color: CT.accent)),
+                ),
               if (!isPro)
                 Text(
-                  _annual
-                      ? '${trial != null ? '7 dagen gratis, daarna ' : ''}${_price(annual, '€49,99')} per jaar. Verlengt automatisch, opzeggen kan altijd.'
-                      : '${_price(monthly, '€7,99')} per maand. Verlengt automatisch, opzeggen kan altijd.',
+                  [
+                    _annual
+                        ? 'CamTrip Pro jaarabonnement: ${trial != null ? '$trial gratis, daarna ' : ''}${_price(annual, '€49,99')} per jaar.'
+                        : 'CamTrip Pro maandabonnement: ${trial != null ? '$trial gratis, daarna ' : ''}${_price(monthly, '€7,99')} per maand.',
+                    'De betaling loopt via je ${Platform.isIOS ? 'Apple ID' : 'Google-account'}. Het abonnement verlengt automatisch, '
+                        'tenzij je het uiterlijk 24 uur voor het einde van de periode opzegt. '
+                        'Opzeggen en beheren kan in de instellingen van je ${Platform.isIOS ? 'App Store-account' : 'Google Play-account'}.',
+                  ].join(' '),
                   textAlign: TextAlign.center,
                   style: CT.text(11, color: CT.muted),
                 ),
               const SizedBox(height: 6),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                TextButton(onPressed: _restore, child: Text('Herstel aankopen', style: CT.text(12, color: CT.muted))),
+              Wrap(alignment: WrapAlignment.center, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                TextButton(onPressed: s.busy ? null : _restore, child: Text('Herstel aankopen', style: CT.text(12, color: CT.muted))),
                 Text('·', style: CT.text(12, color: CT.muted)),
-                TextButton(onPressed: () => launchUrl(Uri.parse(AppConfig.appleEulaUrl)), child: Text('Voorwaarden', style: CT.text(12, color: CT.muted))),
+                TextButton(onPressed: () => _open(AppConfig.termsUrl), child: Text('Voorwaarden', style: CT.text(12, color: CT.muted))),
                 Text('·', style: CT.text(12, color: CT.muted)),
-                TextButton(onPressed: () => launchUrl(Uri.parse(AppConfig.privacyUrl)), child: Text('Privacy', style: CT.text(12, color: CT.muted))),
+                TextButton(onPressed: () => _open(AppConfig.appleEulaUrl), child: Text('EULA', style: CT.text(12, color: CT.muted))),
+                Text('·', style: CT.text(12, color: CT.muted)),
+                TextButton(onPressed: () => _open(AppConfig.privacyUrl), child: Text('Privacy', style: CT.text(12, color: CT.muted))),
               ]),
             ]),
           ),

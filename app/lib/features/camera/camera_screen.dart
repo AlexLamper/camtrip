@@ -50,6 +50,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     WidgetsBinding.instance.addObserver(this);
     final prefs = ref.read(prefsProvider);
     _style = CameraStyle.byId(prefs.cameraStyle);
+    // A Pro style left over from a lapsed subscription would fail on upload.
+    if (_style.pro && !ref.read(isProProvider)) _style = CameraStyle.instant;
     _stamp = prefs.dateStamp;
     _flash = switch (prefs.flashMode) { 'on' => FlashMode.always, 'off' => FlashMode.off, _ => FlashMode.auto };
     _init();
@@ -66,12 +68,19 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final c = _controller;
+    if (state == AppLifecycleState.resumed) {
+      if (c == null && _cameras.isNotEmpty && mounted) _start(_cameraIndex);
+      return;
+    }
     if (c == null || !c.value.isInitialized) return;
     if (state == AppLifecycleState.inactive) {
+      if (_recording) {
+        _recordTimer?.cancel();
+        _recording = false;
+      }
+      // Drop the preview from the tree before the controller goes away.
+      setState(() => _controller = null);
       c.dispose();
-      _controller = null;
-    } else if (state == AppLifecycleState.resumed) {
-      _start(_cameraIndex);
     }
   }
 
@@ -85,11 +94,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
       final back = _cameras.indexWhere((c) => c.lensDirection == CameraLensDirection.back);
       await _start(back < 0 ? 0 : back);
     } on CameraException catch (e) {
-      setState(() => _error = e.code == 'CameraAccessDenied'
-          ? 'CamTrip heeft toegang tot je camera nodig. Zet dit aan in Instellingen.'
-          : 'Camera kon niet starten');
+      if (mounted) setState(() => _error = _cameraError(e));
     }
   }
+
+  String _cameraError(CameraException e) => e.code.contains('AccessDenied') || e.code.contains('AccessRestricted')
+      ? 'CamTrip heeft toegang tot je camera nodig. Zet dit aan in Instellingen.'
+      : 'Camera kon niet starten';
 
   Future<void> _start(int index) async {
     final old = _controller;
@@ -98,17 +109,23 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     final c = CameraController(_cameras[index], ResolutionPreset.max, enableAudio: true, imageFormatGroup: ImageFormatGroup.jpeg);
     try {
       await c.initialize();
-      await c.setFlashMode(_style.forceFlash ? FlashMode.always : _flash);
-      if (!mounted) return;
+      try {
+        await c.setFlashMode(_style.forceFlash ? FlashMode.always : _flash);
+      } on CameraException catch (_) {
+        // front cameras often have no flash
+      }
+      if (!mounted) {
+        await c.dispose();
+        return;
+      }
       setState(() {
         _controller = c;
         _cameraIndex = index;
         _error = null;
       });
     } on CameraException catch (e) {
-      setState(() => _error = e.code == 'CameraAccessDenied'
-          ? 'CamTrip heeft toegang tot je camera nodig. Zet dit aan in Instellingen.'
-          : 'Camera kon niet starten');
+      await c.dispose();
+      if (mounted) setState(() => _error = _cameraError(e));
     }
   }
 
@@ -122,18 +139,34 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     HapticFeedback.selectionClick();
     setState(() => _style = s);
     ref.read(prefsProvider).cameraStyle = s.id;
-    await _controller?.setFlashMode(s.forceFlash ? FlashMode.always : _flash);
+    try {
+      await _controller?.setFlashMode(s.forceFlash ? FlashMode.always : _flash);
+    } on CameraException catch (_) {}
   }
 
   Future<void> _cycleFlash() async {
     final next = switch (_flash) { FlashMode.auto => FlashMode.always, FlashMode.always => FlashMode.off, _ => FlashMode.auto };
     setState(() => _flash = next);
     ref.read(prefsProvider).flashMode = switch (next) { FlashMode.always => 'on', FlashMode.off => 'off', _ => 'auto' };
-    if (!_style.forceFlash) await _controller?.setFlashMode(next);
+    if (!_style.forceFlash) {
+      try {
+        await _controller?.setFlashMode(next);
+      } on CameraException catch (_) {}
+    }
   }
 
-  Future<void> _ensureGallery() async {
-    if (!await Gal.hasAccess(toAlbum: true)) await Gal.requestAccess(toAlbum: true);
+  /// Saves to the phone's album. Never fails the shot: the photo is already
+  /// in the upload queue, the album copy is a bonus.
+  Future<void> _saveToAlbum(Future<void> Function() save) async {
+    try {
+      if (!await Gal.hasAccess(toAlbum: true) && !await Gal.requestAccess(toAlbum: true)) {
+        if (mounted) showMessage(context, 'Geef CamTrip toegang tot je foto\'s om ze ook in je album op te slaan');
+        return;
+      }
+      await save();
+    } catch (_) {
+      if (mounted) showMessage(context, 'Opslaan in je album lukte niet. De foto wordt wel gedeeld.');
+    }
   }
 
   Future<void> _shoot(Group group) async {
@@ -172,14 +205,15 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
             thumb: processed.thumb,
           );
       if (ref.read(prefsProvider).saveOwnToAlbum) {
-        await _ensureGallery();
-        await Gal.putImageBytes(processed.original, album: albumName(group), name: 'camtrip_${takenAt.millisecondsSinceEpoch}');
+        await _saveToAlbum(
+            () => Gal.putImageBytes(processed.original, album: albumName(group), name: 'camtrip_${takenAt.millisecondsSinceEpoch}'));
       }
       try {
         await File(shot.path).delete();
       } catch (_) {}
     } catch (e) {
-      if (mounted) showMessage(context, 'Foto mislukt: $e');
+      debugPrint('shoot failed: $e');
+      if (mounted) showMessage(context, 'Foto maken lukte niet. Probeer het nog eens.');
     } finally {
       if (mounted && _busy) setState(() => _busy = false);
     }
@@ -189,7 +223,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     final c = _controller!;
     if (!_recording) {
       HapticFeedback.mediumImpact();
-      await c.startVideoRecording();
+      try {
+        await c.startVideoRecording();
+      } on CameraException catch (e) {
+        debugPrint('record failed: $e');
+        if (mounted) showMessage(context, 'Video opnemen lukte niet');
+        return;
+      }
       _recordStart = DateTime.now();
       _recordTimer = Timer.periodic(const Duration(seconds: 1), (_) {
         if (!mounted) return;
@@ -209,10 +249,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     final durationMs = DateTime.now().difference(takenAt).inMilliseconds;
     try {
       final file = await c.stopVideoRecording();
-      setState(() => _busy = false);
+      if (mounted) setState(() => _busy = false);
       final styled = await VideoProcessor.applyStyle(File(file.path), _style);
       final thumbFile = await VideoProcessor.thumbnail(styled);
-      final thumbBytes = thumbFile != null ? await thumbFile.readAsBytes() : Uint8List(0);
+      final thumbBytes = thumbFile != null ? await thumbFile.readAsBytes() : placeholderJpeg();
       final thumbs = thumbBytes.isEmpty ? null : await processPhoto(thumbBytes, styleId: 'none', applyStyle: false);
       if (mounted && thumbs != null) setState(() => _lastThumb = thumbs.thumb);
       final bytes = await styled.readAsBytes();
@@ -232,11 +272,11 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
             originalExt: 'mp4',
           );
       if (ref.read(prefsProvider).saveOwnToAlbum) {
-        await _ensureGallery();
-        await Gal.putVideo(styled.path, album: albumName(group));
+        await _saveToAlbum(() => Gal.putVideo(styled.path, album: albumName(group)));
       }
     } catch (e) {
-      if (mounted) showMessage(context, 'Video mislukt: $e');
+      debugPrint('video failed: $e');
+      if (mounted) showMessage(context, 'Video maken lukte niet. Probeer het nog eens.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

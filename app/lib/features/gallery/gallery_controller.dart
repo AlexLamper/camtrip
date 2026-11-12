@@ -109,6 +109,7 @@ class GalleryController extends Notifier<GalleryState> {
       final more = _parse(res);
       state = state.copyWith(photos: [...state.photos, ...more], loading: false, hasMore: _cursor != null);
     } on ApiException catch (e) {
+      if (gen != _generation) return;
       state = state.copyWith(loading: false, error: e.message);
     }
   }
@@ -136,6 +137,12 @@ class GalleryController extends Notifier<GalleryState> {
     } else {
       _replace(p);
     }
+  }
+
+  /// "Foto rapporteren": the server hides it for this user from now on.
+  Future<void> report(Photo photo, ReportReason reason) async {
+    await _api.post('/photos/${photo.id}/report', {'reason': reason.name});
+    state = state.copyWith(photos: state.photos.where((x) => x.id != photo.id).toList());
   }
 
   Future<void> delete(Photo photo) async {
@@ -171,17 +178,24 @@ class Downloader {
   /// [ids] empty = everything. Pro gets originals (decided server-side).
   static Future<int> save(Api api, Group group, List<String> ids, {void Function(DownloadProgress)? onProgress}) async {
     final res = await api.get('/groups/${group.id}/download', query: ids.isEmpty ? null : {'ids': ids.join(',')});
-    final items = (res['items'] as List).cast<Map<String, dynamic>>();
-    if (!await Gal.hasAccess(toAlbum: true)) await Gal.requestAccess(toAlbum: true);
+    final items = ((res['items'] as List?) ?? const []).cast<Map<String, dynamic>>();
+    if (items.isEmpty) return 0;
+    if (!await Gal.hasAccess(toAlbum: true) && !await Gal.requestAccess(toAlbum: true)) {
+      throw ApiException('Geef CamTrip toegang tot je foto\'s in Instellingen om op te slaan');
+    }
     final tmp = await getTemporaryDirectory();
     var done = 0;
     for (final item in items) {
       final path = '${tmp.path}/dl_${item['id']}.${item['ext']}';
       await Api.download(item['url'] as String, path);
-      if (item['kind'] == 'video') {
-        await Gal.putVideo(path, album: 'CamTrip - ${group.name}');
-      } else {
-        await Gal.putImage(path, album: 'CamTrip - ${group.name}');
+      try {
+        if (item['kind'] == 'video') {
+          await Gal.putVideo(path, album: 'CamTrip - ${group.name}');
+        } else {
+          await Gal.putImage(path, album: 'CamTrip - ${group.name}');
+        }
+      } on GalException catch (e) {
+        throw ApiException(e.type == GalExceptionType.notEnoughSpace ? 'Je telefoon is vol' : 'Opslaan in je album lukte niet');
       }
       try {
         await File(path).delete();

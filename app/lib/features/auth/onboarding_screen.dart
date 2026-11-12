@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -48,6 +49,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     } on ApiException catch (e) {
       if (mounted) showMessage(context, e.message);
     } catch (e) {
+      debugPrint('sign-in failed: $e');
       if (mounted) showMessage(context, 'Inloggen lukte niet');
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -103,20 +105,33 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       CTButton('Doorgaan met Apple', icon: Icons.apple, loading: _busy, onTap: () => _signIn(auth.signInWithApple)),
                       const SizedBox(height: 10),
                     ],
-                    CTButton('Doorgaan met Google',
-                        kind: CTButtonKind.ghost, icon: Icons.g_mobiledata_rounded, loading: _busy && !Platform.isIOS, onTap: () => _signIn(auth.signInWithGoogle)),
+                    // On iOS Google needs its client id (set by CI); without it only Apple is offered.
+                    if (!Platform.isIOS || AppConfig.googleIosClientId.isNotEmpty)
+                      CTButton('Doorgaan met Google',
+                          kind: CTButtonKind.ghost, icon: Icons.g_mobiledata_rounded, loading: _busy && !Platform.isIOS, onTap: () => _signIn(auth.signInWithGoogle)),
                     if (!Platform.isIOS) const SizedBox(height: 4),
                   ]),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(30, 4, 30, 12),
-            child: GestureDetector(
-              onTap: () => launchUrl(Uri.parse(AppConfig.privacyUrl)),
-              child: Text(
-                'Door verder te gaan ga je akkoord met de voorwaarden en het privacybeleid.',
-                textAlign: TextAlign.center,
-                style: CT.text(12, color: CT.muted),
-              ),
+            child: Text.rich(
+              TextSpan(children: [
+                const TextSpan(text: 'Door verder te gaan ga je akkoord met de '),
+                TextSpan(
+                  text: 'voorwaarden',
+                  style: const TextStyle(decoration: TextDecoration.underline),
+                  recognizer: TapGestureRecognizer()..onTap = () => launchUrl(Uri.parse(AppConfig.termsUrl)),
+                ),
+                const TextSpan(text: ' en het '),
+                TextSpan(
+                  text: 'privacybeleid',
+                  style: const TextStyle(decoration: TextDecoration.underline),
+                  recognizer: TapGestureRecognizer()..onTap = () => launchUrl(Uri.parse(AppConfig.privacyUrl)),
+                ),
+                const TextSpan(text: '.'),
+              ]),
+              textAlign: TextAlign.center,
+              style: CT.text(12, color: CT.muted),
             ),
           ),
         ]),

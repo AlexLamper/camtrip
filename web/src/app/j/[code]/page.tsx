@@ -36,8 +36,8 @@ export default async function Invite({ params }: Props) {
     <>
       <Nav />
       <main className="invite">
-        <p style={{ color: 'var(--muted)', fontWeight: 600 }}>UITNODIGING</p>
-        <h1 className="display" style={{ fontSize: 40, marginTop: 8 }}>
+        <p className="eyebrow">UITNODIGING</p>
+        <h1 className="display">
           {group ? (
             <>
               {group.owner} nodigt je uit voor <span className="accent">{group.name}</span>
@@ -46,14 +46,14 @@ export default async function Invite({ params }: Props) {
             'Join een groep in CamTrip'
           )}
         </h1>
-        {group && <p style={{ color: 'var(--muted)', marginTop: 10 }}>{group.members} mensen zitten er al in</p>}
+        {group && <p className="members">{group.members} mensen zitten er al in</p>}
         <div className="card">
-          <p style={{ color: 'var(--muted)', fontSize: 13, fontWeight: 600 }}>GROEPSCODE</p>
+          <p>GROEPSCODE</p>
           <div className="code">{code}</div>
         </div>
         <p>1. Download CamTrip &nbsp; 2. Tik op “Ik heb een code” &nbsp; 3. Vul de code in</p>
         <StoreButtons />
-        <p style={{ marginTop: 22 }}>
+        <p className="have-app">
           <a className="btn dark" href={`camtrip://join/${code}`}>
             Ik heb de app al
           </a>

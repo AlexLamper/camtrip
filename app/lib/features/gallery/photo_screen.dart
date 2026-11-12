@@ -165,9 +165,13 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
           if (mounted) showMessage(context, ApiException.from(e).message);
         }
       }),
-      action(p.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded, 'Favoriet',
-          () => ref.read(galleryProvider(widget.groupId).notifier).toggleFavorite(p),
-          color: p.isFavorite ? CT.warn : null),
+      action(p.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded, 'Favoriet', () async {
+        try {
+          await ref.read(galleryProvider(widget.groupId).notifier).toggleFavorite(p);
+        } catch (e) {
+          if (mounted) showMessage(context, ApiException.from(e).message);
+        }
+      }, color: p.isFavorite ? CT.warn : null),
       action(Icons.ios_share, 'Delen', () => _share(p)),
     ]);
   }
@@ -176,16 +180,67 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
     try {
       final tmp = await getTemporaryDirectory();
       final path = '${tmp.path}/share_${p.id}.${p.isVideo ? 'mp4' : 'jpg'}';
-      await Api.download(p.isVideo ? p.videoUrl! : p.displayUrl, path);
+      final url = p.isVideo ? p.videoUrl : p.displayUrl;
+      if (url == null || url.isEmpty) throw ApiException('Geen bestand');
+      await Api.download(url, path);
       await SharePlus.instance.share(ShareParams(files: [XFile(path)]));
     } catch (e) {
       if (mounted) showMessage(context, 'Delen lukte niet');
     }
   }
 
+  Future<void> _report(Photo p) async {
+    final reason = await showModalBottomSheet<ReportReason>(
+      context: context,
+      builder: (c) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+            child: Text('Waarom rapporteer je deze foto?', style: CT.title(20)),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            child: Text('We bekijken elke melding binnen 24 uur. De foto is meteen verborgen voor jou.', style: CT.text(13, color: CT.muted)),
+          ),
+          for (final r in ReportReason.values) ListTile(title: Text(r.label), onTap: () => Navigator.pop(c, r)),
+          ListTile(leading: const Icon(Icons.close), title: const Text('Annuleer'), onTap: () => Navigator.pop(c)),
+        ]),
+      ),
+    );
+    if (reason == null) return;
+    try {
+      await ref.read(galleryProvider(widget.groupId).notifier).report(p, reason);
+      if (!mounted) return;
+      showMessage(context, 'Bedankt, we kijken ernaar');
+      if (ref.read(galleryProvider(widget.groupId)).photos.isEmpty) context.pop();
+    } catch (e) {
+      if (mounted) showMessage(context, ApiException.from(e).message);
+    }
+  }
+
+  Future<void> _block(Member m) async {
+    if (!await confirm(context,
+        title: '${m.name} blokkeren?',
+        message: 'Je ziet geen foto\'s en video\'s van ${m.name} meer, in geen enkele groep, en krijgt er geen meldingen over. Opheffen kan in Instellingen.',
+        ok: 'Blokkeer',
+        danger: true)) {
+      return;
+    }
+    try {
+      await ref.read(authProvider.notifier).block(m.id);
+      if (!mounted) return;
+      showMessage(context, '${m.name} is geblokkeerd');
+      context.pop(); // the gallery reloads without their photos
+    } catch (e) {
+      if (mounted) showMessage(context, ApiException.from(e).message);
+    }
+  }
+
   void _more(Group group, Photo p) {
     final me = ref.read(authProvider).value?.id;
     final canDelete = p.userId == me || group.isAdmin;
+    final mine = p.userId == me;
+    final owner = group.member(p.userId);
     showModalBottomSheet<void>(
       context: context,
       builder: (c) => SafeArea(
@@ -196,8 +251,30 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
               title: const Text('Gebruik als omslagfoto'),
               onTap: () async {
                 Navigator.pop(c);
-                await ref.read(groupsProvider.notifier).updateGroup(group.id, {'coverPhotoId': p.id});
-                if (mounted) showMessage(context, 'Omslagfoto aangepast');
+                try {
+                  await ref.read(groupsProvider.notifier).updateGroup(group.id, {'coverPhotoId': p.id});
+                  if (mounted) showMessage(context, 'Omslagfoto aangepast');
+                } catch (e) {
+                  if (mounted) showMessage(context, ApiException.from(e).message);
+                }
+              },
+            ),
+          if (!mine)
+            ListTile(
+              leading: const Icon(Icons.flag_outlined),
+              title: const Text('Foto rapporteren'),
+              onTap: () {
+                Navigator.pop(c);
+                _report(p);
+              },
+            ),
+          if (!mine && owner != null)
+            ListTile(
+              leading: const Icon(Icons.block),
+              title: Text('${owner.name} blokkeren'),
+              onTap: () {
+                Navigator.pop(c);
+                _block(owner);
               },
             ),
           if (canDelete)
@@ -252,7 +329,16 @@ class _VideoViewState extends State<_VideoView> {
   Future<void> _load() async {
     final c = VideoPlayerController.networkUrl(Uri.parse(widget.url));
     _c = c;
-    await c.initialize();
+    try {
+      await c.initialize();
+    } catch (_) {
+      // Poster stays visible; a tap tries again.
+      if (_c == c) _c = null;
+      await c.dispose();
+      if (mounted) setState(() {});
+      return;
+    }
+    if (!mounted || _c != c) return;
     await c.setLooping(true);
     if (mounted && widget.active) {
       await c.play();
@@ -270,7 +356,13 @@ class _VideoViewState extends State<_VideoView> {
   Widget build(BuildContext context) {
     final c = _c;
     return GestureDetector(
-      onTap: () => c == null ? null : (c.value.isPlaying ? c.pause() : c.play()).then((_) => setState(() {})),
+      onTap: () {
+        if (c == null) {
+          _load();
+        } else if (c.value.isInitialized) {
+          (c.value.isPlaying ? c.pause() : c.play()).then((_) => mounted ? setState(() {}) : null);
+        }
+      },
       child: Stack(fit: StackFit.expand, children: [
         NetPhoto(widget.poster, cacheKey: 'display_${widget.id}'),
         if (c != null && c.value.isInitialized)

@@ -1,6 +1,7 @@
 import {
   DeleteObjectsCommand,
   GetObjectCommand,
+  HeadObjectCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -46,6 +47,18 @@ export function readUrl(key: string, downloadName?: string): Promise<string> {
     }),
     { expiresIn: READ_TTL },
   );
+}
+
+/** True when the object was uploaded (HEAD succeeds). */
+export async function objectExists(key: string): Promise<boolean> {
+  try {
+    await r2().send(new HeadObjectCommand({ Bucket: bucket(), Key: key }));
+    return true;
+  } catch (err) {
+    const status = (err as { $metadata?: { httpStatusCode?: number } }).$metadata?.httpStatusCode;
+    if (status === 404 || status === 403) return false;
+    throw err;
+  }
 }
 
 export async function deleteKeys(keys: string[]): Promise<void> {

@@ -12,18 +12,28 @@ export const POST = handler(async (req) => {
 
   if (!memberRole(group, user._id)) {
     if (group.status === 'archived') throw new HttpError(410, 'Deze groep is afgesloten', 'archived');
-    if (!(await ownerIsPro(group)) && group.members.length >= FREE_MEMBER_LIMIT) {
-      throw new HttpError(
+    const pro = await ownerIsPro(group);
+    const full = () =>
+      new HttpError(
         403,
         `Deze groep zit vol (max. ${FREE_MEMBER_LIMIT} leden). Met CamTrip Pro van de maker kunnen er onbeperkt mensen bij.`,
         'group_full',
       );
-    }
-    // Conditional push so two people joining at once cannot exceed the limit by one.
-    await Group.updateOne(
-      { _id: group._id, 'members.userId': { $ne: user._id } },
+    if (!pro && group.members.length >= FREE_MEMBER_LIMIT) throw full();
+    // Conditional push: the size check is part of the update, so two people
+    // joining at the same moment cannot take a free group past the limit.
+    const res = await Group.updateOne(
+      {
+        _id: group._id,
+        'members.userId': { $ne: user._id },
+        ...(pro ? {} : { [`members.${FREE_MEMBER_LIMIT - 1}`]: { $exists: false } }),
+      },
       { $push: { members: { userId: user._id, role: 'member', joinedAt: new Date() } } },
     );
+    if (res.modifiedCount === 0) {
+      const again = await Group.findById(group._id, { members: 1 }).lean<GroupDoc>();
+      if (!again || !memberRole(again, user._id)) throw full();
+    }
   }
   const fresh = await Group.findById(group._id).lean<GroupDoc>();
   return json({ group: await serializeGroup(fresh!, user._id) });

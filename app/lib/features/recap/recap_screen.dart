@@ -55,7 +55,10 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
 
   Future<void> _load() async {
     final group = ref.read(groupProvider(widget.groupId));
-    if (group == null) return;
+    if (group == null) {
+      setState(() => _error = 'Deze groep kon niet geladen worden.');
+      return;
+    }
     _builder = RecapBuilder(group);
     try {
       final api = ref.read(apiProvider);
@@ -70,7 +73,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
       _all = photos;
       await _render();
     } catch (e) {
-      setState(() => _error = ApiException.from(e).message);
+      if (mounted) setState(() => _error = ApiException.from(e).message);
     }
   }
 
@@ -97,7 +100,8 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
       setState(() => _frames = frames);
       _play();
     } catch (e) {
-      if (mounted) setState(() => _error = 'Recap maken lukte niet: $e');
+      debugPrint('recap render failed: $e');
+      if (mounted) setState(() => _error = e is ApiException ? e.message : 'Recap maken lukte niet. Probeer het nog eens.');
     }
   }
 
@@ -137,7 +141,8 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
     try {
       return await _builder!.export(f, _track, onProgress: (p) => mounted ? setState(() => _exportProgress = p) : null);
     } catch (e) {
-      if (mounted) showMessage(context, e.toString());
+      debugPrint('recap export failed: $e');
+      if (mounted) showMessage(context, 'Video maken lukte niet op dit toestel');
       return null;
     } finally {
       if (mounted) setState(() => _exporting = false);
@@ -148,15 +153,26 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
     final group = ref.read(groupProvider(widget.groupId));
     final file = await _export();
     if (file == null || group == null) return;
-    if (!await Gal.hasAccess(toAlbum: true)) await Gal.requestAccess(toAlbum: true);
-    await Gal.putVideo(file.path, album: albumName(group));
-    if (mounted) showMessage(context, 'Recap opgeslagen in je fotoalbum');
+    try {
+      if (!await Gal.hasAccess(toAlbum: true) && !await Gal.requestAccess(toAlbum: true)) {
+        if (mounted) showMessage(context, 'Geef CamTrip toegang tot je foto\'s in Instellingen om op te slaan');
+        return;
+      }
+      await Gal.putVideo(file.path, album: albumName(group));
+      if (mounted) showMessage(context, 'Recap opgeslagen in je fotoalbum');
+    } catch (_) {
+      if (mounted) showMessage(context, 'Opslaan in je album lukte niet');
+    }
   }
 
   Future<void> _share() async {
     final file = await _export();
     if (file == null) return;
-    await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
+    try {
+      await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
+    } catch (_) {
+      if (mounted) showMessage(context, 'Delen lukte niet');
+    }
   }
 
   @override

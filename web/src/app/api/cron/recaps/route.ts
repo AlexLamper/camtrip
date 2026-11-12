@@ -8,7 +8,8 @@ import { pushToUsers } from '@/lib/push';
  * The recap itself is assembled in the app from the group's photos.
  */
 export const GET = handler(async (req) => {
-  if (req.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) return json({ error: 'Unauthorized' }, 401);
+  const secret = process.env.CRON_SECRET;
+  if (!secret || req.headers.get('authorization') !== `Bearer ${secret}`) return json({ error: 'Unauthorized' }, 401);
   await connectDB();
   const groups = await Group.find({
     endDate: { $ne: null, $lt: new Date() },

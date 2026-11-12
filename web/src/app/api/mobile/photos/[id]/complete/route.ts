@@ -4,6 +4,7 @@ import { handler, HttpError, json, type Params } from '@/lib/http';
 import { requireUser } from '@/lib/auth';
 import { serializePhoto } from '@/lib/photos';
 import { pushToUsers } from '@/lib/push';
+import { objectExists } from '@/lib/storage';
 
 // One push per person per group per window, however many photos they take:
 // "Daan deelt foto's in Mallorca '27" instead of twelve separate buzzes.
@@ -13,6 +14,14 @@ export const POST = handler<Params<{ id: string }>>(async (req, { params }) => {
   const user = await requireUser(req);
   const id = (await params).id;
   if (!Types.ObjectId.isValid(id)) throw new HttpError(404, 'Foto niet gevonden');
+
+  // Only mark ready when all three files really are in storage: a half-finished
+  // upload would otherwise show up as a broken photo for the whole group.
+  const pending = await Photo.findOne({ _id: id, userId: user._id, status: 'pending' }, { originalKey: 1, displayKey: 1, thumbKey: 1 }).lean();
+  if (pending) {
+    const present = await Promise.all([pending.originalKey, pending.displayKey, pending.thumbKey].map(objectExists));
+    if (present.includes(false)) throw new HttpError(409, 'Upload is niet compleet', 'upload_incomplete');
+  }
 
   const photo = await Photo.findOneAndUpdate(
     { _id: id, userId: user._id, status: 'pending' },
@@ -39,7 +48,11 @@ export const POST = handler<Params<{ id: string }>>(async (req, { params }) => {
     const due = !last || Date.now() - new Date(last).getTime() > BUNDLE_WINDOW_MS;
     if (due) {
       await Group.updateOne({ _id: group._id }, { $set: { [`lastNotified.${user._id}`]: new Date() } });
-      const others = group.members.map((m) => m.userId).filter((m) => String(m) !== String(user._id));
+      const memberIds = group.members.map((m) => m.userId).filter((m) => String(m) !== String(user._id));
+      // People who blocked the photographer do not get told about their photos.
+      const blockers = await User.find({ _id: { $in: memberIds }, blockedUserIds: user._id }, { _id: 1 }).lean();
+      const blocked = new Set(blockers.map((b) => String(b._id)));
+      const others = memberIds.filter((m) => !blocked.has(String(m)));
       const me = await User.findById(user._id, { name: 1 }).lean();
       // Fire and forget: an upload never waits on push delivery.
       pushToUsers(

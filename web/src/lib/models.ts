@@ -26,6 +26,8 @@ const userSchema = new Schema(
       notifyNewPhotos: { type: Boolean, default: true },
       notifyRecap: { type: Boolean, default: true },
     },
+    // People whose photos this user never wants to see (App Store guideline 1.2).
+    blockedUserIds: { type: [Schema.Types.ObjectId], default: [] },
   },
   { timestamps: true },
 );
@@ -41,6 +43,7 @@ export interface UserDoc {
   proStore: boolean;
   proExpiresAt: Date | null;
   settings?: { notifyNewPhotos?: boolean; notifyRecap?: boolean };
+  blockedUserIds?: Types.ObjectId[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -49,6 +52,8 @@ export interface UserDoc {
 export const GROUP_TYPES = ['vacation', 'event', 'permanent'] as const;
 export const CAMERA_STYLES = ['film', 'instant', 'disposable', 'bw', 'golden', 'chrome'] as const;
 export const FREE_STYLES: readonly string[] = ['film', 'instant', 'disposable'];
+/** Photos picked from the camera roll carry no camera style. */
+export const PHOTO_STYLES = [...CAMERA_STYLES, 'roll'] as const;
 
 const memberSchema = new Schema(
   {
@@ -166,6 +171,36 @@ export interface PhotoDoc {
   updatedAt?: Date;
 }
 
+// ---------------------------------------------------------------- Report (App Store guideline 1.2)
+export const REPORT_REASONS = ['ongepast', 'spam', 'anders'] as const;
+
+const reportSchema = new Schema(
+  {
+    photoId: { type: Schema.Types.ObjectId, ref: 'Photo', required: true, index: true },
+    groupId: { type: Schema.Types.ObjectId, ref: 'Group', required: true, index: true },
+    reporterId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    // Owner of the reported photo, kept so moderation still knows who after the photo is removed.
+    photoUserId: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    reason: { type: String, enum: REPORT_REASONS, required: true },
+    note: { type: String, default: '', maxlength: 500 },
+    status: { type: String, enum: ['open', 'handled'], default: 'open', index: true },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } },
+);
+reportSchema.index({ photoId: 1, reporterId: 1 }, { unique: true });
+
+export interface ReportDoc {
+  _id: Types.ObjectId;
+  photoId: Types.ObjectId;
+  groupId: Types.ObjectId;
+  reporterId: Types.ObjectId;
+  photoUserId: Types.ObjectId | null;
+  reason: (typeof REPORT_REASONS)[number];
+  note: string;
+  status: 'open' | 'handled';
+  createdAt?: Date;
+}
+
 // ---------------------------------------------------------------- RevenueCat webhook dedupe
 const webhookEventSchema = new Schema(
   { eventId: { type: String, unique: true, required: true } },
@@ -175,4 +210,5 @@ const webhookEventSchema = new Schema(
 export const User = (mongoose.models.User ?? mongoose.model('User', userSchema)) as unknown as Model<UserDoc>;
 export const Group = (mongoose.models.Group ?? mongoose.model('Group', groupSchema)) as unknown as Model<GroupDoc>;
 export const Photo = (mongoose.models.Photo ?? mongoose.model('Photo', photoSchema)) as unknown as Model<PhotoDoc>;
+export const Report = (mongoose.models.Report ?? mongoose.model('Report', reportSchema)) as unknown as Model<ReportDoc>;
 export const WebhookEvent = (mongoose.models.WebhookEvent ?? mongoose.model('WebhookEvent', webhookEventSchema)) as unknown as Model<{ eventId: string }>;

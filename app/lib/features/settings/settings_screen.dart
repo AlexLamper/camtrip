@@ -8,9 +8,11 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api.dart';
 import '../../core/config.dart';
+import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../main.dart';
+import '../../models/models.dart';
 import '../auth/auth_controller.dart';
 import '../premium/premium_controller.dart';
 
@@ -49,6 +51,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } on ApiException catch (e) {
       if (mounted) showMessage(context, e.message);
     }
+  }
+
+  Future<void> _blocked() async {
+    await showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => const _BlockedSheet());
   }
 
   @override
@@ -120,7 +126,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             if (context.mounted) showMessage(context, e.message);
           }
         }),
+        SettingRow(
+          title: 'Geblokkeerde personen',
+          subtitle: (user?.blockedUserIds.isEmpty ?? true) ? 'Niemand' : Fmt.count(user!.blockedUserIds.length, 'persoon', 'personen'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: _blocked,
+        ),
         SettingRow(title: 'Privacybeleid', trailing: const Icon(Icons.open_in_new, size: 18), onTap: () => launchUrl(Uri.parse(AppConfig.privacyUrl))),
+        SettingRow(title: 'Voorwaarden', trailing: const Icon(Icons.open_in_new, size: 18), onTap: () => launchUrl(Uri.parse(AppConfig.termsUrl))),
         SettingRow(title: 'Contact', subtitle: AppConfig.supportEmail, onTap: () => launchUrl(Uri.parse('mailto:${AppConfig.supportEmail}'))),
         SettingRow(
           title: 'Uitloggen',
@@ -154,6 +167,77 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         const SizedBox(height: 24),
         Center(child: Text('CamTrip $_version', style: CT.text(12, color: CT.muted))),
       ]),
+    );
+  }
+}
+
+/// Lists blocked people with a way to unblock them.
+class _BlockedSheet extends ConsumerStatefulWidget {
+  const _BlockedSheet();
+  @override
+  ConsumerState<_BlockedSheet> createState() => _BlockedSheetState();
+}
+
+class _BlockedSheetState extends ConsumerState<_BlockedSheet> {
+  List<Member>? _users;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final users = await ref.read(authProvider.notifier).blockedUsers();
+      if (mounted) setState(() => _users = users);
+    } catch (e) {
+      if (mounted) setState(() => _error = ApiException.from(e).message);
+    }
+  }
+
+  Future<void> _unblock(Member m) async {
+    try {
+      await ref.read(authProvider.notifier).unblock(m.id);
+      if (mounted) setState(() => _users = _users?.where((u) => u.id != m.id).toList());
+    } catch (e) {
+      if (mounted) showMessage(context, ApiException.from(e).message);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final users = _users;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Geblokkeerd', style: CT.title(22)),
+          const SizedBox(height: 4),
+          Text('Je ziet geen foto\'s van deze mensen.', style: CT.text(13, color: CT.muted)),
+          const SizedBox(height: 12),
+          if (_error != null)
+            Text(_error!, style: CT.text(14, color: CT.accent))
+          else if (users == null)
+            const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator(color: CT.ink)))
+          else if (users.isEmpty)
+            Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text('Je hebt niemand geblokkeerd.', style: CT.text(15)))
+          else
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
+              child: ListView(shrinkWrap: true, children: [
+                for (final m in users)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Avatar.member(m, size: 34),
+                    title: Text(m.name, style: CT.text(16, weight: FontWeight.w500)),
+                    trailing: TextButton(onPressed: () => _unblock(m), child: const Text('Opheffen')),
+                  ),
+              ]),
+            ),
+        ]),
+      ),
     );
   }
 }

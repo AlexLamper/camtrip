@@ -9,7 +9,9 @@ import '../../core/api.dart';
 import '../../core/config.dart';
 import '../../models/models.dart';
 import '../premium/premium_controller.dart';
+import '../gallery/gallery_controller.dart';
 import '../notifications/push.dart';
+import '../upload/upload_queue.dart';
 
 /// Session state. `null` = signed out. Loading only during restore / sign-in.
 final authProvider = AsyncNotifierProvider<AuthController, AppUser?>(AuthController.new);
@@ -138,6 +140,26 @@ class AuthController extends AsyncNotifier<AppUser?> {
 
   Future<void> deleteAccount() async {
     await _api.delete('/me');
+    // Nothing of this account may be uploaded later under another sign-in.
+    await ref.read(uploadQueueProvider.notifier).clear();
     await signOut();
+  }
+
+  /// "Lid blokkeren": hides every photo of [userId] for this account.
+  Future<void> block(String userId) async {
+    final res = await _api.post('/me/blocks', {'userId': userId});
+    state = AsyncData(AppUser.fromJson(res['user'] as Map<String, dynamic>));
+    ref.invalidate(galleryProvider); // every gallery reloads without their photos
+  }
+
+  Future<void> unblock(String userId) async {
+    final res = await _api.delete('/me/blocks/$userId');
+    state = AsyncData(AppUser.fromJson(res['user'] as Map<String, dynamic>));
+    ref.invalidate(galleryProvider);
+  }
+
+  Future<List<Member>> blockedUsers() async {
+    final res = await _api.get('/me/blocks');
+    return ((res['users'] as List?) ?? const []).map((u) => Member.fromJson(u as Map<String, dynamic>)).toList();
   }
 }

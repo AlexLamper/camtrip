@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { Group, CAMERA_STYLES, GROUP_TYPES, type GroupDoc } from '@/lib/models';
-import { body, handler, json } from '@/lib/http';
+import { Group, CAMERA_STYLES, FREE_STYLES, GROUP_TYPES, type GroupDoc } from '@/lib/models';
+import { body, handler, HttpError, json } from '@/lib/http';
 import { isPro, requireUser } from '@/lib/auth';
 import { computeDeleteAfter, serializeGroup, uniqueCode } from '@/lib/groups';
 
@@ -25,6 +25,9 @@ const Create = z
 export const POST = handler(async (req) => {
   const user = await requireUser(req);
   const input = await body(req, Create);
+  if (!FREE_STYLES.includes(input.defaultStyle) && !isPro(user)) {
+    throw new HttpError(402, 'Deze camerastijl hoort bij CamTrip Pro', 'pro_required');
+  }
   const endDate = input.type === 'permanent' ? null : (input.endDate ?? input.startDate ?? null);
   const group = await Group.create({
     name: input.name,

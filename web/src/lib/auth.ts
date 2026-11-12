@@ -55,6 +55,7 @@ export function publicUser(user: UserDoc) {
       notifyNewPhotos: user.settings?.notifyNewPhotos ?? true,
       notifyRecap: user.settings?.notifyRecap ?? true,
     },
+    blockedUserIds: (user.blockedUserIds ?? []).map(String),
   };
 }
 

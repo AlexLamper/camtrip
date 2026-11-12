@@ -4,7 +4,8 @@ DateTime? _date(dynamic v) => v == null ? null : DateTime.tryParse(v.toString())
 
 Color parseColor(String? hex, [Color fallback = const Color(0xFFD9472B)]) {
   if (hex == null || hex.length != 7) return fallback;
-  return Color(int.parse('FF${hex.substring(1)}', radix: 16));
+  final v = int.tryParse('FF${hex.substring(1)}', radix: 16);
+  return v == null ? fallback : Color(v);
 }
 
 class AppUser {
@@ -16,6 +17,7 @@ class AppUser {
     required this.isPro,
     required this.notifyNewPhotos,
     required this.notifyRecap,
+    this.blockedUserIds = const [],
   });
 
   final String id;
@@ -25,6 +27,9 @@ class AppUser {
   final bool isPro;
   final bool notifyNewPhotos;
   final bool notifyRecap;
+
+  /// People whose photos this user hid ("Lid blokkeren").
+  final List<String> blockedUserIds;
 
   Color get color => parseColor(avatarColor);
   String get initial => name.isEmpty ? '?' : name.characters.first.toUpperCase();
@@ -39,6 +44,7 @@ class AppUser {
       isPro: j['isPro'] == true,
       notifyNewPhotos: s['notifyNewPhotos'] != false,
       notifyRecap: s['notifyRecap'] != false,
+      blockedUserIds: ((j['blockedUserIds'] as List?) ?? const []).map((e) => e.toString()).toList(),
     );
   }
 
@@ -50,6 +56,7 @@ class AppUser {
         isPro: isPro ?? this.isPro,
         notifyNewPhotos: notifyNewPhotos,
         notifyRecap: notifyRecap,
+        blockedUserIds: blockedUserIds,
       );
 }
 
@@ -74,6 +81,16 @@ class Member {
         avatarColor: (j['avatarColor'] as String?) ?? '#d9472b',
         role: (j['role'] as String?) ?? 'member',
       );
+}
+
+/// Why a photo is reported ("Foto rapporteren"). Ids match the API.
+enum ReportReason {
+  ongepast('Ongepast of aanstootgevend'),
+  spam('Spam'),
+  anders('Iets anders');
+
+  const ReportReason(this.label);
+  final String label;
 }
 
 enum GroupType { vacation, event, permanent }
@@ -137,7 +154,7 @@ class Group {
         startDate: _date(j['startDate']),
         endDate: _date(j['endDate']),
         defaultStyle: (j['defaultStyle'] as String?) ?? 'instant',
-        code: j['code'] as String,
+        code: (j['code'] as String?) ?? '',
         status: (j['status'] as String?) ?? 'active',
         photoCount: (j['photoCount'] as num?)?.toInt() ?? 0,
         videoCount: (j['videoCount'] as num?)?.toInt() ?? 0,
@@ -210,13 +227,13 @@ class Photo {
         durationMs: (j['durationMs'] as num?)?.toInt() ?? 0,
         takenAt: _date(j['takenAt']) ?? DateTime.now(),
         fromRoll: j['fromRoll'] == true,
-        thumbUrl: j['thumbUrl'] as String,
-        displayUrl: j['displayUrl'] as String,
+        thumbUrl: (j['thumbUrl'] as String?) ?? '',
+        displayUrl: (j['displayUrl'] as String?) ?? '',
         videoUrl: j['videoUrl'] as String?,
         reactions: ((j['reactions'] as List?) ?? const [])
-            .map((r) => Reaction((r as Map)['emoji'] as String, (r['count'] as num).toInt()))
+            .map((r) => Reaction((r as Map)['emoji'] as String, (r['count'] as num?)?.toInt() ?? 0))
             .toList(),
-        myReactions: ((j['myReactions'] as List?) ?? const []).cast<String>(),
+        myReactions: ((j['myReactions'] as List?) ?? const []).map((e) => e.toString()).toList(),
         favoriteCount: (j['favoriteCount'] as num?)?.toInt() ?? 0,
         isFavorite: j['isFavorite'] == true,
       );

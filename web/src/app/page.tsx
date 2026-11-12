@@ -1,11 +1,18 @@
 import { Footer, Nav, StoreButtons } from '@/components/site';
 
-const SCENES = {
-  film: 'radial-gradient(circle at 62% 46%, #ffe7a3 0 7%, transparent 8%), linear-gradient(#f59e5b 0%, #f7c27a 42%, #3d7ea6 43%, #2c6a8f 62%, #e9d2a4 63%, #d9b984 100%)',
-  instant: 'radial-gradient(ellipse at 30% 70%, #9be7f0 0 12%, transparent 30%), linear-gradient(160deg, #3fc1d3, #1f8fb0 55%, #f3e5c8 56%, #e7d1aa)',
-  disposable:
-    'radial-gradient(circle at 50% 75%, #fff 0 9%, #e9e2d6 10% 14%, transparent 15%), linear-gradient(#c96e3e 0 35%, #f1d9b5 36% 100%)',
-};
+function Phone({ src, alt, priority }: { src: string; alt: string; priority?: boolean }) {
+  return (
+    <img
+      className="phone-shot"
+      src={`/screen-${src}.webp`}
+      alt={alt}
+      width={454}
+      height={956}
+      loading={priority ? 'eager' : 'lazy'}
+      decoding="async"
+    />
+  );
+}
 
 function Icon({ d }: { d: string }) {
   return (
@@ -35,15 +42,15 @@ export default function Home() {
             <p className="note">Gratis te downloaden · voor iPhone en Android</p>
           </div>
           <div className="phones">
-            <img src="/screen-camera.png" alt="De CamTrip-camera met instant-stijl" />
-            <img src="/screen-galerij.png" alt="De gedeelde galerij van een groep" />
+            <Phone src="camera" alt="De CamTrip-camera met instant-stijl" priority />
+            <Phone src="galerij" alt="De gedeelde galerij van een groep" priority />
           </div>
         </div>
 
         <section className="wrap">
           <h2 className="display">Zo werkt het</h2>
           <p className="sub">Op vakantie, een feest of een weekendje weg. In drie stappen deelt iedereen alles.</p>
-          <div className="steps">
+          <div className="steps section-body">
             <div className="step">
               <h3>Maak een groep</h3>
               <p>Geef je trip een naam en kies de data. Je krijgt een code, een QR-code en een link.</p>
@@ -57,21 +64,44 @@ export default function Home() {
               <p>Elke foto staat direct bij iedereen in de app, en in je eigen fotoalbum.</p>
             </div>
           </div>
+          <div className="screens">
+            <figure>
+              <Phone src="albums" alt="Overzicht van je albums in CamTrip" />
+              <figcaption>
+                Al je trips op een rij
+                <span>Join met een code of QR-code</span>
+              </figcaption>
+            </figure>
+            <figure>
+              <Phone src="detail" alt="Een foto met reacties van de groep" />
+              <figcaption>
+                Reageer op elkaars foto’s
+                <span>Hartjes, favorieten en opslaan</span>
+              </figcaption>
+            </figure>
+            <figure>
+              <Phone src="recap" alt="De recap-video van een trip" />
+              <figcaption>
+                Recap-video met muziek
+                <span>Klaar om te delen na je trip</span>
+              </figcaption>
+            </figure>
+          </div>
         </section>
 
         <section className="wrap">
           <h2 className="display">Foto’s met karakter</h2>
           <p className="sub">Kies je camera. Elke stijl zie je live in de zoeker, dus je weet precies wat je krijgt.</p>
-          <div className="styles-row">
+          <div className="styles-row section-body">
             {(
               [
-                ['film', 'Film 400', 'Warme kleuren, korrel en een oranje datumstempel'],
+                ['film', 'Film', 'Warme kleuren, korrel en een oranje datumstempel'],
                 ['instant', 'Instant', 'Zachte kleuren en een witte rand'],
-                ['disposable', 'Wegwerp', 'Harde flits, vignet en lichtlekken'],
+                ['wegwerp', 'Wegwerp', 'Harde flits, vignet en lichtlekken'],
               ] as const
             ).map(([key, title, sub]) => (
               <figure key={key} className="pol">
-                <div className="shot" style={{ background: SCENES[key] }} />
+                <img className="shot" src={`/style-${key}.webp`} alt={`Voorbeeldfoto met de stijl ${title}`} width={800} height={800} loading="lazy" decoding="async" />
                 <figcaption>
                   {title}
                   <span>{sub}</span>
@@ -83,7 +113,7 @@ export default function Home() {
 
         <section className="wrap">
           <h2 className="display">Gemaakt voor onderweg</h2>
-          <div className="features">
+          <div className="features section-body">
             <div className="feature">
               <div className="ic">
                 <Icon d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" />
@@ -111,7 +141,7 @@ export default function Home() {
         <section className="wrap">
           <h2 className="display">Gratis, of Pro</h2>
           <p className="sub">Voor de meeste groepen is gratis genoeg. Pro is voor als je alles wilt.</p>
-          <div className="pricing">
+          <div className="pricing section-body">
             <div className="plan">
               <h3>Gratis</h3>
               <div className="price">€0</div>
@@ -139,7 +169,7 @@ export default function Home() {
 
         <section className="wrap">
           <h2 className="display">Vragen</h2>
-          <div className="faq">
+          <div className="faq section-body">
             <details>
               <summary>Moet iedereen in de groep de app hebben?</summary>
               <p>Ja, om mee te fotograferen en alles te zien. De app is gratis voor iPhone en Android.</p>
@@ -165,13 +195,13 @@ export default function Home() {
           </div>
         </section>
 
-        <div className="wrap">
+        <section className="wrap">
           <div className="cta">
             <h2 className="display">Klaar voor je volgende trip?</h2>
             <p>Download CamTrip, maak een groep en stuur de link naar je vrienden.</p>
             <StoreButtons />
           </div>
-        </div>
+        </section>
       </main>
       <Footer />
     </>

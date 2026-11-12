@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Group, Photo, User } from '@/lib/models';
+import { Group, Photo, Report, User } from '@/lib/models';
 import { body, handler, json } from '@/lib/http';
 import { publicUser, requireUser } from '@/lib/auth';
 import { deleteKeys } from '@/lib/storage';
@@ -52,7 +52,8 @@ export const DELETE = handler(async (req) => {
       continue;
     }
     const isOwner = String(g.ownerId) === String(user._id);
-    const members = isOwner && !rest.some((m) => m.role === 'admin') ? rest.map((m, i) => (i === 0 ? { ...m, role: 'admin' } : m)) : rest;
+    // Never leave a group without an admin, whether or not this user created it.
+    const members = rest.some((m) => m.role === 'admin') ? rest : rest.map((m, i) => (i === 0 ? { ...m, role: 'admin' } : m));
     const counts = await Photo.aggregate([
       { $match: { groupId: g._id, status: 'ready' } },
       { $group: { _id: '$kind', n: { $sum: 1 } } },
@@ -61,12 +62,18 @@ export const DELETE = handler(async (req) => {
       { _id: g._id },
       {
         members,
-        ...(isOwner ? { ownerId: members[0].userId } : {}),
+        ...(isOwner ? { ownerId: (members.find((m) => m.role === 'admin') ?? members[0]).userId } : {}),
         photoCount: counts.find((c) => c._id === 'photo')?.n ?? 0,
         videoCount: counts.find((c) => c._id === 'video')?.n ?? 0,
       },
     );
   }
+
+  // Personal traces on other people's photos and in other accounts.
+  await Photo.updateMany({ 'reactions.userId': user._id }, { $pull: { reactions: { userId: user._id } } });
+  await Photo.updateMany({ favoritedBy: user._id }, { $pull: { favoritedBy: user._id } });
+  await User.updateMany({ blockedUserIds: user._id }, { $pull: { blockedUserIds: user._id } });
+  await Report.deleteMany({ reporterId: user._id });
 
   await User.deleteOne({ _id: user._id });
   return json({ ok: true });

@@ -7,7 +7,8 @@ type Event = { id?: string; type?: string; app_user_id?: string; transferred_to?
 
 export const POST = handler(async (req) => {
   const expected = process.env.REVENUECAT_WEBHOOK_AUTHORIZATION;
-  if (expected && req.headers.get('authorization') !== expected) {
+  if (!expected) throw new Error('REVENUECAT_WEBHOOK_AUTHORIZATION is not set');
+  if (req.headers.get('authorization') !== expected) {
     return json({ error: 'Unauthorized' }, 401);
   }
   const { event } = (await req.json()) as { event?: Event };
@@ -22,9 +23,15 @@ export const POST = handler(async (req) => {
   }
 
   const ids = new Set<string>([event.app_user_id ?? '', ...(event.transferred_to ?? [])]);
-  for (const id of ids) {
-    // Anonymous RevenueCat ids ($RCAnonymousID:...) are not accounts here.
-    if (/^[a-f0-9]{24}$/i.test(id)) await syncProFromRevenueCat(id);
+  try {
+    for (const id of ids) {
+      // Anonymous RevenueCat ids ($RCAnonymousID:...) are not accounts here.
+      if (/^[a-f0-9]{24}$/i.test(id)) await syncProFromRevenueCat(id);
+    }
+  } catch (err) {
+    // Forget the event so RevenueCat's retry is processed instead of skipped as a duplicate.
+    await WebhookEvent.deleteOne({ eventId: event.id });
+    throw err;
   }
   return json({ ok: true });
 });

@@ -27,6 +27,7 @@ class GroupSettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final g = ref.watch(groupProvider(groupId));
     final me = ref.watch(authProvider).value?.id;
+    final blocked = ref.watch(authProvider).value?.blockedUserIds ?? const <String>[];
     if (g == null) return Scaffold(appBar: AppBar());
     final ctrl = ref.read(groupsProvider.notifier);
 
@@ -106,24 +107,43 @@ class GroupSettingsScreen extends ConsumerWidget {
               Avatar.member(m, size: 36),
               const SizedBox(width: 12),
               Expanded(
-                child: Text('${m.name}${m.id == me ? ' (jij)' : ''}', style: CT.text(15, weight: FontWeight.w500)),
+                child: Text('${m.name}${m.id == me ? ' (jij)' : ''}${blocked.contains(m.id) ? ' · geblokkeerd' : ''}',
+                    style: CT.text(15, weight: FontWeight.w500)),
               ),
               if (m.isAdmin) Text('beheerder', style: CT.text(12, color: CT.muted)),
-              if (g.isAdmin && m.id != me && m.id != g.ownerId)
+              if (m.id != me)
                 PopupMenuButton<String>(
                   icon: const Icon(Icons.more_horiz, color: CT.muted),
                   onSelected: (v) async {
-                    if (v == 'remove') {
-                      if (await confirm(context, title: '${m.name} verwijderen?', message: 'Hun foto\'s blijven in de groep.', ok: 'Verwijder', danger: true)) {
-                        if (context.mounted) await _run(context, () => ctrl.removeMember(g.id, m.id));
-                      }
-                    } else {
-                      await _run(context, () => ctrl.setRole(g.id, m.id, m.isAdmin ? 'member' : 'admin'));
+                    switch (v) {
+                      case 'remove':
+                        if (await confirm(context, title: '${m.name} verwijderen?', message: 'Hun foto\'s blijven in de groep.', ok: 'Verwijder', danger: true)) {
+                          if (context.mounted) await _run(context, () => ctrl.removeMember(g.id, m.id));
+                        }
+                      case 'role':
+                        await _run(context, () => ctrl.setRole(g.id, m.id, m.isAdmin ? 'member' : 'admin'));
+                      case 'block':
+                        if (await confirm(context,
+                            title: '${m.name} blokkeren?',
+                            message: 'Je ziet geen foto\'s en video\'s van ${m.name} meer en krijgt er geen meldingen over. Opheffen kan in Instellingen.',
+                            ok: 'Blokkeer',
+                            danger: true)) {
+                          if (context.mounted) {
+                            await _run(context, () => ref.read(authProvider.notifier).block(m.id));
+                          }
+                        }
+                      case 'unblock':
+                        await _run(context, () => ref.read(authProvider.notifier).unblock(m.id));
                     }
                   },
                   itemBuilder: (_) => [
-                    PopupMenuItem(value: 'role', child: Text(m.isAdmin ? 'Maak gewoon lid' : 'Maak beheerder')),
-                    const PopupMenuItem(value: 'remove', child: Text('Verwijder uit groep')),
+                    if (g.isAdmin && m.id != g.ownerId) ...[
+                      PopupMenuItem(value: 'role', child: Text(m.isAdmin ? 'Maak gewoon lid' : 'Maak beheerder')),
+                      const PopupMenuItem(value: 'remove', child: Text('Verwijder uit groep')),
+                    ],
+                    blocked.contains(m.id)
+                        ? const PopupMenuItem(value: 'unblock', child: Text('Blokkering opheffen'))
+                        : const PopupMenuItem(value: 'block', child: Text('Blokkeer')),
                   ],
                 ),
             ]),

@@ -1,5 +1,5 @@
 import { connectDB } from '@/lib/db';
-import { Group, Photo, type GroupDoc } from '@/lib/models';
+import { Group, Photo, Report, type GroupDoc } from '@/lib/models';
 import { handler, json } from '@/lib/http';
 import { ownerIsPro } from '@/lib/groups';
 import { deleteKeys } from '@/lib/storage';
@@ -9,7 +9,8 @@ import { deleteKeys } from '@/lib/storage';
  * uploads that were reserved but never completed (after 2 days).
  */
 export const GET = handler(async (req) => {
-  if (req.headers.get('authorization') !== `Bearer ${process.env.CRON_SECRET}`) return json({ error: 'Unauthorized' }, 401);
+  const secret = process.env.CRON_SECRET;
+  if (!secret || req.headers.get('authorization') !== `Bearer ${secret}`) return json({ error: 'Unauthorized' }, 401);
   await connectDB();
 
   const due = await Group.find({ deleteAfter: { $ne: null, $lt: new Date() } }).lean<GroupDoc[]>();
@@ -23,6 +24,7 @@ export const GET = handler(async (req) => {
     const photos = await Photo.find({ groupId: g._id }, { originalKey: 1, displayKey: 1, thumbKey: 1 }).lean();
     await deleteKeys(photos.flatMap((p) => [p.originalKey, p.displayKey, p.thumbKey]));
     await Photo.deleteMany({ groupId: g._id });
+    await Report.deleteMany({ groupId: g._id });
     await Group.deleteOne({ _id: g._id });
     deletedGroups++;
   }

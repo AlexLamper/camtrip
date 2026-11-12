@@ -52,8 +52,13 @@ class PremiumController extends Notifier<PremiumState> {
   Future<void> configure() async {
     final key = RevenueCatConfig.sdkKey();
     if (key.isEmpty) return; // keys not injected (local dev build)
-    await Purchases.setLogLevel(kDebugMode ? LogLevel.info : LogLevel.warn);
-    await Purchases.configure(PurchasesConfiguration(key));
+    try {
+      await Purchases.setLogLevel(kDebugMode ? LogLevel.info : LogLevel.warn);
+      await Purchases.configure(PurchasesConfiguration(key));
+    } catch (e) {
+      debugPrint('RevenueCat configure failed: $e');
+      return; // the app works without purchases; the paywall says so
+    }
     Purchases.addCustomerInfoUpdateListener(_apply);
     state = state.copyWith(configured: true);
     unawaited(loadOffering());
@@ -68,7 +73,7 @@ class PremiumController extends Notifier<PremiumState> {
     if (!state.configured) return;
     try {
       final offerings = await Purchases.getOfferings();
-      state = state.copyWith(offering: offerings.current);
+      state = state.copyWith(offering: offerings.current ?? offerings.all['default']);
     } catch (_) {}
   }
 
@@ -96,6 +101,7 @@ class PremiumController extends Notifier<PremiumState> {
 
   /// Returns true when Pro is active afterwards. Cancelling returns false quietly.
   Future<bool> purchase(Package package) async {
+    if (!state.configured) throw ApiException('Abonnementen zijn nu niet beschikbaar. Probeer het later.');
     state = state.copyWith(busy: true);
     try {
       final result = await Purchases.purchase(PurchaseParams.package(package));
@@ -103,14 +109,18 @@ class PremiumController extends Notifier<PremiumState> {
       await _syncServer();
       return state.isPro;
     } on PlatformException catch (e) {
-      if (PurchasesErrorHelper.getErrorCode(e) == PurchasesErrorCode.purchaseCancelledError) return false;
-      throw ApiException(e.message ?? 'Aankoop mislukt');
+      final code = PurchasesErrorHelper.getErrorCode(e);
+      if (code == PurchasesErrorCode.purchaseCancelledError) return false;
+      if (code == PurchasesErrorCode.paymentPendingError) throw ApiException('Je betaling wordt nog verwerkt. Pro gaat aan zodra die rond is.');
+      debugPrint('purchase failed: ${e.message}');
+      throw ApiException('Aankoop lukte niet. Probeer het later nog eens.');
     } finally {
       state = state.copyWith(busy: false);
     }
   }
 
   Future<bool> restore() async {
+    if (!state.configured) throw ApiException('Aankopen herstellen kan nu niet. Probeer het later.');
     state = state.copyWith(busy: true);
     try {
       final info = await Purchases.restorePurchases();
@@ -118,7 +128,8 @@ class PremiumController extends Notifier<PremiumState> {
       await _syncServer();
       return state.isPro;
     } on PlatformException catch (e) {
-      throw ApiException(e.message ?? 'Herstellen mislukt');
+      debugPrint('restore failed: ${e.message}');
+      throw ApiException('Herstellen lukte niet. Probeer het later nog eens.');
     } finally {
       state = state.copyWith(busy: false);
     }

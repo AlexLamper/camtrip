@@ -61,7 +61,7 @@ export function Footer() {
     <footer>
       <div className="wrap">
         <span>© {new Date().getFullYear()} CamTrip · een app van AL Design</span>
-        <span>
+        <span className="links">
           <Link href="/privacy">Privacy</Link>
           <Link href="/voorwaarden">Voorwaarden</Link>
           <a href="mailto:support@camtrip.app">Contact</a>

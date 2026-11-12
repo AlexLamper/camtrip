@@ -12,8 +12,10 @@ import 'groups_controller.dart';
 /// Extracts a group code from a typed code, a camtrip.app/j/CODE link or camtrip://join/CODE.
 String? parseInvite(String raw) {
   final s = raw.trim();
-  final link = RegExp(r'(?:/j/|join/)([A-Za-z0-9]{4,8})').firstMatch(s);
+  final link = RegExp(r'(?:/j/|join/|[?&]code=)([A-Za-z0-9]{4,8})(?![A-Za-z0-9])').firstMatch(s);
   if (link != null) return link.group(1)!.toUpperCase();
+  // Any other link is not an invite (e.g. a QR code of a random website).
+  if (s.contains('://') || s.contains('/')) return null;
   final code = s.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
   return code.length >= 4 && code.length <= 8 ? code : null;
 }
@@ -68,7 +70,7 @@ class _JoinSheetState extends ConsumerState<JoinSheet> {
       HapticFeedback.mediumImpact();
       GoRouter.of(context).push('/group/${g.id}');
     } on ApiException catch (e) {
-      setState(() => _error = e.message);
+      if (mounted) setState(() => _error = e.message);
     } finally {
       if (mounted) setState(() => _busy = false);
     }

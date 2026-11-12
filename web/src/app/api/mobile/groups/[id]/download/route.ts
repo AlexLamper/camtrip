@@ -4,6 +4,7 @@ import { handler, json, type Params } from '@/lib/http';
 import { isPro, requireUser } from '@/lib/auth';
 import { requireMember } from '@/lib/groups';
 import { readUrl } from '@/lib/storage';
+import { hiddenForViewer } from '@/lib/photos';
 
 /**
  * Download list for "Alles opslaan" (or a selection via ?ids=a,b,c).
@@ -18,8 +19,12 @@ export const GET = handler<Params<{ id: string }>>(async (req, { params }) => {
     .filter((x) => Types.ObjectId.isValid(x))
     .map((x) => new Types.ObjectId(x));
 
-  const filter: Record<string, unknown> = { groupId: group._id, status: 'ready' };
-  if (ids.length) filter._id = { $in: ids };
+  const hidden = await hiddenForViewer(user);
+  const and: Record<string, unknown>[] = [{ groupId: group._id, status: 'ready' }];
+  if (hidden.userId) and.push({ userId: hidden.userId });
+  if (hidden._id) and.push({ _id: hidden._id });
+  if (ids.length) and.push({ _id: { $in: ids } });
+  const filter = { $and: and };
   const photos = await Photo.find(filter).sort({ takenAt: 1 }).lean<PhotoDoc[]>();
   const pro = isPro(user);
 

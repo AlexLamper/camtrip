@@ -217,11 +217,20 @@ class UploadQueue extends Notifier<List<UploadItem>> {
 
   Future<void> retryAll() async {
     for (final i in state) {
+      if (i.status == UploadStatus.uploading) continue;
       i.status = UploadStatus.waiting;
       i.error = null;
     }
     state = [...state];
+    await _save();
     unawaited(process());
+  }
+
+  /// Empties the queue and its files (account deleted).
+  Future<void> clear() async {
+    for (final id in state.map((i) => i.id).toList()) {
+      await remove(id);
+    }
   }
 
   Future<void> remove(String id) async {
@@ -249,11 +258,16 @@ class UploadQueue extends Notifier<List<UploadItem>> {
     if (ref.read(authProvider).value == null) return;
     _running = true;
     try {
+      // Each item is tried at most once per pass; an item that stays waiting
+      // (no connection after all) ends the pass instead of looping forever.
+      final tried = <String>{};
       while (true) {
-        final next = state.where((i) => i.status == UploadStatus.waiting && _allowed(i)).firstOrNull;
+        final next = state.where((i) => i.status == UploadStatus.waiting && _allowed(i) && !tried.contains(i.id)).firstOrNull;
         if (next == null) break;
-        final ok = await _upload(next);
-        if (!ok && !_online) break;
+        tried.add(next.id);
+        final result = await _upload(next);
+        if (result == _Result.offline || !_online) break;
+        if (result == _Result.retry) tried.remove(next.id);
       }
     } finally {
       _running = false;
@@ -262,7 +276,7 @@ class UploadQueue extends Notifier<List<UploadItem>> {
 
   void _touch(UploadItem i) => state = [...state];
 
-  Future<bool> _upload(UploadItem i) async {
+  Future<_Result> _upload(UploadItem i) async {
     final api = ref.read(apiProvider);
     i.status = UploadStatus.uploading;
     i.progress = 0;
@@ -306,10 +320,16 @@ class UploadQueue extends Notifier<List<UploadItem>> {
       await put('thumb', thumb, 'image/jpeg');
       await put('display', display, 'image/jpeg');
       await put('original', original, i.mime);
-      await api.post('/photos/${i.photoId}/complete');
+      try {
+        await api.post('/photos/${i.photoId}/complete');
+      } on ApiException catch (e) {
+        // The server did not find all three files: upload again with fresh URLs.
+        if (e.code == 'upload_incomplete') throw _ExpiredUpload();
+        rethrow;
+      }
       await remove(i.id);
       ref.read(uploadedProvider).add(i.groupId);
-      return true;
+      return _Result.done;
     } on _ExpiredUpload {
       // Ask for fresh upload URLs (a new reservation) on the next pass.
       i.uploads = null;
@@ -318,25 +338,32 @@ class UploadQueue extends Notifier<List<UploadItem>> {
       i.error = i.status == UploadStatus.failed ? 'Upload mislukt' : 'retry';
       _touch(i);
       await _save();
-      return false;
+      return i.status == UploadStatus.waiting ? _Result.retry : _Result.failed;
     } on ApiException catch (e) {
-      if (e.isOffline) {
+      final offline = e.isOffline;
+      if (offline) {
         i.status = UploadStatus.waiting;
       } else {
         i.status = UploadStatus.failed;
-        i.error = e.message;
+        i.error = switch (e.code) {
+          'pro_required' => 'Deze stijl hoort bij CamTrip Pro',
+          'archived' => 'Deze groep is afgesloten',
+          _ => e.message,
+        };
       }
       _touch(i);
       await _save();
-      return false;
+      return offline ? _Result.offline : _Result.failed;
     } catch (e) {
       i.status = UploadStatus.failed;
       i.error = 'Upload mislukt';
       _touch(i);
       await _save();
-      return false;
+      return _Result.failed;
     }
   }
 }
+
+enum _Result { done, retry, failed, offline }
 
 class _ExpiredUpload implements Exception {}

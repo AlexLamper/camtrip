@@ -39,6 +39,13 @@ Future<ProcessedPhoto> processPhoto(
 /// Only the resized display + thumbnail, for photos uploaded from the camera roll.
 Future<ProcessedPhoto> processRollPhoto(File file) async => processPhoto(await file.readAsBytes(), styleId: 'none', applyStyle: false);
 
+/// Plain dark frame, used as video thumbnail when ffmpeg could not grab one.
+Uint8List placeholderJpeg({int width = 480, int height = 640}) {
+  final image = img.Image(width: width, height: height);
+  img.fill(image, color: img.ColorRgb8(40, 38, 36));
+  return Uint8List.fromList(img.encodeJpg(image, quality: 70));
+}
+
 ProcessedPhoto _process(_Job job) {
   var image = img.decodeImage(job.bytes);
   if (image == null) throw Exception('Kon de foto niet lezen');

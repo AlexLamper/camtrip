@@ -12,8 +12,10 @@ class GroupsController extends AsyncNotifier<List<Group>> {
 
   @override
   Future<List<Group>> build() async {
-    final user = ref.watch(authProvider).value;
-    if (user == null) return const [];
+    // Refetch for a different account or a Pro change (member limits and
+    // retention change with it), not for every profile edit or block.
+    final (userId, _) = ref.watch(authProvider.select((a) => (a.value?.id, a.value?.isPro)));
+    if (userId == null) return const [];
     final res = await _api.get('/groups');
     final groups = ((res['groups'] as List?) ?? const []).map((g) => Group.fromJson(g as Map<String, dynamic>)).toList();
     _ensureActive(groups);
