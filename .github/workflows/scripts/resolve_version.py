@@ -114,7 +114,7 @@ def main():
         editable_states = {"PREPARE_FOR_SUBMISSION", "DEVELOPER_REJECTED", "REJECTED",
                            "METADATA_REJECTED", "INVALID_BINARY"}
         editable = [v["attributes"]["versionString"] for v in versions
-                    if v["attributes"].get("appStoreState") in editable_states]
+                    if (v["attributes"].get("appVersionState") or v["attributes"].get("appStoreState")) in editable_states]
 
         # TestFlight trains. A build uploaded here never becomes an App Store
         # version until it is released, so this is the list that actually says
