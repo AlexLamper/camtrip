@@ -1,0 +1,538 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:camera/camera.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gal/gal.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../core/format.dart';
+import '../../core/theme.dart';
+import '../../core/widgets.dart';
+import '../../main.dart';
+import '../../models/models.dart';
+import '../groups/groups_controller.dart';
+import '../premium/premium_controller.dart';
+import '../upload/upload_queue.dart';
+import 'processor.dart';
+import 'styles.dart';
+import 'video_processor.dart';
+
+String albumName(Group g) => 'CamTrip - ${g.name}';
+
+class CameraScreen extends ConsumerStatefulWidget {
+  const CameraScreen({super.key});
+  @override
+  ConsumerState<CameraScreen> createState() => _CameraScreenState();
+}
+
+class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBindingObserver {
+  List<CameraDescription> _cameras = const [];
+  CameraController? _controller;
+  int _cameraIndex = 0;
+  late CameraStyle _style;
+  late bool _stamp;
+  FlashMode _flash = FlashMode.auto;
+  bool _videoMode = false;
+  bool _recording = false;
+  bool _busy = false;
+  bool _flashAnim = false;
+  String? _error;
+  Uint8List? _lastThumb;
+  DateTime? _recordStart;
+  Timer? _recordTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    final prefs = ref.read(prefsProvider);
+    _style = CameraStyle.byId(prefs.cameraStyle);
+    _stamp = prefs.dateStamp;
+    _flash = switch (prefs.flashMode) { 'on' => FlashMode.always, 'off' => FlashMode.off, _ => FlashMode.auto };
+    _init();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _recordTimer?.cancel();
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final c = _controller;
+    if (c == null || !c.value.isInitialized) return;
+    if (state == AppLifecycleState.inactive) {
+      c.dispose();
+      _controller = null;
+    } else if (state == AppLifecycleState.resumed) {
+      _start(_cameraIndex);
+    }
+  }
+
+  Future<void> _init() async {
+    try {
+      _cameras = await availableCameras();
+      if (_cameras.isEmpty) {
+        setState(() => _error = 'Geen camera gevonden');
+        return;
+      }
+      final back = _cameras.indexWhere((c) => c.lensDirection == CameraLensDirection.back);
+      await _start(back < 0 ? 0 : back);
+    } on CameraException catch (e) {
+      setState(() => _error = e.code == 'CameraAccessDenied'
+          ? 'CamTrip heeft toegang tot je camera nodig. Zet dit aan in Instellingen.'
+          : 'Camera kon niet starten');
+    }
+  }
+
+  Future<void> _start(int index) async {
+    final old = _controller;
+    _controller = null;
+    await old?.dispose();
+    final c = CameraController(_cameras[index], ResolutionPreset.max, enableAudio: true, imageFormatGroup: ImageFormatGroup.jpeg);
+    try {
+      await c.initialize();
+      await c.setFlashMode(_style.forceFlash ? FlashMode.always : _flash);
+      if (!mounted) return;
+      setState(() {
+        _controller = c;
+        _cameraIndex = index;
+        _error = null;
+      });
+    } on CameraException catch (e) {
+      setState(() => _error = e.code == 'CameraAccessDenied'
+          ? 'CamTrip heeft toegang tot je camera nodig. Zet dit aan in Instellingen.'
+          : 'Camera kon niet starten');
+    }
+  }
+
+  bool get _front => _cameras.isNotEmpty && _cameras[_cameraIndex].lensDirection == CameraLensDirection.front;
+
+  Future<void> _selectStyle(CameraStyle s) async {
+    if (s.pro && !ref.read(isProProvider)) {
+      context.push('/pro');
+      return;
+    }
+    HapticFeedback.selectionClick();
+    setState(() => _style = s);
+    ref.read(prefsProvider).cameraStyle = s.id;
+    await _controller?.setFlashMode(s.forceFlash ? FlashMode.always : _flash);
+  }
+
+  Future<void> _cycleFlash() async {
+    final next = switch (_flash) { FlashMode.auto => FlashMode.always, FlashMode.always => FlashMode.off, _ => FlashMode.auto };
+    setState(() => _flash = next);
+    ref.read(prefsProvider).flashMode = switch (next) { FlashMode.always => 'on', FlashMode.off => 'off', _ => 'auto' };
+    if (!_style.forceFlash) await _controller?.setFlashMode(next);
+  }
+
+  Future<void> _ensureGallery() async {
+    if (!await Gal.hasAccess(toAlbum: true)) await Gal.requestAccess(toAlbum: true);
+  }
+
+  Future<void> _shoot(Group group) async {
+    final c = _controller;
+    if (c == null || _busy || !c.value.isInitialized) return;
+    if (_videoMode) return _toggleRecording(group);
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _busy = true;
+      _flashAnim = true;
+    });
+    Future.delayed(const Duration(milliseconds: 140), () => mounted ? setState(() => _flashAnim = false) : null);
+    try {
+      final shot = await c.takePicture();
+      final takenAt = DateTime.now();
+      final bytes = await shot.readAsBytes();
+      setState(() => _busy = false); // ready for the next shot while this one develops
+      final processed = await processPhoto(
+        bytes,
+        styleId: _style.id,
+        dateStamp: _stamp ? Fmt.stamp(takenAt) : null,
+        mirror: _front,
+      );
+      if (mounted) setState(() => _lastThumb = processed.thumb);
+      await ref.read(uploadQueueProvider.notifier).enqueue(
+            groupId: group.id,
+            kind: 'photo',
+            style: _style.id,
+            mime: 'image/jpeg',
+            takenAt: takenAt,
+            fromRoll: false,
+            width: processed.width,
+            height: processed.height,
+            original: processed.original,
+            display: processed.display,
+            thumb: processed.thumb,
+          );
+      if (ref.read(prefsProvider).saveOwnToAlbum) {
+        await _ensureGallery();
+        await Gal.putImageBytes(processed.original, album: albumName(group), name: 'camtrip_${takenAt.millisecondsSinceEpoch}');
+      }
+      try {
+        await File(shot.path).delete();
+      } catch (_) {}
+    } catch (e) {
+      if (mounted) showMessage(context, 'Foto mislukt: $e');
+    } finally {
+      if (mounted && _busy) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _toggleRecording(Group group) async {
+    final c = _controller!;
+    if (!_recording) {
+      HapticFeedback.mediumImpact();
+      await c.startVideoRecording();
+      _recordStart = DateTime.now();
+      _recordTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!mounted) return;
+        setState(() {});
+        // keep clips short: they are shared over holiday data
+        if (DateTime.now().difference(_recordStart!) > const Duration(seconds: 60)) _toggleRecording(group);
+      });
+      setState(() => _recording = true);
+      return;
+    }
+    _recordTimer?.cancel();
+    setState(() {
+      _recording = false;
+      _busy = true;
+    });
+    final takenAt = _recordStart ?? DateTime.now();
+    final durationMs = DateTime.now().difference(takenAt).inMilliseconds;
+    try {
+      final file = await c.stopVideoRecording();
+      setState(() => _busy = false);
+      final styled = await VideoProcessor.applyStyle(File(file.path), _style);
+      final thumbFile = await VideoProcessor.thumbnail(styled);
+      final thumbBytes = thumbFile != null ? await thumbFile.readAsBytes() : Uint8List(0);
+      final thumbs = thumbBytes.isEmpty ? null : await processPhoto(thumbBytes, styleId: 'none', applyStyle: false);
+      if (mounted && thumbs != null) setState(() => _lastThumb = thumbs.thumb);
+      final bytes = await styled.readAsBytes();
+      await ref.read(uploadQueueProvider.notifier).enqueue(
+            groupId: group.id,
+            kind: 'video',
+            style: _style.id,
+            mime: 'video/mp4',
+            takenAt: takenAt,
+            fromRoll: false,
+            width: thumbs?.width ?? 0,
+            height: thumbs?.height ?? 0,
+            durationMs: durationMs,
+            original: bytes,
+            display: thumbs?.display ?? thumbBytes,
+            thumb: thumbs?.thumb ?? thumbBytes,
+            originalExt: 'mp4',
+          );
+      if (ref.read(prefsProvider).saveOwnToAlbum) {
+        await _ensureGallery();
+        await Gal.putVideo(styled.path, album: albumName(group));
+      }
+    } catch (e) {
+      if (mounted) showMessage(context, 'Video mislukt: $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _pickGroup(List<Group> groups) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (c) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Schiet in groep', style: CT.title(22)),
+            const SizedBox(height: 12),
+            for (final g in groups.where((g) => !g.isArchived))
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(g.name, style: CT.text(16, weight: FontWeight.w600)),
+                subtitle: Text('${g.members.length} leden · ${g.totalCount} foto\'s', style: CT.text(13, color: CT.muted)),
+                trailing: g.id == ref.read(activeGroupIdProvider) ? const Icon(Icons.check_circle, color: CT.accent) : null,
+                onTap: () {
+                  ref.read(activeGroupIdProvider.notifier).set(g.id);
+                  Navigator.pop(c);
+                },
+              ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final group = ref.watch(activeGroupProvider);
+    final groups = ref.watch(groupsProvider).value ?? const <Group>[];
+    final isPro = ref.watch(isProProvider);
+    final pending = ref.watch(uploadQueueProvider).length;
+
+    return Scaffold(
+      backgroundColor: CT.bg,
+      body: SafeArea(
+        child: Column(children: [
+          // top bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+            child: Row(children: [
+              IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.close)),
+              TextButton.icon(
+                onPressed: _style.forceFlash ? null : _cycleFlash,
+                icon: Icon(
+                  _style.forceFlash || _flash == FlashMode.always
+                      ? Icons.flash_on
+                      : (_flash == FlashMode.off ? Icons.flash_off : Icons.flash_auto),
+                  color: CT.ink,
+                  size: 20,
+                ),
+                label: Text(_style.forceFlash ? 'Flits' : (_flash == FlashMode.always ? 'Aan' : _flash == FlashMode.off ? 'Uit' : 'Auto'),
+                    style: CT.text(14, weight: FontWeight.w600)),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => _pickGroup(groups),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(border: Border.all(color: CT.ink, width: 1.5), borderRadius: BorderRadius.circular(10)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.circle, size: 8, color: CT.accent),
+                    const SizedBox(width: 6),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 150),
+                      child: Text(group == null ? 'Kies groep' : '${group.name} · ${group.members.length}',
+                          overflow: TextOverflow.ellipsis, style: CT.text(13, weight: FontWeight.w600)),
+                    ),
+                    const Icon(Icons.expand_more, size: 18),
+                  ]),
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: _cameras.length > 1 ? () => _start((_cameraIndex + 1) % _cameras.length) : null,
+                icon: const Icon(Icons.cameraswitch_outlined),
+              ),
+            ]),
+          ),
+          // viewfinder
+          Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: _viewfinder())),
+          // styles
+          SizedBox(
+            height: 58,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              scrollDirection: Axis.horizontal,
+              itemCount: CameraStyle.all.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (_, i) {
+                final s = CameraStyle.all[i];
+                return CTChip(
+                  s.name,
+                  selected: s.id == _style.id,
+                  dashed: s.pro && !isPro,
+                  icon: s.pro && !isPro ? Icons.star_rounded : null,
+                  onTap: () => _selectStyle(s),
+                );
+              },
+            ),
+          ),
+          // shutter row
+          Padding(
+            padding: const EdgeInsets.fromLTRB(32, 6, 32, 16),
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              GestureDetector(
+                onTap: group == null ? null : () => context.push('/group/${group.id}'),
+                child: SizedBox(
+                  width: 56,
+                  child: Stack(clipBehavior: Clip.none, children: [
+                    Transform.rotate(
+                      angle: -0.1,
+                      child: Container(
+                        width: 48,
+                        height: 54,
+                        padding: const EdgeInsets.fromLTRB(3, 3, 3, 9),
+                        decoration: BoxDecoration(color: Colors.white, boxShadow: CT.printShadow, borderRadius: BorderRadius.circular(2)),
+                        child: _lastThumb == null
+                            ? Container(color: CT.cream, child: const Icon(Icons.photo_library_outlined, size: 18, color: CT.muted))
+                            : Image.memory(_lastThumb!, fit: BoxFit.cover),
+                      ),
+                    ),
+                    if (pending > 0)
+                      Positioned(
+                        right: 0,
+                        top: -6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(color: CT.accent, borderRadius: BorderRadius.circular(10)),
+                          child: Text('$pending', style: CT.text(11, color: Colors.white, weight: FontWeight.w700)),
+                        ),
+                      ),
+                  ]),
+                ),
+              ),
+              _shutter(group),
+              GestureDetector(
+                onTap: _recording ? null : () => setState(() => _videoMode = !_videoMode),
+                child: SizedBox(
+                  width: 56,
+                  child: Column(children: [
+                    Text(_videoMode ? 'Foto' : 'Video', style: CT.text(14, weight: FontWeight.w600)),
+                    Text(_videoMode ? 'video · foto' : 'foto · video', style: CT.text(10, color: CT.muted)),
+                  ]),
+                ),
+              ),
+            ]),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _shutter(Group? group) {
+    final recordingFor = _recording && _recordStart != null ? DateTime.now().difference(_recordStart!).inSeconds : 0;
+    return GestureDetector(
+      onTap: group == null
+          ? () => showMessage(context, 'Maak of join eerst een groep')
+          : () => _shoot(group),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          width: 84,
+          height: 84,
+          decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFEEEEEE), border: Border.all(color: CT.ink, width: 3)),
+          alignment: Alignment.center,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: _recording ? 30 : 58,
+            height: _recording ? 30 : 58,
+            decoration: BoxDecoration(
+              color: _videoMode ? CT.accent : CT.accent,
+              borderRadius: BorderRadius.circular(_recording ? 6 : 29),
+            ),
+            child: _busy && !_videoMode
+                ? const Padding(padding: EdgeInsets.all(18), child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
+                : null,
+          ),
+        ),
+        if (_recording)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text('0:${recordingFor.toString().padLeft(2, '0')}', style: CT.text(12, color: CT.accent, weight: FontWeight.w700)),
+          ),
+      ]),
+    );
+  }
+
+  Widget _viewfinder() {
+    final c = _controller;
+    final instant = _style.frame == FrameKind.instant;
+    Widget content;
+    if (_error != null) {
+      content = Container(
+        color: CT.cream,
+        padding: const EdgeInsets.all(24),
+        alignment: Alignment.center,
+        child: Text(_error!, textAlign: TextAlign.center, style: CT.text(15, color: CT.muted)),
+      );
+    } else if (c == null || !c.value.isInitialized) {
+      content = Container(color: CT.cream);
+    } else {
+      final preview = FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: c.value.previewSize?.height ?? 1080,
+          height: c.value.previewSize?.width ?? 1440,
+          child: CameraPreview(c),
+        ),
+      );
+      content = Stack(fit: StackFit.expand, children: [
+        ColorFiltered(colorFilter: ColorFilter.matrix(_style.matrix.m), child: preview),
+        if (_style.leak > 0)
+          IgnorePointer(child: Opacity(opacity: _style.leak.clamp(0, 1), child: Image.asset('assets/images/light_leak.png', fit: BoxFit.cover))),
+        IgnorePointer(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                radius: 0.95,
+                colors: [Colors.transparent, Colors.black.withValues(alpha: _style.vignette * 0.75)],
+                stops: const [0.55, 1],
+              ),
+            ),
+          ),
+        ),
+        if (_style.grain > 0)
+          IgnorePointer(
+            child: Opacity(
+              opacity: (_style.grain * 1.4).clamp(0, 1),
+              child: Image.asset('assets/images/grain.png', repeat: ImageRepeat.repeat, fit: BoxFit.none),
+            ),
+          ),
+        if (_stamp && !_videoMode)
+          Positioned(
+            right: 12,
+            bottom: 10,
+            child: GestureDetector(
+              onTap: () => setState(() {
+                _stamp = false;
+                ref.read(prefsProvider).dateStamp = false;
+              }),
+              child: Text(Fmt.stamp(DateTime.now()),
+                  style: const TextStyle(
+                    fontFamily: 'Courier',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17,
+                    color: Color(0xFFFF8A2A),
+                    letterSpacing: 1,
+                    shadows: [Shadow(color: Color(0xE6FF781E), blurRadius: 6)],
+                  )),
+            ),
+          ),
+        if (_flashAnim) Container(color: Colors.white),
+      ]);
+    }
+
+    return LayoutBuilder(builder: (context, box) {
+      // 3:4 photo area, inside an instant print when that style is chosen
+      final printPadding = instant ? 12.0 : 0.0;
+      final bottomBand = instant ? 56.0 : 0.0;
+      final maxW = box.maxWidth;
+      final maxH = box.maxHeight;
+      var photoW = maxW - printPadding * 2;
+      var photoH = photoW * 4 / 3;
+      if (photoH + printPadding + bottomBand > maxH) {
+        photoH = maxH - printPadding - bottomBand;
+        photoW = photoH * 3 / 4;
+      }
+      return Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          padding: EdgeInsets.fromLTRB(printPadding, printPadding, printPadding, bottomBand),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(instant ? 3 : 18),
+            boxShadow: instant ? CT.printShadow : null,
+          ),
+          child: Stack(clipBehavior: Clip.none, children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(instant ? 0 : 18),
+              child: SizedBox(width: photoW, height: photoH, child: content),
+            ),
+            if (instant)
+              Positioned(
+                left: 4,
+                bottom: -40,
+                child: Text('${Fmt.short(DateTime.now())} · ${ref.watch(activeGroupProvider)?.name ?? ''}',
+                    style: CT.text(14, color: CT.muted, weight: FontWeight.w500)),
+              ),
+          ]),
+        ),
+      );
+    });
+  }
+}

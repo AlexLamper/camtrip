@@ -1,0 +1,420 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../core/api.dart';
+import '../../core/format.dart';
+import '../../core/theme.dart';
+import '../../core/widgets.dart';
+import '../../models/models.dart';
+import '../camera/processor.dart';
+import '../groups/groups_controller.dart';
+import '../upload/upload_queue.dart';
+import 'gallery_controller.dart';
+
+class GalleryScreen extends ConsumerStatefulWidget {
+  const GalleryScreen({super.key, required this.groupId});
+  final String groupId;
+
+  @override
+  ConsumerState<GalleryScreen> createState() => _GalleryScreenState();
+}
+
+class _GalleryScreenState extends ConsumerState<GalleryScreen> {
+  final _scroll = ScrollController();
+  bool _selecting = false;
+  final Set<String> _selected = {};
+  DownloadProgress? _download;
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(() {
+      if (_scroll.position.pixels > _scroll.position.maxScrollExtent - 600) {
+        ref.read(galleryProvider(widget.groupId).notifier).loadMore();
+      }
+    });
+    Future.microtask(() => ref.read(groupsProvider.notifier).refreshOne(widget.groupId).ignore());
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveAll(Group group) async {
+    final ids = _selecting ? _selected.toList() : <String>[];
+    if (_selecting && ids.isEmpty) return;
+    setState(() => _download = DownloadProgress(0, ids.isEmpty ? group.totalCount : ids.length));
+    try {
+      final n = await Downloader.save(ref.read(apiProvider), group, ids, onProgress: (p) => mounted ? setState(() => _download = p) : null);
+      if (mounted) showMessage(context, '$n ${n == 1 ? 'foto' : 'foto\'s'} opgeslagen in "CamTrip - ${group.name}"');
+      setState(() {
+        _selecting = false;
+        _selected.clear();
+      });
+    } catch (e) {
+      if (mounted) showMessage(context, ApiException.from(e).message);
+    } finally {
+      if (mounted) setState(() => _download = null);
+    }
+  }
+
+  Future<void> _uploadFromRoll(Group group) async {
+    final picker = ImagePicker();
+    final files = await picker.pickMultiImage(imageQuality: 95);
+    if (files.isEmpty) return;
+    if (mounted) showMessage(context, '${files.length} foto\'s worden toegevoegd');
+    for (final f in files) {
+      final bytes = await f.readAsBytes();
+      final processed = await processPhoto(bytes, styleId: 'none', applyStyle: false);
+      DateTime takenAt;
+      try {
+        takenAt = await f.lastModified();
+      } catch (_) {
+        takenAt = DateTime.now();
+      }
+      await ref.read(uploadQueueProvider.notifier).enqueue(
+            groupId: group.id,
+            kind: 'photo',
+            style: 'roll',
+            mime: 'image/jpeg',
+            takenAt: takenAt,
+            fromRoll: true,
+            width: processed.width,
+            height: processed.height,
+            original: processed.original,
+            display: processed.display,
+            thumb: processed.thumb,
+          );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final group = ref.watch(groupProvider(widget.groupId));
+    final gallery = ref.watch(galleryProvider(widget.groupId));
+    final pending = ref.watch(uploadQueueProvider).where((i) => i.groupId == widget.groupId).length;
+
+    if (group == null) {
+      return Scaffold(appBar: AppBar(), body: const Center(child: CircularProgressIndicator(color: CT.ink)));
+    }
+
+    return Scaffold(
+      body: Stack(children: [
+        RefreshIndicator(
+          color: CT.ink,
+          onRefresh: () async {
+            await ref.read(galleryProvider(widget.groupId).notifier).refresh();
+            await ref.read(groupsProvider.notifier).refreshOne(widget.groupId);
+          },
+          child: CustomScrollView(
+            controller: _scroll,
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverSafeArea(bottom: false, sliver: SliverToBoxAdapter(child: _header(group, pending))),
+              if (gallery.photos.isEmpty && !gallery.loading)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: EmptyState(
+                    title: gallery.filter.favorites ? 'Nog geen favorieten' : 'Nog geen foto\'s',
+                    message: gallery.error ??
+                        (gallery.filter.favorites
+                            ? 'Tik op het sterretje bij een foto om hem hier te zetten.'
+                            : 'Maak de eerste foto. Iedereen in de groep ziet hem meteen.'),
+                    action: gallery.filter.favorites
+                        ? null
+                        : SizedBox(width: 220, child: CTButton('Open de camera', kind: CTButtonKind.primary, onTap: () => _openCamera(group))),
+                  ),
+                ),
+              for (final (day, photos) in gallery.byDay) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(22, 18, 22, 12),
+                    child: Text(Fmt.day(day), style: CT.title(16)),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 22),
+                  sliver: SliverGrid(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 0.84,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (_, i) => _tile(group, photos[i], photos),
+                      childCount: photos.length,
+                    ),
+                  ),
+                ),
+              ],
+              if (gallery.loading && gallery.photos.isNotEmpty)
+                const SliverToBoxAdapter(
+                  child: Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator(color: CT.ink))),
+                ),
+              if (gallery.loading && gallery.photos.isEmpty)
+                const SliverFillRemaining(child: Center(child: CircularProgressIndicator(color: CT.ink))),
+              const SliverToBoxAdapter(child: SizedBox(height: 120)),
+            ],
+          ),
+        ),
+        Positioned(left: 0, right: 0, bottom: 0, child: _bottomBar(group)),
+      ]),
+    );
+  }
+
+  void _openCamera(Group group) {
+    ref.read(activeGroupIdProvider.notifier).set(group.id);
+    context.push('/camera');
+  }
+
+  Widget _header(Group group, int pending) {
+    final gallery = ref.watch(galleryProvider(widget.groupId));
+    final ctrl = ref.read(galleryProvider(widget.groupId).notifier);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back)),
+          Expanded(
+            child: Text(
+              [group.code, Fmt.range(group.startDate, group.endDate)].where((s) => s.isNotEmpty).join(' · '),
+              textAlign: TextAlign.center,
+              style: CT.text(12, color: CT.muted, weight: FontWeight.w500),
+            ),
+          ),
+          IconButton(
+            onPressed: () => context.push('/group/${group.id}/settings'),
+            icon: const Icon(Icons.more_horiz),
+          ),
+        ]),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(group.name, style: CT.title(30)),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => context.push('/group/${group.id}/invite'),
+              child: Row(children: [
+                AvatarStack(group.members),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    '${Fmt.count(group.photoCount, 'foto', 'foto\'s')}${group.videoCount > 0 ? ' · ${Fmt.count(group.videoCount, 'video', 'video\'s')}' : ''}',
+                    style: CT.text(13, color: CT.muted),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(Icons.person_add_alt_1_outlined, size: 18, color: CT.muted),
+              ]),
+            ),
+            if (pending > 0) ...[
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () => context.push('/queue'),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(color: CT.warnBg, borderRadius: BorderRadius.circular(12), border: Border.all(color: CT.warn)),
+                  child: Row(children: [
+                    const Icon(Icons.cloud_upload_outlined, size: 18, color: CT.warn),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text('${Fmt.count(pending, 'foto wacht', 'foto\'s wachten')} om gedeeld te worden', style: CT.text(13, weight: FontWeight.w500))),
+                    const Icon(Icons.chevron_right, size: 18),
+                  ]),
+                ),
+              ),
+            ],
+            if (group.hasEnded && group.photoCount >= 3) ...[
+              const SizedBox(height: 14),
+              GestureDetector(
+                onTap: () => context.push('/group/${group.id}/recap'),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: CT.paper, borderRadius: BorderRadius.circular(14), boxShadow: CT.cardShadow),
+                  child: Row(children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: SizedBox(width: 46, height: 46, child: group.coverUrl == null ? Container(color: CT.cream) : NetPhoto(group.coverUrl!)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text('Je recap is klaar', style: CT.text(14, weight: FontWeight.w600)),
+                        Text('Video met muziek van jullie trip', style: CT.text(12, color: CT.muted)),
+                      ]),
+                    ),
+                    Text('Bekijk ▶', style: CT.text(13, color: CT.accent, weight: FontWeight.w600)),
+                  ]),
+                ),
+              ),
+            ] else if (group.photoCount >= 3) ...[
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () => context.push('/group/${group.id}/recap'),
+                child: Text('🎞️  Maak nu een recap-video', style: CT.text(13, color: CT.accent, weight: FontWeight.w600)),
+              ),
+            ],
+            if (group.deleteAfter != null && group.hasEnded) ...[
+              const SizedBox(height: 10),
+              Text(
+                'Gratis groep: foto\'s blijven tot ${Fmt.shortYear(group.deleteAfter!)}. Sla ze op of neem Pro.',
+                style: CT.text(12, color: CT.muted),
+              ),
+            ],
+            const SizedBox(height: 14),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: [
+                CTChip('Alles', selected: !gallery.filter.favorites && gallery.filter.userId == null, onTap: () => ctrl.setFilter(const GalleryFilter.all())),
+                const SizedBox(width: 8),
+                CTChip('Favorieten', icon: Icons.star_rounded, selected: gallery.filter.favorites, onTap: () => ctrl.setFilter(const GalleryFilter.favorites())),
+                const SizedBox(width: 8),
+                CTChip(
+                  gallery.filter.userId == null ? 'Per persoon' : (group.member(gallery.filter.userId!)?.name ?? 'Persoon'),
+                  icon: Icons.person_outline,
+                  selected: gallery.filter.userId != null,
+                  onTap: () => _pickPerson(group),
+                ),
+                const SizedBox(width: 8),
+                CTChip(_selecting ? 'Klaar' : 'Selecteer', icon: Icons.check_circle_outline, selected: _selecting, onTap: () {
+                  setState(() {
+                    _selecting = !_selecting;
+                    _selected.clear();
+                  });
+                }),
+              ]),
+            ),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  void _pickPerson(Group group) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (c) => SafeArea(
+        child: ListView(shrinkWrap: true, padding: const EdgeInsets.fromLTRB(20, 0, 20, 16), children: [
+          Text('Foto\'s van...', style: CT.title(22)),
+          const SizedBox(height: 8),
+          for (final m in group.members)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Avatar.member(m, size: 34),
+              title: Text(m.name, style: CT.text(16, weight: FontWeight.w500)),
+              onTap: () {
+                ref.read(galleryProvider(widget.groupId).notifier).setFilter(GalleryFilter.person(m.id));
+                Navigator.pop(c);
+              },
+            ),
+        ]),
+      ),
+    );
+  }
+
+  Widget _tile(Group group, Photo p, List<Photo> dayPhotos) {
+    final m = group.member(p.userId);
+    final selected = _selected.contains(p.id);
+    return GestureDetector(
+      onTap: () {
+        if (_selecting) {
+          setState(() => selected ? _selected.remove(p.id) : _selected.add(p.id));
+        } else {
+          final all = ref.read(galleryProvider(widget.groupId)).photos;
+          context.push('/group/${group.id}/photo/${p.id}', extra: all.indexOf(p));
+        }
+      },
+      onLongPress: () => setState(() {
+        _selecting = true;
+        _selected.add(p.id);
+      }),
+      child: Stack(clipBehavior: Clip.none, children: [
+        InstantPrint(
+          rotation: tiltFor(p.id),
+          padding: 6,
+          bottom: 26,
+          caption: Row(children: [
+            if (m != null) Avatar.member(m, size: 17),
+            const SizedBox(width: 5),
+            Text(Fmt.dm(p.takenAt), style: CT.text(10, color: CT.muted)),
+            if (p.fromRoll) ...[const SizedBox(width: 4), Text('· geüpload', style: CT.text(10, color: CT.muted))],
+            const Spacer(),
+            if (p.isFavorite) const Icon(Icons.star_rounded, size: 13, color: CT.warn),
+            if (p.heartCount > 0) ...[
+              const SizedBox(width: 2),
+              Text('${p.reactions.first.emoji} ${p.heartCount}', style: CT.text(10, weight: FontWeight.w600)),
+            ],
+          ]),
+          child: Stack(fit: StackFit.expand, children: [
+            NetPhoto(p.thumbUrl, cacheKey: 'thumb_${p.id}'),
+            if (p.isVideo)
+              const Center(child: CircleAvatar(radius: 16, backgroundColor: Colors.black45, child: Icon(Icons.play_arrow, color: Colors.white))),
+          ]),
+        ),
+        if (_selecting)
+          Positioned(
+            right: 8,
+            top: 8,
+            child: Icon(selected ? Icons.check_circle : Icons.radio_button_unchecked, color: selected ? CT.accent : Colors.white, size: 26),
+          ),
+      ]),
+    );
+  }
+
+  Widget _bottomBar(Group group) {
+    final d = _download;
+    return Container(
+      padding: EdgeInsets.fromLTRB(18, 14, 18, 14 + MediaQuery.of(context).padding.bottom),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [CT.bg.withValues(alpha: 0), CT.bg, CT.bg], stops: const [0, 0.3, 1]),
+      ),
+      child: Row(children: [
+        Expanded(
+          child: CTButton(
+            d != null
+                ? 'Opslaan... ${d.done}/${d.total}'
+                : (_selecting ? 'Sla ${_selected.length} op' : 'Alles opslaan'),
+            icon: Icons.download_rounded,
+            onTap: d != null || group.totalCount == 0 ? null : () => _saveAll(group),
+          ),
+        ),
+        const SizedBox(width: 10),
+        if (!group.isArchived) ...[
+          SizedBox(
+            width: 58,
+            child: Material(
+              color: CT.paper,
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => _uploadFromRoll(group),
+                child: Container(
+                  height: 54,
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: CT.line, width: 1.5)),
+                  child: const Icon(Icons.add_photo_alternate_outlined),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          SizedBox(
+            width: 58,
+            child: Material(
+              color: CT.accent,
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => _openCamera(group),
+                child: const SizedBox(height: 54, child: Icon(Icons.photo_camera, color: Colors.white)),
+              ),
+            ),
+          ),
+        ],
+      ]),
+    );
+  }
+}

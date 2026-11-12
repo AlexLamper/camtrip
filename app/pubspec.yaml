@@ -1,0 +1,88 @@
+name: camtrip
+description: "CamTrip - één rolletje voor de hele groep."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # app structure (same stack as BijbelQuiz)
+  flutter_riverpod: ^3.5.0
+  go_router: ^18.1.4
+  dio: ^5.11.1
+  flutter_secure_storage: ^11.2.0
+  shared_preferences: ^2.5.6
+  intl: ^0.20.3
+  uuid: ^4.6.0
+  package_info_plus: ^10.2.2
+
+  # accounts + payments
+  google_sign_in: ^7.2.0
+  sign_in_with_apple: ^8.2.0
+  purchases_flutter: ^11.0.1
+
+  # camera + media
+  camera: ^0.12.2
+  image: ^4.12.0
+  gal: ^2.3.3
+  path_provider: ^2.1.6
+  video_player: ^2.14.1
+  audioplayers: ^6.8.1
+  ffmpeg_kit_flutter_new_min: ^3.6.8
+  image_picker: ^1.2.4
+
+  # sharing + joining
+  share_plus: ^13.3.1
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.5.0
+  app_links: ^7.2.2
+  url_launcher: ^6.3.3
+
+  # network + notifications
+  connectivity_plus: ^7.3.2
+  cached_network_image: ^4.0.7
+  firebase_core: ^5.1.0
+  firebase_messaging: ^17.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/music/
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.otf
+        - asset: assets/fonts/Inter-Medium.otf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.otf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.otf
+          weight: 700
+    - family: InterDisplay
+      fonts:
+        - asset: assets/fonts/InterDisplay-Bold.otf
+          weight: 700
+        - asset: assets/fonts/InterDisplay-SemiBold.otf
+          weight: 600
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_icon.png"
+  remove_alpha_ios: true
+  adaptive_icon_background: "#d9472b"
+  adaptive_icon_foreground: "assets/images/app_icon_foreground.png"
