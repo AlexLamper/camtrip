@@ -2,7 +2,9 @@ import { z } from 'zod';
 import { Group, type GroupDoc } from '@/lib/models';
 import { body, handler, HttpError, json } from '@/lib/http';
 import { requireUser } from '@/lib/auth';
-import { FREE_MEMBER_LIMIT, memberRole, normalizeCode, ownerIsPro, serializeGroup } from '@/lib/groups';
+import { FREE_MEMBER_LIMIT, memberRole, normalizeCode, serializeGroup } from '@/lib/groups';
+import { hasPro } from '@/lib/entitlements';
+import { groupIsPro, refreshGroupRetention } from '@/lib/pro';
 
 export const POST = handler(async (req) => {
   const user = await requireUser(req);
@@ -12,11 +14,12 @@ export const POST = handler(async (req) => {
 
   if (!memberRole(group, user._id)) {
     if (group.status === 'archived') throw new HttpError(410, 'Deze groep is afgesloten', 'archived');
-    const pro = await ownerIsPro(group);
+    // One Pro member lifts the limit for everyone, and so does a Pro newcomer.
+    const pro = hasPro(user) || (await groupIsPro(group));
     const full = () =>
       new HttpError(
         403,
-        `Deze groep zit vol (max. ${FREE_MEMBER_LIMIT} leden). Met CamTrip Pro van de maker kunnen er onbeperkt mensen bij.`,
+        `Deze groep zit vol (max. ${FREE_MEMBER_LIMIT} leden). Heeft één lid CamTrip Pro, dan kunnen er onbeperkt mensen bij.`,
         'group_full',
       );
     if (!pro && group.members.length >= FREE_MEMBER_LIMIT) throw full();
@@ -34,6 +37,8 @@ export const POST = handler(async (req) => {
       const again = await Group.findById(group._id, { members: 1 }).lean<GroupDoc>();
       if (!again || !memberRole(again, user._id)) throw full();
     }
+    // A Pro newcomer makes the whole group Pro (no 30-day deletion any more).
+    await refreshGroupRetention(group._id);
   }
   const fresh = await Group.findById(group._id).lean<GroupDoc>();
   return json({ group: await serializeGroup(fresh!, user._id) });

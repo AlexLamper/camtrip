@@ -18,6 +18,9 @@ class AppUser {
     required this.notifyNewPhotos,
     required this.notifyRecap,
     this.blockedUserIds = const [],
+    this.role = 'user',
+    this.proSource,
+    this.proUntil,
   });
 
   final String id;
@@ -30,6 +33,17 @@ class AppUser {
 
   /// People whose photos this user hid ("Lid blokkeren").
   final List<String> blockedUserIds;
+
+  /// App-wide role: 'admin' shows "Beheer" in Instellingen.
+  final String role;
+
+  /// Why this account has Pro: 'subscription', 'gift' or 'admin' (null without).
+  final String? proSource;
+
+  /// When personal Pro ends; null = no end date (or no Pro).
+  final DateTime? proUntil;
+
+  bool get isAppAdmin => role == 'admin';
 
   Color get color => parseColor(avatarColor);
   String get initial => name.isEmpty ? '?' : name.characters.first.toUpperCase();
@@ -45,6 +59,9 @@ class AppUser {
       notifyNewPhotos: s['notifyNewPhotos'] != false,
       notifyRecap: s['notifyRecap'] != false,
       blockedUserIds: ((j['blockedUserIds'] as List?) ?? const []).map((e) => e.toString()).toList(),
+      role: (j['role'] as String?) ?? 'user',
+      proSource: j['proSource'] as String?,
+      proUntil: _date(j['proUntil']),
     );
   }
 
@@ -57,6 +74,9 @@ class AppUser {
         notifyNewPhotos: notifyNewPhotos,
         notifyRecap: notifyRecap,
         blockedUserIds: blockedUserIds,
+        role: role,
+        proSource: proSource,
+        proUntil: proUntil,
       );
 }
 
@@ -114,6 +134,10 @@ class Group {
     required this.myRole,
     required this.ownerId,
     required this.members,
+    this.archived = false,
+    this.hiddenCount = 0,
+    this.proSource,
+    this.proByName,
   });
 
   final String id;
@@ -134,8 +158,31 @@ class Group {
   final String ownerId;
   final List<Member> members;
 
+  /// Archived by this user only ("Gearchiveerd" in their albums list).
+  final bool archived;
+
+  /// Photos this user hid for themselves ("Verborgen foto's").
+  final int hiddenCount;
+
+  /// Group Pro: 'self' = my own Pro, 'group' = another member's ("Pro via Sanne").
+  /// One Pro in the group = Pro for everyone in it. null when not a Pro group.
+  final String? proSource;
+
+  /// Name of the member whose Pro the group uses.
+  final String? proByName;
+
+  /// Pro thanks to someone else in the group, not my own account.
+  bool get isProViaGroup => isProGroup && proSource == 'group';
+
   bool get isAdmin => myRole == 'admin';
+
+  /// Closed by an admin ("Groep afsluiten"): no new photos, for everyone.
+  /// Not the same as [archived], which is personal.
   bool get isArchived => status == 'archived';
+  bool get isClosed => isArchived;
+
+  /// "Reis afronden" makes sense for dated groups that have not ended yet.
+  bool get canFinishTrip => type != GroupType.permanent && (endDate == null || endDate!.isAfter(DateTime.now()));
   bool get hasEnded => endDate != null && endDate!.isBefore(DateTime.now().subtract(const Duration(hours: 12)));
   int get totalCount => photoCount + videoCount;
   bool get isFull => memberLimit != null && members.length >= memberLimit!;
@@ -165,6 +212,34 @@ class Group {
         myRole: j['myRole'] as String?,
         ownerId: (j['ownerId'] as String?) ?? '',
         members: ((j['members'] as List?) ?? const []).map((m) => Member.fromJson(m as Map<String, dynamic>)).toList(),
+        archived: j['archived'] == true,
+        hiddenCount: (j['hiddenCount'] as num?)?.toInt() ?? 0,
+        proSource: j['proSource'] as String?,
+        proByName: (j['proBy'] as Map?)?['name'] as String?,
+      );
+
+  Group copyWith({String? name, bool? archived, int? hiddenCount, int? photoCount, int? videoCount, DateTime? endDate}) => Group(
+        id: id,
+        name: name ?? this.name,
+        type: type,
+        startDate: startDate,
+        endDate: endDate ?? this.endDate,
+        defaultStyle: defaultStyle,
+        code: code,
+        status: status,
+        photoCount: photoCount ?? this.photoCount,
+        videoCount: videoCount ?? this.videoCount,
+        coverUrl: coverUrl,
+        deleteAfter: deleteAfter,
+        isProGroup: isProGroup,
+        memberLimit: memberLimit,
+        myRole: myRole,
+        ownerId: ownerId,
+        members: members,
+        archived: archived ?? this.archived,
+        hiddenCount: hiddenCount ?? this.hiddenCount,
+        proSource: proSource,
+        proByName: proByName,
       );
 }
 
@@ -214,6 +289,30 @@ class Photo {
   final bool isFavorite;
 
   bool get isVideo => kind == 'video';
+
+  /// The photographer, or any admin, may delete a photo for the whole group.
+  bool canDelete(String? me, Group? group) => userId == me || (group?.isAdmin ?? false);
+
+  Photo copyWith({bool? isFavorite, int? favoriteCount}) => Photo(
+        id: id,
+        groupId: groupId,
+        userId: userId,
+        kind: kind,
+        style: style,
+        width: width,
+        height: height,
+        durationMs: durationMs,
+        takenAt: takenAt,
+        fromRoll: fromRoll,
+        thumbUrl: thumbUrl,
+        displayUrl: displayUrl,
+        videoUrl: videoUrl,
+        reactions: reactions,
+        myReactions: myReactions,
+        favoriteCount: favoriteCount ?? this.favoriteCount,
+        isFavorite: isFavorite ?? this.isFavorite,
+      );
+
   int get heartCount => reactions.fold(0, (a, r) => a + r.count);
 
   factory Photo.fromJson(Map<String, dynamic> j) => Photo(

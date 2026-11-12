@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,12 +13,7 @@ import '../../core/config.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import 'auth_controller.dart';
-
-const _scenes = [
-  [Color(0xFFF59E5B), Color(0xFFF7C27A), Color(0xFF3D7EA6), Color(0xFFE9D2A4)],
-  [Color(0xFFFFB36B), Color(0xFFFFD9A0), Color(0xFF3A2A22), Color(0xFFF0A868)],
-  [Color(0xFF3FC1D3), Color(0xFF1F8FB0), Color(0xFFF3E5C8), Color(0xFFE7D1AA)],
-];
+import 'onboarding_slides.dart';
 
 /// Welcome + sign-in in one screen: three slides, then Apple / Google.
 class OnboardingScreen extends ConsumerStatefulWidget {
@@ -30,7 +26,7 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _pages = PageController();
   int _page = 0;
-  bool _busy = false;
+  String? _busyWith; // 'apple' / 'google' while that sign-in runs
 
   static const _slides = [
     ('Eén rolletje\nvoor de hele groep.', 'Schiet met een retro-camera. Iedereen ziet je foto\'s direct, en ze staan meteen in je eigen album.'),
@@ -38,8 +34,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     ('Na afloop een\nrecap-video.', 'CamTrip maakt een video met muziek van jullie mooiste momenten.'),
   ];
 
-  Future<void> _signIn(Future<void> Function() fn) async {
-    setState(() => _busy = true);
+  Future<void> _signIn(String which, Future<void> Function() fn) async {
+    setState(() => _busyWith = which);
     try {
       await fn();
     } on SignInWithAppleAuthorizationException catch (e) {
@@ -52,7 +48,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       debugPrint('sign-in failed: $e');
       if (mounted) showMessage(context, 'Inloggen lukte niet');
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) setState(() => _busyWith = null);
     }
   }
 
@@ -63,23 +59,19 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     return Scaffold(
       body: SafeArea(
         child: Column(children: [
-          SizedBox(height: 360, child: _prints()),
+          // Each slide: its visual takes the free space, the text keeps its own height.
           Expanded(
             child: PageView.builder(
               controller: _pages,
               itemCount: _slides.length,
               onPageChanged: (i) => setState(() => _page = i),
-              itemBuilder: (_, i) => Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  if (widget.pendingCode != null && i == 0) ...[
-                    Text('Je bent uitgenodigd! Log in om mee te doen.', style: CT.text(14, color: CT.accent, weight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                  ],
-                  Text(_slides[i].$1, style: CT.title(32)),
-                  const SizedBox(height: 12),
-                  Text(_slides[i].$2, style: CT.text(16, color: const Color(0xFF555550))),
-                ]),
+              itemBuilder: (_, i) => OnboardingSlide(
+                index: i,
+                title: _slides[i].$1,
+                body: _slides[i].$2,
+                header: widget.pendingCode != null && i == 0
+                    ? Text('Je bent uitgenodigd! Log in om mee te doen.', style: CT.text(14, color: CT.accent, weight: FontWeight.w600))
+                    : null,
               ),
             ),
           ),
@@ -100,17 +92,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             padding: const EdgeInsets.fromLTRB(22, 0, 22, 8),
             child: !last
                 ? CTButton('Verder', onTap: () => _pages.nextPage(duration: const Duration(milliseconds: 280), curve: Curves.easeOut))
-                : Column(children: [
-                    if (Platform.isIOS) ...[
-                      CTButton('Doorgaan met Apple', icon: Icons.apple, loading: _busy, onTap: () => _signIn(auth.signInWithApple)),
-                      const SizedBox(height: 10),
-                    ],
-                    // On iOS Google needs its client id (set by CI); without it only Apple is offered.
-                    if (!Platform.isIOS || AppConfig.googleIosClientId.isNotEmpty)
-                      CTButton('Doorgaan met Google',
-                          kind: CTButtonKind.ghost, icon: Icons.g_mobiledata_rounded, loading: _busy && !Platform.isIOS, onTap: () => _signIn(auth.signInWithGoogle)),
-                    if (!Platform.isIOS) const SizedBox(height: 4),
-                  ]),
+                : _signInButtons(auth),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(30, 4, 30, 12),
@@ -139,16 +121,32 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     );
   }
 
-  Widget _prints() {
-    Widget scene(List<Color> c) => Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: c, stops: const [0, 0.45, 0.46, 1]),
-          ),
-        );
-    return Stack(children: [
-      Positioned(left: 26, top: 40, width: 170, child: InstantPrint(rotation: -8, caption: Text('Mallorca · dag 2', style: CT.text(11, color: CT.muted)), child: scene(_scenes[0]))),
-      Positioned(right: 26, top: 16, width: 160, child: InstantPrint(rotation: 6, caption: Text('Golden hour', style: CT.text(11, color: CT.muted)), child: scene(_scenes[1]))),
-      Positioned(left: 100, top: 170, width: 180, child: InstantPrint(rotation: -2, caption: Text('zwembad ☀', style: CT.text(11, color: CT.muted)), child: scene(_scenes[2]))),
+  /// Last step: e-mail account first (best for new people), then sign-in,
+  /// then Apple / Google. Google only shows once its client ids are set.
+  Widget _signInButtons(AuthController auth) {
+    final apple = Platform.isIOS;
+    final google = AppConfig.googleSignInAvailable;
+    Widget appleButton() => CTButton('Doorgaan met Apple',
+        kind: CTButtonKind.ghost, compact: true, icon: Icons.apple, loading: _busyWith == 'apple', onTap: _busyWith != null ? null : () => _signIn('apple', auth.signInWithApple));
+    Widget googleButton() => CTButton('Doorgaan met Google',
+        kind: CTButtonKind.ghost, compact: true, icon: Icons.g_mobiledata_rounded, loading: _busyWith == 'google', onTap: _busyWith != null ? null : () => _signIn('google', auth.signInWithGoogle));
+    return Column(children: [
+      CTButton('Account aanmaken', onTap: _busyWith != null ? null : () => context.push('/welcome/email?mode=register')),
+      const SizedBox(height: 8),
+      CTButton('Inloggen', kind: CTButtonKind.ghost, compact: true, onTap: _busyWith != null ? null : () => context.push('/welcome/email?mode=login')),
+      if (apple || google) ...[
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(children: [
+            const Expanded(child: Divider(color: CT.line, thickness: 1)),
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 12), child: Text('of', style: CT.text(12, color: CT.muted))),
+            const Expanded(child: Divider(color: CT.line, thickness: 1)),
+          ]),
+        ),
+        if (apple) appleButton(),
+        if (apple && google) const SizedBox(height: 8),
+        if (google) googleButton(),
+      ],
     ]);
   }
 }

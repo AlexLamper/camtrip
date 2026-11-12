@@ -2,9 +2,11 @@ import { z } from 'zod';
 import { Types } from 'mongoose';
 import { Photo, FREE_STYLES, PHOTO_STYLES, type PhotoDoc } from '@/lib/models';
 import { body, handler, HttpError, json, type Params } from '@/lib/http';
-import { isPro, requireUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
+import { hasPro } from '@/lib/entitlements';
+import { groupIsPro } from '@/lib/pro';
 import { requireMember } from '@/lib/groups';
-import { hiddenForViewer, serializePhoto } from '@/lib/photos';
+import { hiddenForViewer, hiddenPhotoIds, serializePhoto } from '@/lib/photos';
 import { mediaKeys, uploadUrl } from '@/lib/storage';
 
 type P = Params<{ id: string }>;
@@ -19,11 +21,14 @@ export const GET = handler<P>(async (req, { params }) => {
   const beforeId = url.searchParams.get('beforeId');
   const userFilter = url.searchParams.get('userId');
   const favorites = url.searchParams.get('favorites') === '1';
+  // ?hidden=1: only the photos this user hid for themselves ("Verborgen foto's").
+  const onlyHidden = url.searchParams.get('hidden') === '1';
 
-  const hidden = await hiddenForViewer(user);
+  const hidden = await hiddenForViewer(user, group._id, { includeHidden: onlyHidden });
   const and: Record<string, unknown>[] = [{ groupId: group._id, status: 'ready' }];
   if (hidden.userId) and.push({ userId: hidden.userId });
   if (hidden._id) and.push({ _id: hidden._id });
+  if (onlyHidden) and.push({ _id: { $in: await hiddenPhotoIds(user._id, group._id) } });
   if (userFilter && Types.ObjectId.isValid(userFilter)) and.push({ userId: new Types.ObjectId(userFilter) });
   if (favorites) and.push({ favoritedBy: user._id });
   if (before) {
@@ -70,7 +75,8 @@ export const POST = handler<P>(async (req, { params }) => {
   if (group.status === 'archived') throw new HttpError(410, 'Deze groep is afgesloten', 'archived');
   const input = await body(req, Init);
   // Same rule as the camera: Pro styles need Pro. Camera-roll photos ('roll') have no style.
-  if (input.style !== 'roll' && !FREE_STYLES.includes(input.style) && !isPro(user)) {
+  // Group Pro counts: one Pro member unlocks the Pro styles for everyone in this group.
+  if (input.style !== 'roll' && !FREE_STYLES.includes(input.style) && !hasPro(user) && !(await groupIsPro(group))) {
     throw new HttpError(402, 'Deze camerastijl hoort bij CamTrip Pro', 'pro_required');
   }
 

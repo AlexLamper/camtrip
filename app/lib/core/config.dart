@@ -16,12 +16,30 @@ class AppConfig {
   static const String appleEulaUrl = 'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
   static const String supportEmail = 'support@camtrip.app';
 
+  // ---- Google Sign-In ----
+  // Fill these in once the Google Cloud OAuth clients exist (or pass them as
+  // --dart-define, which wins). While a value is empty the Google button is
+  // hidden on that platform, so App Review never sees a button that fails.
+  // CI also reads googleIosClientIdDefault to write ios/Flutter/Secrets.xcconfig.
+  static const String googleIosClientIdDefault = '';
+  static const String googleServerClientIdDefault = '';
+
   /// Google OAuth "web" client id: needed as serverClientId on Android so the
   /// id token is issued for our backend.
-  static const String googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID', defaultValue: '');
+  static const String googleServerClientId =
+      String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID', defaultValue: googleServerClientIdDefault);
 
   /// iOS OAuth client id for Google Sign-In.
-  static const String googleIosClientId = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID', defaultValue: '');
+  static const String googleIosClientId = String.fromEnvironment('GOOGLE_IOS_CLIENT_ID', defaultValue: googleIosClientIdDefault);
+
+  /// Whether Google Sign-In can work on this platform with the ids we have.
+  static bool get googleSignInAvailable => googleSignInConfigured(defaultTargetPlatform);
+
+  static bool googleSignInConfigured(TargetPlatform platform) => switch (platform) {
+        TargetPlatform.iOS || TargetPlatform.macOS => googleIosClientId.isNotEmpty,
+        TargetPlatform.android => googleServerClientId.isNotEmpty,
+        _ => false,
+      };
 
   static String inviteUrl(String code) => '$siteUrl/j/${code.toUpperCase()}';
 

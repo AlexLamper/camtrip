@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/admin/admin_screen.dart';
+import '../features/admin/admin_user_screen.dart';
 import '../features/auth/auth_controller.dart';
+import '../features/auth/email_auth_screen.dart';
 import '../features/auth/onboarding_screen.dart';
 import '../features/camera/camera_screen.dart';
 import '../features/gallery/gallery_screen.dart';
+import '../features/gallery/hidden_photos_screen.dart';
 import '../features/gallery/photo_screen.dart';
 import '../features/groups/albums_screen.dart';
 import '../features/groups/create_group_screen.dart';
@@ -18,6 +22,44 @@ import '../features/upload/queue_screen.dart';
 import 'theme.dart';
 
 final rootNavigatorKey = GlobalKey<NavigatorState>();
+
+// Page transitions. Routes built with `builder:` get a MaterialPage, which
+// uses the theme's pageTransitionsTheme (Cupertino slide + swipe-back on iOS,
+// shared-axis fade on Android). Use these helpers in `pageBuilder:` for the rest.
+
+/// Modal-like screens (camera, paywall, invite, ...): a fullscreen dialog
+/// that slides up from the bottom. Gets a close button instead of a back arrow.
+Page<void> modalPage(GoRouterState state, Widget child) => CustomTransitionPage<void>(
+      key: state.pageKey,
+      name: state.name,
+      arguments: state.extra,
+      fullscreenDialog: true,
+      transitionDuration: CT.transitionDuration,
+      reverseTransitionDuration: const Duration(milliseconds: 250),
+      transitionsBuilder: (_, animation, _, child) => SlideTransition(
+        position: Tween(begin: const Offset(0, 1), end: Offset.zero)
+            .animate(CurvedAnimation(parent: animation, curve: CT.transitionCurve, reverseCurve: Curves.easeInCubic)),
+        child: child,
+      ),
+      child: child,
+    );
+
+/// A page that fades in with a slight upward slide, for screens that should
+/// not use the push-style transition (e.g. replacing the root).
+Page<void> fadePage(GoRouterState state, Widget child) => CustomTransitionPage<void>(
+      key: state.pageKey,
+      name: state.name,
+      arguments: state.extra,
+      transitionDuration: CT.transitionDuration,
+      transitionsBuilder: (_, animation, _, child) {
+        final curved = CurvedAnimation(parent: animation, curve: CT.transitionCurve);
+        return FadeTransition(
+          opacity: curved,
+          child: SlideTransition(position: Tween(begin: const Offset(0, 0.03), end: Offset.zero).animate(curved), child: child),
+        );
+      },
+      child: child,
+    );
 
 /// Refreshes the router when the session changes.
 class _AuthListenable extends ChangeNotifier {
@@ -36,28 +78,44 @@ final routerProvider = Provider<GoRouter>((ref) {
       final loc = state.matchedLocation;
       if (auth.isLoading && !auth.hasValue) return loc == '/splash' ? null : '/splash';
       final signedIn = auth.value != null;
-      if (!signedIn) return loc == '/welcome' ? null : '/welcome';
-      if (loc == '/welcome' || loc == '/splash') return '/';
+      final inWelcome = loc == '/welcome' || loc.startsWith('/welcome/');
+      if (!signedIn) return inWelcome ? null : '/welcome';
+      if (inWelcome || loc == '/splash') return '/';
       return null;
     },
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const _Splash()),
-      GoRoute(path: '/welcome', builder: (_, _) => const OnboardingScreen()),
+      GoRoute(
+        path: '/welcome',
+        builder: (_, _) => const OnboardingScreen(),
+        routes: [
+          // /welcome/email?mode=register|login|forgot|reset
+          GoRoute(
+            path: 'email',
+            builder: (_, s) => EmailAuthScreen(initialMode: EmailAuthMode.parse(s.uri.queryParameters['mode'])),
+          ),
+        ],
+      ),
       GoRoute(path: '/', builder: (_, _) => const AlbumsScreen()),
-      GoRoute(path: '/new', pageBuilder: (_, _) => const MaterialPage(fullscreenDialog: true, child: CreateGroupScreen())),
-      GoRoute(path: '/camera', pageBuilder: (_, _) => const MaterialPage(fullscreenDialog: true, child: CameraScreen())),
-      GoRoute(path: '/pro', pageBuilder: (_, _) => const MaterialPage(fullscreenDialog: true, child: PaywallScreen())),
+      GoRoute(path: '/new', pageBuilder: (_, s) => modalPage(s, const CreateGroupScreen())),
+      GoRoute(path: '/camera', pageBuilder: (_, s) => modalPage(s, const CameraScreen())),
+      GoRoute(path: '/pro', pageBuilder: (_, s) => modalPage(s, const PaywallScreen())),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+      // Instellingen > Beheer (app admins only; the screen and the API both check).
+      GoRoute(path: '/admin', builder: (_, _) => const AdminScreen()),
+      GoRoute(path: '/admin/user/:id', builder: (_, s) => AdminUserScreen(userId: s.pathParameters['id']!)),
       GoRoute(path: '/queue', builder: (_, _) => const QueueScreen()),
       GoRoute(path: '/group/:id', builder: (_, s) => GalleryScreen(groupId: s.pathParameters['id']!)),
       GoRoute(
         path: '/group/:id/invite',
-        builder: (_, s) => InviteScreen(groupId: s.pathParameters['id']!, justCreated: s.uri.queryParameters['new'] == '1'),
+        pageBuilder: (_, s) =>
+            modalPage(s, InviteScreen(groupId: s.pathParameters['id']!, justCreated: s.uri.queryParameters['new'] == '1')),
       ),
       GoRoute(path: '/group/:id/settings', builder: (_, s) => GroupSettingsScreen(groupId: s.pathParameters['id']!)),
+      GoRoute(path: '/group/:id/hidden', builder: (_, s) => HiddenPhotosScreen(groupId: s.pathParameters['id']!)),
       GoRoute(
         path: '/group/:id/recap',
-        pageBuilder: (_, s) => MaterialPage(fullscreenDialog: true, child: RecapScreen(groupId: s.pathParameters['id']!)),
+        pageBuilder: (_, s) => modalPage(s, RecapScreen(groupId: s.pathParameters['id']!)),
       ),
       GoRoute(
         path: '/group/:id/photo/:photoId',

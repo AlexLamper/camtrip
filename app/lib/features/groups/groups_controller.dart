@@ -22,9 +22,12 @@ class GroupsController extends AsyncNotifier<List<Group>> {
     return groups;
   }
 
+  /// Groups the camera can shoot into: not closed, not archived by me.
+  static bool _usable(Group g) => !g.isClosed && !g.archived;
+
   void _ensureActive(List<Group> groups) {
     final prefs = ref.read(prefsProvider);
-    final active = groups.where((g) => !g.isArchived).toList();
+    final active = groups.where(_usable).toList();
     if (active.isEmpty) return;
     if (!active.any((g) => g.id == prefs.activeGroupId)) {
       ref.read(activeGroupIdProvider.notifier).set(active.first.id);
@@ -34,6 +37,10 @@ class GroupsController extends AsyncNotifier<List<Group>> {
   Future<void> reload() async {
     state = await AsyncValue.guard(build);
   }
+
+  /// Takes a group the server sent back (e.g. after deleting photos, so the
+  /// counts and cover are right again).
+  void applyServerGroup(Group g) => _upsert(g);
 
   void _upsert(Group g) {
     final list = [...(state.value ?? const <Group>[])];
@@ -102,23 +109,78 @@ class GroupsController extends AsyncNotifier<List<Group>> {
     return g;
   }
 
-  Future<void> leave(String id) async {
-    await _api.post('/groups/$id/leave');
-    _drop(id);
+  /// Replaces one group locally and returns the previous version (for rollback).
+  Group? _patchLocal(String id, Group Function(Group) change) {
+    final list = [...(state.value ?? const <Group>[])];
+    final i = list.indexWhere((x) => x.id == id);
+    if (i < 0) return null;
+    final before = list[i];
+    list[i] = change(before);
+    state = AsyncData(list);
+    return before;
   }
 
-  Future<void> deleteGroup(String id) async {
-    await _api.delete('/groups/$id');
+  /// Optimistic: the name changes at once and goes back if the server says no.
+  Future<Group> rename(String id, String name) async {
+    final before = _patchLocal(id, (g) => g.copyWith(name: name));
+    try {
+      return await updateGroup(id, {'name': name});
+    } catch (_) {
+      if (before != null) _upsert(before);
+      rethrow;
+    }
+  }
+
+  /// "Reis afronden": the trip ends now (admins).
+  Future<Group> finishTrip(String id) => updateGroup(id, {'endNow': true});
+
+  /// "Als omslag instellen" (admins).
+  Future<Group> setCover(String groupId, String photoId) => updateGroup(groupId, {'coverPhotoId': photoId});
+
+  /// Archives a group for me only (optimistic, rolled back on error). The
+  /// camera moves on to another group when this was the active one.
+  Future<void> setArchived(String id, bool archived) async {
+    final before = _patchLocal(id, (g) => g.copyWith(archived: archived));
+    final previousActive = ref.read(activeGroupIdProvider);
+    if (archived && previousActive == id) _pickNextActive(except: id);
+    try {
+      final res = await _api.patch('/groups/$id/archive', {'archived': archived});
+      _upsert(Group.fromJson(res['group'] as Map<String, dynamic>));
+    } catch (_) {
+      if (before != null) _upsert(before);
+      if (archived && previousActive == id) ref.read(activeGroupIdProvider.notifier).set(previousActive);
+      rethrow;
+    }
+  }
+
+  Future<void> leave(String id) => _removeOptimistic(id, () => _api.post('/groups/$id/leave'));
+
+  /// Deletes the group and all its photos for everyone (admins only).
+  Future<void> deleteGroup(String id) => _removeOptimistic(id, () => _api.delete('/groups/$id'));
+
+  /// Removes the group from the list at once; puts it back if the call fails.
+  Future<void> _removeOptimistic(String id, Future<Object?> Function() call) async {
+    final before = state.value ?? const <Group>[];
+    final previousActive = ref.read(activeGroupIdProvider);
     _drop(id);
+    try {
+      await call();
+    } catch (_) {
+      state = AsyncData(before);
+      ref.read(activeGroupIdProvider.notifier).set(previousActive);
+      rethrow;
+    }
+  }
+
+  void _pickNextActive({required String except}) {
+    final next = (state.value ?? const <Group>[]).where((g) => g.id != except && _usable(g)).firstOrNull;
+    ref.read(activeGroupIdProvider.notifier).set(next?.id);
   }
 
   void _drop(String id) {
     final list = (state.value ?? const <Group>[]).where((g) => g.id != id).toList();
     state = AsyncData(list);
-    if (ref.read(activeGroupIdProvider) == id) {
-      final next = list.where((g) => !g.isArchived).firstOrNull;
-      ref.read(activeGroupIdProvider.notifier).set(next?.id);
-    }
+    if (ref.read(activeGroupIdProvider) == id) _pickNextActive(except: id);
   }
 }
 

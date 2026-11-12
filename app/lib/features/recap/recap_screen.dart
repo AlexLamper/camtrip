@@ -14,7 +14,7 @@ import '../../core/widgets.dart';
 import '../../models/models.dart';
 import '../camera/camera_screen.dart' show albumName;
 import '../groups/groups_controller.dart';
-import '../premium/premium_controller.dart';
+import '../premium/pro_gate.dart';
 import 'recap_builder.dart';
 
 class RecapScreen extends ConsumerStatefulWidget {
@@ -93,7 +93,8 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
       final frames = await _builder!.render(
         picked,
         _template,
-        watermark: !ref.read(isProProvider),
+        // One Pro in the group = no watermark for everyone in it.
+        watermark: ref.read(proGateProvider(widget.groupId)).watermark,
         onProgress: (p) => mounted ? setState(() => _progress = p) : null,
       );
       if (!mounted) return;
@@ -177,7 +178,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isPro = ref.watch(isProProvider);
+    final isPro = ref.watch(proGateProvider(widget.groupId)).unlocked;
     final f = _frames;
     return Scaffold(
       appBar: AppBar(

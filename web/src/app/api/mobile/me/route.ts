@@ -1,11 +1,12 @@
 import { z } from 'zod';
 import { Group, Photo, Report, User } from '@/lib/models';
 import { body, handler, json } from '@/lib/http';
-import { publicUser, requireUser } from '@/lib/auth';
+import { publicUser, requireUser, syncAdminRole } from '@/lib/auth';
 import { deleteKeys } from '@/lib/storage';
+import { refreshGroupRetention } from '@/lib/pro';
 
 export const GET = handler(async (req) => {
-  const user = await requireUser(req);
+  const user = await syncAdminRole(await requireUser(req));
   return json({ user: publicUser(user) });
 });
 
@@ -67,6 +68,8 @@ export const DELETE = handler(async (req) => {
         videoCount: counts.find((c) => c._id === 'video')?.n ?? 0,
       },
     );
+    // This user may have been the group's Pro member: the free retention can apply again.
+    await refreshGroupRetention(g._id);
   }
 
   // Personal traces on other people's photos and in other accounts.

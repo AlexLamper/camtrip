@@ -9,6 +9,7 @@ import '../../core/widgets.dart';
 import '../../models/models.dart';
 import '../auth/auth_controller.dart';
 import '../camera/styles.dart';
+import 'group_actions.dart';
 import 'groups_controller.dart';
 
 class GroupSettingsScreen extends ConsumerWidget {
@@ -49,10 +50,8 @@ class GroupSettingsScreen extends ConsumerWidget {
           SettingRow(
             title: 'Naam wijzigen',
             trailing: const Icon(Icons.chevron_right),
-            onTap: () async {
-              final name = await _prompt(context, 'Naam van de groep', g.name);
-              if (name != null && name.trim().isNotEmpty && context.mounted) await _run(context, () => ctrl.updateGroup(g.id, {'name': name.trim()}));
-            },
+            subtitle: g.name,
+            onTap: () => GroupActions.rename(context, ref, g),
           ),
           if (g.type != GroupType.permanent)
             SettingRow(
@@ -75,6 +74,13 @@ class GroupSettingsScreen extends ConsumerWidget {
                   }
                 }
               },
+            ),
+          if (g.canFinishTrip)
+            SettingRow(
+              title: 'Reis afronden',
+              subtitle: 'Zet de einddatum op vandaag',
+              trailing: const Icon(Icons.flag_outlined, color: CT.muted),
+              onTap: () => GroupActions.finishTrip(context, ref, g),
             ),
           SettingRow(
             title: 'Standaard camerastijl',
@@ -151,18 +157,27 @@ class GroupSettingsScreen extends ConsumerWidget {
         const SizedBox(height: 8),
         CTButton('Vrienden uitnodigen', kind: CTButtonKind.ghost, icon: Icons.person_add_alt_1, onTap: () => context.push('/group/${g.id}/invite')),
         const SectionLabel('Jij'),
+        SettingRow(
+          title: g.archived ? 'Terugzetten uit archief' : 'Archiveren',
+          subtitle: g.archived ? 'De groep staat weer gewoon bij je albums' : 'Alleen voor jou: de groep gaat naar "Gearchiveerd" onderaan je albums',
+          trailing: Icon(g.archived ? Icons.unarchive_outlined : Icons.archive_outlined, color: CT.muted),
+          onTap: () => GroupActions.setArchived(context, ref, g, !g.archived),
+        ),
+        if (g.hiddenCount > 0)
+          SettingRow(
+            title: 'Verborgen foto\'s (${g.hiddenCount})',
+            subtitle: 'Foto\'s die je voor jezelf hebt verborgen',
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/group/${g.id}/hidden'),
+          ),
         if (g.members.length > 1)
           SettingRow(
             title: 'Groep verlaten',
+            subtitle: 'Je foto\'s blijven in de groep voor de anderen',
             color: CT.accent,
+            divider: g.isAdmin,
             onTap: () async {
-              if (!await confirm(context, title: 'Groep verlaten?', message: 'Je foto\'s blijven in de groep voor de anderen.', ok: 'Verlaat', danger: true)) return;
-              if (context.mounted) {
-                await _run(context, () async {
-                  await ctrl.leave(g.id);
-                  if (context.mounted) context.go('/');
-                });
-              }
+              if (await GroupActions.leave(context, ref, g) && context.mounted) context.go('/');
             },
           ),
         if (g.isAdmin)
@@ -172,34 +187,10 @@ class GroupSettingsScreen extends ConsumerWidget {
             color: CT.accent,
             divider: false,
             onTap: () async {
-              if (!await confirm(context,
-                  title: 'Groep verwijderen?', message: 'Alle ${g.totalCount} foto\'s en video\'s verdwijnen voor iedereen. Dit kan niet ongedaan.', ok: 'Verwijder', danger: true)) {
-                return;
-              }
-              if (context.mounted) {
-                await _run(context, () async {
-                  await ctrl.deleteGroup(g.id);
-                  if (context.mounted) context.go('/');
-                });
-              }
+              if (await GroupActions.delete(context, ref, g) && context.mounted) context.go('/');
             },
           ),
       ]),
     );
   }
-}
-
-Future<String?> _prompt(BuildContext context, String title, String initial) {
-  final c = TextEditingController(text: initial);
-  return showDialog<String>(
-    context: context,
-    builder: (d) => AlertDialog(
-      title: Text(title, style: CT.title(20)),
-      content: TextField(controller: c, autofocus: true, maxLength: 60),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(d), child: const Text('Annuleer')),
-        TextButton(onPressed: () => Navigator.pop(d, c.text), child: const Text('Opslaan')),
-      ],
-    ),
-  );
 }

@@ -15,6 +15,9 @@ class ApiException implements Exception {
   bool get isOffline => status == null;
   bool get isUnauthorized => status == 401;
 
+  /// Blocked by CamTrip ("Beheer"): sign-in and every call are refused.
+  bool get isBanned => code == 'account_banned';
+
   @override
   String toString() => message;
 
@@ -48,7 +51,9 @@ class Api {
         handler.next(options);
       },
       onError: (e, handler) {
-        if (e.response?.statusCode == 401) onUnauthorized?.call();
+        final data = e.response?.data;
+        final banned = data is Map && data['code'] == 'account_banned';
+        if (e.response?.statusCode == 401 || banned) onUnauthorized?.call();
         handler.next(e);
       },
     ));

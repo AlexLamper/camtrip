@@ -15,7 +15,11 @@ Een app van AL Design.
 
 ## Hoe het werkt
 
-- **Inloggen**: Sign in with Apple / Google → de API geeft een eigen JWT (180 dagen).
+- **Inloggen**: account met e-mail + wachtwoord, Sign in with Apple of Google → de API geeft een eigen JWT (180 dagen).
+  - `POST /api/mobile/auth/register` `{name, email, password}` (min. 8 tekens), `POST /auth/login` `{email, password}`, `POST /auth/forgot` `{email}` (altijd 200; mailt een 6-cijferige code, 15 min geldig, via Resend), `POST /auth/reset` `{email, code, password}`. Alle geven `{token, user}` terug, net als `/auth/apple` en `/auth/google`.
+  - Wachtwoorden: scrypt met eigen salt per gebruiker (`web/src/lib/password.ts`, tests: `cd web && npm test`). Login/forgot/reset: max. 10 (forgot 5) pogingen per 15 min per e-mail + IP, opgeslagen in Mongo (`AuthAttempt`, TTL). Een resetcode vervalt na 5 foute pogingen.
+  - Koppelen: logt iemand in met Apple/Google met een *geverifieerd* e-mailadres waarvoor al een wachtwoord-account bestaat, dan wordt dat account gekoppeld. Was dat adres nog niet bevestigd (geen resetcode gebruikt), dan vervalt het wachtwoord (bescherming tegen vooraf kapen); met "Wachtwoord vergeten?" stel je een nieuw in.
+  - Google-knop verschijnt pas als `GOOGLE_IOS_CLIENT_ID` (iOS) / `GOOGLE_SERVER_CLIENT_ID` (Android) gezet is (dart-define of default in `app/lib/core/config.dart`).
 - **Groepen**: vakantie (met datum), event of altijd open. Joinen met een code van 6 tekens, QR-code of de link `camtrip.app/j/CODE` (opent de app direct via universal links / app links).
 - **Camera**: 6 stijlen (Film, Instant, Wegwerp gratis; Z/W, Golden, Chrome Pro). Live in de zoeker via een kleurmatrix + korrel/vignet/lichtlek; dezelfde berekening wordt op de foto zelf toegepast (`processor.dart`), plus datumstempel en instant-rand. Video's krijgen de stijl via ffmpeg.
 - **Delen**: de foto gaat eerst naar een wachtrij op het toestel en in je eigen album "CamTrip - groepsnaam", daarna naar Cloudflare R2 via presigned URLs (origineel, display 2048 px, thumbnail). Werkt zonder bereik; video's optioneel alleen via wifi.
@@ -38,10 +42,10 @@ cd app && flutter run --dart-define=API_BASE_URL=http://localhost:3000/api/mobil
 
 ## Configuratie
 
-**Vercel (web/)** - zie `web/.env.example`: `MONGODB_URI`, `JWT_SECRET`, `APPLE_CLIENT_IDS`, `GOOGLE_CLIENT_IDS`, `R2_*`, `REVENUECAT_*`, `APNS_KEY_ID`, `APNS_KEY_P8`, `CRON_SECRET`, `APPLE_TEAM_ID`, `ANDROID_SHA256_FINGERPRINTS`.
+**Vercel (web/)** - zie `web/.env.example`: `MONGODB_URI`, `JWT_SECRET`, `APPLE_CLIENT_IDS`, `GOOGLE_CLIENT_IDS` (kommalijst: web- + iOS-client id), `RESEND_API_KEY`, `MAIL_FROM` (optioneel), `R2_*`, `REVENUECAT_*`, `APNS_KEY_ID`, `APNS_KEY_P8`, `CRON_SECRET`, `APPLE_TEAM_ID`, `ANDROID_SHA256_FINGERPRINTS`.
 
 **GitHub Actions secret**: alleen `APP_STORE_CONNECT_API_KEY_P8` (inhoud van AuthKey_QS5UXPB9HY.p8, API key "CamTrip CI", Admin). Signing gaat automatisch via die key (`-allowProvisioningUpdates`); Key ID, Issuer ID en de RevenueCat public key hebben defaults.
 
-**GitHub Actions variables**: `GOOGLE_IOS_CLIENT_ID`, `GOOGLE_SERVER_CLIENT_ID`.
+**GitHub Actions variables**: `GOOGLE_IOS_CLIENT_ID`, `GOOGLE_SERVER_CLIENT_ID` (of vul de defaults in `app/lib/core/config.dart`; CI leest die ook voor `ios/Flutter/Secrets.xcconfig`).
 
 **App ID** `app.camtrip.camtrip` met Sign in with Apple, Push Notifications en Associated Domains (`applinks:camtrip.app`).

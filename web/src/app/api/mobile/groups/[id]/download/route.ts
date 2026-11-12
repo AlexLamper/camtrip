@@ -1,7 +1,9 @@
 import { Types } from 'mongoose';
 import { Photo, type PhotoDoc } from '@/lib/models';
 import { handler, json, type Params } from '@/lib/http';
-import { isPro, requireUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
+import { hasPro } from '@/lib/entitlements';
+import { groupIsPro } from '@/lib/pro';
 import { requireMember } from '@/lib/groups';
 import { readUrl } from '@/lib/storage';
 import { hiddenForViewer } from '@/lib/photos';
@@ -19,14 +21,15 @@ export const GET = handler<Params<{ id: string }>>(async (req, { params }) => {
     .filter((x) => Types.ObjectId.isValid(x))
     .map((x) => new Types.ObjectId(x));
 
-  const hidden = await hiddenForViewer(user);
+  const hidden = await hiddenForViewer(user, group._id);
   const and: Record<string, unknown>[] = [{ groupId: group._id, status: 'ready' }];
   if (hidden.userId) and.push({ userId: hidden.userId });
   if (hidden._id) and.push({ _id: hidden._id });
   if (ids.length) and.push({ _id: { $in: ids } });
   const filter = { $and: and };
   const photos = await Photo.find(filter).sort({ takenAt: 1 }).lean<PhotoDoc[]>();
-  const pro = isPro(user);
+  // Own Pro, or any Pro member in this group: originals for everyone in it.
+  const pro = hasPro(user) || (await groupIsPro(group));
 
   const items = await Promise.all(
     photos.map(async (p) => {

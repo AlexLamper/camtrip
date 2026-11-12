@@ -14,6 +14,7 @@ import '../auth/auth_controller.dart';
 import '../camera/styles.dart';
 import '../groups/groups_controller.dart';
 import 'gallery_controller.dart';
+import 'photo_actions.dart';
 
 const reactionEmojis = ['❤️', '😂', '🔥', '😍', '😮', '👏'];
 
@@ -236,9 +237,28 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
     }
   }
 
+  /// "Verbergen voor mij": the next photo slides in; the SnackBar can undo.
+  Future<void> _hide(Photo p) async {
+    final ctrl = ref.read(galleryProvider(widget.groupId).notifier);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final hidden = await ctrl.hide([p.id]);
+      if (!mounted) return;
+      final empty = ref.read(galleryProvider(widget.groupId)).photos.isEmpty;
+      showUndo(context, p.isVideo ? 'Video verborgen voor jou' : 'Foto verborgen voor jou', () {
+        ctrl.unhide(hidden).catchError((Object e) {
+          messenger.showSnackBar(SnackBar(content: Text(ApiException.from(e).message)));
+        });
+      });
+      if (empty) context.pop();
+    } catch (e) {
+      if (mounted) showMessage(context, ApiException.from(e).message);
+    }
+  }
+
   void _more(Group group, Photo p) {
     final me = ref.read(authProvider).value?.id;
-    final canDelete = p.userId == me || group.isAdmin;
+    final canDelete = p.canDelete(me, group);
     final mine = p.userId == me;
     final owner = group.member(p.userId);
     showModalBottomSheet<void>(
@@ -248,17 +268,26 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
           if (group.isAdmin && !p.isVideo)
             ListTile(
               leading: const Icon(Icons.photo_outlined),
-              title: const Text('Gebruik als omslagfoto'),
+              title: const Text('Als omslag instellen'),
               onTap: () async {
                 Navigator.pop(c);
                 try {
-                  await ref.read(groupsProvider.notifier).updateGroup(group.id, {'coverPhotoId': p.id});
+                  await ref.read(groupsProvider.notifier).setCover(group.id, p.id);
                   if (mounted) showMessage(context, 'Omslagfoto aangepast');
                 } catch (e) {
                   if (mounted) showMessage(context, ApiException.from(e).message);
                 }
               },
             ),
+          ListTile(
+            leading: const Icon(Icons.visibility_off_outlined),
+            title: const Text('Verbergen voor mij'),
+            subtitle: Text('De anderen in de groep zien hem nog wel', style: CT.text(12, color: CT.muted)),
+            onTap: () {
+              Navigator.pop(c);
+              _hide(p);
+            },
+          ),
           if (!mine)
             ListTile(
               leading: const Icon(Icons.flag_outlined),
@@ -280,14 +309,17 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
           if (canDelete)
             ListTile(
               leading: const Icon(Icons.delete_outline, color: CT.accent),
-              title: Text('Verwijder', style: CT.text(16, color: CT.accent)),
+              title: Text('Verwijderen', style: CT.text(16, color: CT.accent)),
+              subtitle: Text('Voor iedereen in de groep', style: CT.text(12, color: CT.muted)),
               onTap: () async {
                 Navigator.pop(c);
-                if (!await confirm(context, title: 'Foto verwijderen?', message: 'Hij verdwijnt voor iedereen in de groep.', ok: 'Verwijder', danger: true)) return;
+                if (!await confirmDeletePhotos(context, count: 1)) return;
                 try {
+                  // The group's counts and cover come back with the response.
                   await ref.read(galleryProvider(widget.groupId).notifier).delete(p);
-                  await ref.read(groupsProvider.notifier).refreshOne(group.id);
-                  if (mounted && ref.read(galleryProvider(widget.groupId)).photos.isEmpty) context.pop();
+                  if (!mounted) return;
+                  showMessage(context, p.isVideo ? 'Video verwijderd' : 'Foto verwijderd');
+                  if (ref.read(galleryProvider(widget.groupId)).photos.isEmpty) context.pop();
                 } catch (e) {
                   if (mounted) showMessage(context, ApiException.from(e).message);
                 }

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 
 /// Design "E - Instant Wit": white/cream, ink, one orange-red accent, and
@@ -67,6 +68,61 @@ class CT {
       ),
       bottomSheetTheme: const BottomSheetThemeData(backgroundColor: bg, showDragHandle: true),
       dialogTheme: const DialogThemeData(backgroundColor: bg),
+      pageTransitionsTheme: pageTransitions,
+    );
+  }
+
+  /// iOS/macOS: native Cupertino slide with swipe-back. Android and others:
+  /// a light shared-axis fade (fade + slight horizontal slide).
+  static const pageTransitions = PageTransitionsTheme(
+    builders: {
+      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+      TargetPlatform.android: SharedAxisFadePageTransitionsBuilder(),
+      TargetPlatform.fuchsia: SharedAxisFadePageTransitionsBuilder(),
+      TargetPlatform.linux: SharedAxisFadePageTransitionsBuilder(),
+      TargetPlatform.windows: SharedAxisFadePageTransitionsBuilder(),
+    },
+  );
+
+  /// Shared timing for app transitions.
+  static const transitionDuration = Duration(milliseconds: 300);
+  static const transitionCurve = Curves.easeOutCubic;
+}
+
+/// Fade-through / shared-axis style page transition: the new page fades in
+/// while sliding a little from the right, the old page slides a little to
+/// the left. Cheap (opacity + translate only).
+class SharedAxisFadePageTransitionsBuilder extends PageTransitionsBuilder {
+  const SharedAxisFadePageTransitionsBuilder();
+
+  @override
+  Duration get transitionDuration => CT.transitionDuration;
+
+  @override
+  Duration get reverseTransitionDuration => const Duration(milliseconds: 250);
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final inCurve = CurvedAnimation(parent: animation, curve: CT.transitionCurve, reverseCurve: Curves.easeInCubic);
+    final outCurve = CurvedAnimation(parent: secondaryAnimation, curve: CT.transitionCurve, reverseCurve: Curves.easeInCubic);
+    // The outgoing page only slides (no fade), so two opaque pages never
+    // fade at the same time and the background never shows through.
+    return SlideTransition(
+      position: Tween(begin: Offset.zero, end: const Offset(-0.06, 0)).animate(outCurve),
+      child: FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: const Interval(0.2, 1, curve: Curves.easeOut)),
+        child: SlideTransition(
+          position: Tween(begin: const Offset(0.08, 0), end: Offset.zero).animate(inCurve),
+          child: child,
+        ),
+      ),
     );
   }
 }

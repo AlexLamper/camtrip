@@ -1,7 +1,8 @@
 import { connectDB } from '@/lib/db';
-import { Group, Photo, Report, type GroupDoc } from '@/lib/models';
+import { Group, Photo, User, type GroupDoc } from '@/lib/models';
 import { handler, json } from '@/lib/http';
-import { ownerIsPro } from '@/lib/groups';
+import { deleteGroupEverywhere } from '@/lib/groups';
+import { groupIsPro, refreshRetentionForMember } from '@/lib/pro';
 import { deleteKeys } from '@/lib/storage';
 
 /**
@@ -13,19 +14,24 @@ export const GET = handler(async (req) => {
   if (!secret || req.headers.get('authorization') !== `Bearer ${secret}`) return json({ error: 'Unauthorized' }, 401);
   await connectDB();
 
+  // Gifts from an admin that ran out since the last run: their groups may be
+  // free again. (Subscriptions are handled by the RevenueCat webhook.)
+  const lapsed = await User.find(
+    { 'proGrant.until': { $ne: null, $lt: new Date(), $gt: new Date(Date.now() - 3 * 86_400_000) } },
+    { _id: 1 },
+  ).lean();
+  for (const u of lapsed) await refreshRetentionForMember(u._id);
+
   const due = await Group.find({ deleteAfter: { $ne: null, $lt: new Date() } }).lean<GroupDoc[]>();
   let deletedGroups = 0;
   for (const g of due) {
-    // The owner may have bought Pro since deleteAfter was set.
-    if (await ownerIsPro(g)) {
+    // A member may have Pro since deleteAfter was set (one Pro member = Pro group).
+    if (await groupIsPro(g)) {
       await Group.updateOne({ _id: g._id }, { deleteAfter: null });
       continue;
     }
-    const photos = await Photo.find({ groupId: g._id }, { originalKey: 1, displayKey: 1, thumbKey: 1 }).lean();
-    await deleteKeys(photos.flatMap((p) => [p.originalKey, p.displayKey, p.thumbKey]));
-    await Photo.deleteMany({ groupId: g._id });
-    await Report.deleteMany({ groupId: g._id });
-    await Group.deleteOne({ _id: g._id });
+    // Same removal as a manual delete: R2 objects, photos, reports, hides.
+    await deleteGroupEverywhere(g);
     deletedGroups++;
   }
 

@@ -8,23 +8,36 @@ import '../../core/widgets.dart';
 import '../../models/models.dart';
 import '../auth/auth_controller.dart';
 import '../upload/upload_queue.dart';
+import 'group_actions.dart';
 import 'groups_controller.dart';
 import 'join_sheet.dart';
 
-/// Home: all groups as instant prints, the active one marked.
-class AlbumsScreen extends ConsumerWidget {
+/// Home: all groups as instant prints, the active one marked. Long-press an
+/// album for Archiveren / Verlaten / Verwijderen. Groups the user archived sit
+/// collapsed under "Gearchiveerd" at the bottom; swipe one to put it back.
+class AlbumsScreen extends ConsumerStatefulWidget {
   const AlbumsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AlbumsScreen> createState() => _AlbumsScreenState();
+}
+
+class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
+  bool _showArchived = false;
+
+  @override
+  Widget build(BuildContext context) {
     final groups = ref.watch(groupsProvider);
     final user = ref.watch(authProvider).value;
     final activeId = ref.watch(activeGroupIdProvider);
     final pending = ref.watch(uploadQueueProvider).length;
 
     final list = groups.value ?? const <Group>[];
-    final active = list.where((g) => !g.isArchived).toList();
-    final archived = list.where((g) => g.isArchived).toList();
+    // Open groups first, then ones an admin closed; my archived ones apart.
+    final mine = list.where((g) => !g.archived).toList();
+    final active = [...mine.where((g) => !g.isClosed), ...mine.where((g) => g.isClosed)];
+    final archived = list.where((g) => g.archived).toList();
+    final canShoot = mine.any((g) => !g.isClosed);
 
     return Scaffold(
       body: RefreshIndicator(
@@ -82,16 +95,15 @@ class AlbumsScreen extends ConsumerWidget {
             else ...[
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
-                sliver: _grid(context, ref, [...active, if (active.isNotEmpty) null], activeId, showNew: true),
+                sliver: _grid(context, ref, [...active, null], activeId),
               ),
               if (archived.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: Padding(padding: const EdgeInsets.fromLTRB(24, 28, 24, 4), child: Text('ARCHIEF', style: CT.label)),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-                  sliver: _grid(context, ref, archived, activeId),
-                ),
+                SliverToBoxAdapter(child: _archivedHeader(archived.length)),
+                if (_showArchived)
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(24, 4, 24, 0),
+                    sliver: SliverList.list(children: [for (final g in archived) _archivedRow(g)]),
+                  ),
               ],
               SliverToBoxAdapter(
                 child: Padding(
@@ -120,7 +132,7 @@ class AlbumsScreen extends ConsumerWidget {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: active.isEmpty
+      floatingActionButton: !canShoot
           ? null
           : Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22),
@@ -129,7 +141,83 @@ class AlbumsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _grid(BuildContext context, WidgetRef ref, List<Group?> items, String? activeId, {bool showNew = false}) {
+  Widget _archivedHeader(int count) => Padding(
+        padding: const EdgeInsets.fromLTRB(14, 22, 14, 0),
+        child: InkWell(
+          key: const Key('archived-toggle'),
+          borderRadius: BorderRadius.circular(12),
+          onTap: () => setState(() => _showArchived = !_showArchived),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            child: Row(children: [
+              const Icon(Icons.archive_outlined, size: 18, color: CT.muted),
+              const SizedBox(width: 8),
+              Expanded(child: Text('GEARCHIVEERD ($count)', style: CT.label)),
+              AnimatedRotation(
+                turns: _showArchived ? 0.5 : 0,
+                duration: const Duration(milliseconds: 180),
+                child: const Icon(Icons.expand_more, color: CT.muted),
+              ),
+            ]),
+          ),
+        ),
+      );
+
+  /// Compact row; swipe to the left (or long-press) to put it back.
+  Widget _archivedRow(Group g) => Dismissible(
+        key: ValueKey('archived-${g.id}'),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          decoration: BoxDecoration(color: CT.ink, borderRadius: BorderRadius.circular(14)),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.unarchive_outlined, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text('Terugzetten', style: CT.text(14, color: Colors.white, weight: FontWeight.w600)),
+          ]),
+        ),
+        onDismissed: (_) => GroupActions.setArchived(context, ref, g, false),
+        child: GestureDetector(
+          onTap: () => context.push('/group/${g.id}'),
+          onLongPress: () => GroupActions.showMenu(context, ref, g),
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: CT.paper, borderRadius: BorderRadius.circular(14), boxShadow: CT.cardShadow),
+            child: Row(children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: g.coverUrl == null
+                      ? Container(color: CT.cream, child: const Icon(Icons.photo_camera_outlined, size: 18, color: CT.muted))
+                      : NetPhoto(g.coverUrl!, cacheKey: 'cover_${g.id}_${g.photoCount}'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(g.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(15, weight: FontWeight.w600)),
+                  Text(
+                    [if (g.startDate != null) Fmt.range(g.startDate, g.endDate), Fmt.count(g.totalCount, 'foto', 'foto\'s')].join(' · '),
+                    style: CT.text(12, color: CT.muted),
+                  ),
+                ]),
+              ),
+              IconButton(
+                tooltip: 'Meer',
+                onPressed: () => GroupActions.showMenu(context, ref, g),
+                icon: const Icon(Icons.more_horiz, color: CT.muted),
+              ),
+            ]),
+          ),
+        ),
+      );
+
+  Widget _grid(BuildContext context, WidgetRef ref, List<Group?> items, String? activeId) {
     return SliverGrid(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -154,7 +242,9 @@ class AlbumsScreen extends ConsumerWidget {
         }
         final isActive = g.id == activeId && !g.isArchived;
         return GestureDetector(
+          key: ValueKey('album-${g.id}'),
           onTap: () => context.push('/group/${g.id}'),
+          onLongPress: () => GroupActions.showMenu(context, ref, g),
           child: Opacity(
             opacity: g.isArchived ? 0.6 : 1,
             child: InstantPrint(
@@ -169,7 +259,7 @@ class AlbumsScreen extends ConsumerWidget {
                   ]),
                   Text(
                     g.isArchived
-                        ? 'archief · ${g.totalCount}'
+                        ? 'afgesloten · ${g.totalCount}'
                         : [if (isActive) 'actief', if (g.startDate != null) Fmt.range(g.startDate, g.endDate), '${g.totalCount}'].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

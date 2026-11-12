@@ -109,6 +109,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         toggle('Nieuwe foto\'s (gebundeld)', user?.notifyNewPhotos ?? true,
             (v) => ref.read(authProvider.notifier).updateProfile(notifyNewPhotos: v).ignore()),
         toggle('Recap klaar', user?.notifyRecap ?? true, (v) => ref.read(authProvider.notifier).updateProfile(notifyRecap: v).ignore()),
+        if (user?.isAppAdmin ?? false) ...[
+          const SectionLabel('CamTrip-team'),
+          SettingRow(
+            title: 'Beheer',
+            subtitle: 'Gebruikers, Pro geven, meldingen en cijfers',
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/admin'),
+          ),
+        ],
         const SectionLabel('Account'),
         SettingRow(
           title: 'Abonnement beheren',

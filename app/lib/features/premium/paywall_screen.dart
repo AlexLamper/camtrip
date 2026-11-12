@@ -147,6 +147,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                     Expanded(child: Text(f, style: CT.text(15))),
                   ]),
                 ),
+              const SizedBox(height: 8),
+              const GroupProNote(),
               if (!isPro) ...[
                 const SizedBox(height: 22),
                 Row(children: [
@@ -216,6 +218,34 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           ),
         ]),
       ),
+    );
+  }
+}
+
+/// "Eén Pro in de groep = Pro voor iedereen in die groep."
+class GroupProNote extends StatelessWidget {
+  const GroupProNote({super.key});
+
+  static const title = 'Eén Pro in de groep = Pro voor iedereen in die groep';
+  static const body = 'Heeft één iemand Pro, dan krijgt de hele groep alle camerastijlen, onbeperkt leden, '
+      'foto\'s die bewaard blijven, originele kwaliteit en recaps zonder watermerk.';
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: CT.cream, borderRadius: BorderRadius.circular(14)),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Icon(Icons.groups_rounded, size: 22, color: CT.accent),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(title, style: CT.text(14, weight: FontWeight.w700)),
+            const SizedBox(height: 3),
+            Text(body, style: CT.text(13, color: CT.muted)),
+          ]),
+        ),
+      ]),
     );
   }
 }

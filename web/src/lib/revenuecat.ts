@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
 import { User } from './models';
-import { refreshRetentionForOwner } from './groups';
+import { refreshRetentionForMember } from './pro';
 
 export const PRO_ENTITLEMENT_ID = process.env.REVENUECAT_PRO_ENTITLEMENT_ID ?? 'pro';
 
@@ -36,8 +36,9 @@ export async function syncProFromRevenueCat(appUserId: string): Promise<{ isPro:
     { new: false, projection: { proStore: 1 } },
   ).lean();
 
+  // Every group this user is in: one Pro member makes the whole group Pro.
   if (before && Boolean(before.proStore) !== active) {
-    await refreshRetentionForOwner(appUserId, active);
+    await refreshRetentionForMember(appUserId);
   }
   return { isPro: active, expiresAt: active ? expiresAt : null };
 }

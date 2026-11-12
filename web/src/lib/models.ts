@@ -10,10 +10,29 @@ const pushTokenSchema = new Schema(
   { _id: false },
 );
 
+const proGrantSchema = new Schema(
+  {
+    until: { type: Date, default: null },
+    grantedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    reason: { type: String, default: '', maxlength: 200 },
+    createdAt: { type: Date, default: () => new Date() },
+  },
+  { _id: false },
+);
+
 const userSchema = new Schema(
   {
     name: { type: String, default: '' },
-    email: { type: String, default: '' },
+    // Always stored lowercase. Apple/Google users may share an address with
+    // another sign-in, so uniqueness is enforced only for password accounts
+    // (see the partial index below).
+    email: { type: String, default: '', lowercase: true, trim: true },
+    // E-mail + password accounts. Absent for Apple/Google-only users.
+    passwordHash: { type: String },
+    emailVerified: { type: Boolean, default: false },
+    resetCodeHash: { type: String, default: null },
+    resetExpires: { type: Date, default: null },
+    resetAttempts: { type: Number, default: 0 },
     appleId: { type: String, unique: true, sparse: true },
     googleId: { type: String, unique: true, sparse: true },
     avatarColor: { type: String, default: '#d9472b' },
@@ -28,14 +47,34 @@ const userSchema = new Schema(
     },
     // People whose photos this user never wants to see (App Store guideline 1.2).
     blockedUserIds: { type: [Schema.Types.ObjectId], default: [] },
+    // App-wide role. 'admin' unlocks the "Beheer" tools and Pro. Set in the DB
+    // or bootstrapped from ADMIN_EMAILS (see lib/admin-env.ts).
+    role: { type: String, enum: ['user', 'admin'], default: 'user', index: true },
+    // Pro given by an admin, so this person does not have to pay. until null = lifetime.
+    proGrant: { type: proGrantSchema, default: null },
+    // Banned by an admin: sign-in and every API call are refused.
+    banned: { type: Boolean, default: false, index: true },
+    bannedAt: { type: Date, default: null },
+    bannedReason: { type: String, default: '' },
   },
   { timestamps: true },
+);
+// One password account per address. Partial (not plain sparse) because older
+// Apple/Google users have email '' or may share an address.
+userSchema.index(
+  { email: 1 },
+  { unique: true, name: 'email_password_unique', partialFilterExpression: { passwordHash: { $type: 'string' } } },
 );
 
 export interface UserDoc {
   _id: Types.ObjectId;
   name: string;
   email: string;
+  passwordHash?: string;
+  emailVerified?: boolean;
+  resetCodeHash?: string | null;
+  resetExpires?: Date | null;
+  resetAttempts?: number;
   appleId?: string;
   googleId?: string;
   avatarColor: string;
@@ -44,8 +83,20 @@ export interface UserDoc {
   proExpiresAt: Date | null;
   settings?: { notifyNewPhotos?: boolean; notifyRecap?: boolean };
   blockedUserIds?: Types.ObjectId[];
+  role?: 'user' | 'admin';
+  proGrant?: ProGrant | null;
+  banned?: boolean;
+  bannedAt?: Date | null;
+  bannedReason?: string;
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export interface ProGrant {
+  until: Date | null;
+  grantedBy: Types.ObjectId | null;
+  reason: string;
+  createdAt: Date;
 }
 
 // ---------------------------------------------------------------- Group
@@ -84,6 +135,9 @@ const groupSchema = new Schema(
     // actorId -> last time members were told about this person's new photos.
     // Lets several photos in a row become one bundled push.
     lastNotified: { type: Map, of: Date, default: {} },
+    // Members who archived this group for themselves ("Archiveren" in the
+    // albums list). Personal: the group stays as it is for everyone else.
+    archivedBy: { type: [Schema.Types.ObjectId], default: [] },
   },
   { timestamps: true },
 );
@@ -111,6 +165,7 @@ export interface GroupDoc {
   deleteAfter: Date | null;
   recapNotifiedAt: Date | null;
   lastNotified?: Record<string, Date>;
+  archivedBy?: Types.ObjectId[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -184,6 +239,10 @@ const reportSchema = new Schema(
     reason: { type: String, enum: REPORT_REASONS, required: true },
     note: { type: String, default: '', maxlength: 500 },
     status: { type: String, enum: ['open', 'handled'], default: 'open', index: true },
+    // Set by an app admin in "Beheer" > Meldingen.
+    resolution: { type: String, enum: ['dismissed', 'photo_deleted', 'user_banned', null], default: null },
+    handledBy: { type: Schema.Types.ObjectId, ref: 'User', default: null },
+    handledAt: { type: Date, default: null },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );
@@ -198,6 +257,30 @@ export interface ReportDoc {
   reason: (typeof REPORT_REASONS)[number];
   note: string;
   status: 'open' | 'handled';
+  resolution?: 'dismissed' | 'photo_deleted' | 'user_banned' | null;
+  handledBy?: Types.ObjectId | null;
+  handledAt?: Date | null;
+  createdAt?: Date;
+}
+
+// ---------------------------------------------------------------- Hidden photo ("Verbergen voor mij")
+// One document per (user, photo). Only hides the photo for that user; it stays
+// in the group for everyone else and can be shown again from "Verborgen foto's".
+const hiddenPhotoSchema = new Schema(
+  {
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    groupId: { type: Schema.Types.ObjectId, ref: 'Group', required: true, index: true },
+    photoId: { type: Schema.Types.ObjectId, ref: 'Photo', required: true, index: true },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } },
+);
+hiddenPhotoSchema.index({ userId: 1, groupId: 1, photoId: 1 }, { unique: true });
+
+export interface HiddenPhotoDoc {
+  _id: Types.ObjectId;
+  userId: Types.ObjectId;
+  groupId: Types.ObjectId;
+  photoId: Types.ObjectId;
   createdAt?: Date;
 }
 
@@ -207,8 +290,18 @@ const webhookEventSchema = new Schema(
   { timestamps: true },
 );
 
+// ---------------------------------------------------------------- Auth rate limiting
+// One document per attempt; Mongo's TTL monitor removes them after the window.
+export const AUTH_ATTEMPT_WINDOW_SECONDS = 15 * 60;
+const authAttemptSchema = new Schema({
+  key: { type: String, required: true, index: true },
+  createdAt: { type: Date, default: () => new Date(), expires: AUTH_ATTEMPT_WINDOW_SECONDS },
+});
+
 export const User = (mongoose.models.User ?? mongoose.model('User', userSchema)) as unknown as Model<UserDoc>;
 export const Group = (mongoose.models.Group ?? mongoose.model('Group', groupSchema)) as unknown as Model<GroupDoc>;
 export const Photo = (mongoose.models.Photo ?? mongoose.model('Photo', photoSchema)) as unknown as Model<PhotoDoc>;
 export const Report = (mongoose.models.Report ?? mongoose.model('Report', reportSchema)) as unknown as Model<ReportDoc>;
+export const HiddenPhoto = (mongoose.models.HiddenPhoto ?? mongoose.model('HiddenPhoto', hiddenPhotoSchema)) as unknown as Model<HiddenPhotoDoc>;
 export const WebhookEvent = (mongoose.models.WebhookEvent ?? mongoose.model('WebhookEvent', webhookEventSchema)) as unknown as Model<{ eventId: string }>;
+export const AuthAttempt = (mongoose.models.AuthAttempt ?? mongoose.model('AuthAttempt', authAttemptSchema)) as unknown as Model<{ key: string; createdAt: Date }>;

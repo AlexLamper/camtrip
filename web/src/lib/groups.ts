@@ -1,9 +1,9 @@
 import { randomInt } from 'node:crypto';
 import { Types } from 'mongoose';
-import { Group, Photo, User, type GroupDoc, type UserDoc } from './models';
+import { Group, HiddenPhoto, Photo, Report, User, type GroupDoc, type UserDoc } from './models';
 import { HttpError } from './http';
-import { isPro } from './auth';
-import { readUrl } from './storage';
+import { groupPro } from './entitlements';
+import { deleteKeys, readUrl } from './storage';
 
 export const FREE_MEMBER_LIMIT = 10;
 export const FREE_RETENTION_DAYS = 30;
@@ -41,11 +41,8 @@ export async function requireAdmin(groupId: string, userId: Types.ObjectId): Pro
   return group;
 }
 
-/** A group gets Pro limits when its creator has Pro. */
-export async function ownerIsPro(group: Pick<GroupDoc, 'ownerId'>): Promise<boolean> {
-  const owner = await User.findById(group.ownerId, { proStore: 1, proExpiresAt: 1 }).lean<UserDoc>();
-  return isPro(owner);
-}
+// Group Pro (one Pro member = Pro for the whole group) lives in ./pro
+// (groupIsPro / groupProFor / refreshGroupRetention) and ./entitlements.
 
 export function computeDeleteAfter(type: string, endDate: Date | null, pro: boolean): Date | null {
   if (pro || type === 'permanent') return null;
@@ -53,24 +50,21 @@ export function computeDeleteAfter(type: string, endDate: Date | null, pro: bool
   return new Date(base.getTime() + FREE_RETENTION_DAYS * 86_400_000);
 }
 
-/** Recompute deleteAfter for every group a user owns (after a Pro change). */
-export async function refreshRetentionForOwner(ownerId: Types.ObjectId | string, pro: boolean) {
-  const groups = await Group.find({ ownerId }, { type: 1, endDate: 1 }).lean<GroupDoc[]>();
-  await Promise.all(
-    groups.map((g) =>
-      Group.updateOne({ _id: g._id }, { deleteAfter: computeDeleteAfter(g.type, g.endDate ?? null, pro) }),
-    ),
-  );
-}
-
 /** Shape sent to the app. Member details are joined in so the gallery can show avatars. */
 export async function serializeGroup(group: GroupDoc, viewerId: Types.ObjectId | string) {
   const users = await User.find(
     { _id: { $in: group.members.map((m) => m.userId) } },
-    { name: 1, avatarColor: 1 },
+    { name: 1, avatarColor: 1, role: 1, proStore: 1, proExpiresAt: 1, proGrant: 1, banned: 1 },
   ).lean<UserDoc[]>();
   const byId = new Map(users.map((u) => [String(u._id), u]));
-  const pro = await ownerIsPro(group);
+  // One Pro member = Pro for everyone in the group (see lib/entitlements.ts).
+  const gp = groupPro(
+    group.members.map((m) => byId.get(String(m.userId))).filter((u): u is UserDoc => Boolean(u)),
+    { viewerId, ownerId: group.ownerId },
+  );
+  const pro = gp.isPro;
+
+  const hiddenCount = await HiddenPhoto.countDocuments({ userId: viewerId, groupId: group._id });
 
   let coverUrl: string | null = null;
   if (group.coverPhotoId) {
@@ -92,9 +86,17 @@ export async function serializeGroup(group: GroupDoc, viewerId: Types.ObjectId |
     coverUrl,
     deleteAfter: group.deleteAfter ?? null,
     isProGroup: pro,
+    // Group Pro: 'self' = the viewer's own Pro, 'group' = another member's ("Pro via Sanne").
+    isPro: pro,
+    proSource: !pro ? null : gp.proBy?.id === String(viewerId) ? 'self' : 'group',
+    proBy: gp.proBy ? { id: gp.proBy.id, name: gp.proBy.name } : null,
     memberLimit: pro ? null : FREE_MEMBER_LIMIT,
     myRole: memberRole(group, viewerId),
     ownerId: String(group.ownerId),
+    // Personal: only this viewer archived it ("Gearchiveerd" in their albums list).
+    archived: (group.archivedBy ?? []).some((id) => String(id) === String(viewerId)),
+    // Photos this viewer hid for themselves ("Verborgen foto's").
+    hiddenCount,
     members: group.members.map((m) => {
       const u = byId.get(String(m.userId));
       return {
@@ -106,4 +108,19 @@ export async function serializeGroup(group: GroupDoc, viewerId: Types.ObjectId |
     }),
     createdAt: (group as unknown as { createdAt?: Date }).createdAt ?? null,
   };
+}
+
+/**
+ * Removes a whole group for everyone: every photo and video in R2 (original,
+ * display, thumbnail), the photo rows, reports, personal hides and the group.
+ * Nobody is notified. Phones keep whatever was already saved to their album.
+ */
+export async function deleteGroupEverywhere(group: Pick<GroupDoc, '_id'>): Promise<number> {
+  const photos = await Photo.find({ groupId: group._id }, { originalKey: 1, displayKey: 1, thumbKey: 1 }).lean();
+  await deleteKeys(photos.flatMap((p) => [p.originalKey, p.displayKey, p.thumbKey]));
+  await Photo.deleteMany({ groupId: group._id });
+  await Report.deleteMany({ groupId: group._id });
+  await HiddenPhoto.deleteMany({ groupId: group._id });
+  await Group.deleteOne({ _id: group._id });
+  return photos.length;
 }

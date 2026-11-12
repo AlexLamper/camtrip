@@ -1,7 +1,8 @@
 import { z } from 'zod';
 import { Group, CAMERA_STYLES, FREE_STYLES, GROUP_TYPES, type GroupDoc } from '@/lib/models';
 import { body, handler, HttpError, json } from '@/lib/http';
-import { isPro, requireUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth';
+import { hasPro } from '@/lib/entitlements';
 import { computeDeleteAfter, serializeGroup, uniqueCode } from '@/lib/groups';
 
 export const GET = handler(async (req) => {
@@ -25,7 +26,7 @@ const Create = z
 export const POST = handler(async (req) => {
   const user = await requireUser(req);
   const input = await body(req, Create);
-  if (!FREE_STYLES.includes(input.defaultStyle) && !isPro(user)) {
+  if (!FREE_STYLES.includes(input.defaultStyle) && !hasPro(user)) {
     throw new HttpError(402, 'Deze camerastijl hoort bij CamTrip Pro', 'pro_required');
   }
   const endDate = input.type === 'permanent' ? null : (input.endDate ?? input.startDate ?? null);
@@ -38,7 +39,7 @@ export const POST = handler(async (req) => {
     code: await uniqueCode(),
     ownerId: user._id,
     members: [{ userId: user._id, role: 'admin' }],
-    deleteAfter: computeDeleteAfter(input.type, endDate, isPro(user)),
+    deleteAfter: computeDeleteAfter(input.type, endDate, hasPro(user)),
   });
   return json({ group: await serializeGroup(group.toObject(), user._id) }, 201);
 });

@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { Types } from 'mongoose';
-import { Group, Photo, Report, CAMERA_STYLES, FREE_STYLES, type GroupDoc } from '@/lib/models';
+import { Group, Photo, CAMERA_STYLES, FREE_STYLES, type GroupDoc } from '@/lib/models';
 import { body, handler, HttpError, json, type Params } from '@/lib/http';
 import { requireUser } from '@/lib/auth';
-import { computeDeleteAfter, ownerIsPro, requireAdmin, requireMember, serializeGroup } from '@/lib/groups';
-import { deleteKeys } from '@/lib/storage';
+import { computeDeleteAfter, deleteGroupEverywhere, requireAdmin, requireMember, serializeGroup } from '@/lib/groups';
+import { groupIsPro } from '@/lib/pro';
 
 type P = Params<{ id: string }>;
 
@@ -21,14 +21,22 @@ const Patch = z.object({
   defaultStyle: z.enum(CAMERA_STYLES).optional(),
   status: z.enum(['active', 'archived']).optional(),
   coverPhotoId: z.string().optional(),
+  // "Reis afronden": the trip ends now (endDate = now; a future start moves to now too).
+  endNow: z.boolean().optional(),
 });
 
 export const PATCH = handler<P>(async (req, { params }) => {
   const user = await requireUser(req);
   const group = await requireAdmin((await params).id, user._id);
   const input = await body(req, Patch);
+  if (input.endNow) {
+    if (group.type === 'permanent') throw new HttpError(400, 'Een groep die altijd open is heeft geen einddatum');
+    const now = new Date();
+    input.endDate = now;
+    if (group.startDate && group.startDate > now) input.startDate = now;
+  }
   const update: Partial<GroupDoc> & Record<string, unknown> = {};
-  const pro = await ownerIsPro(group);
+  const pro = await groupIsPro(group);
   if (input.defaultStyle && !FREE_STYLES.includes(input.defaultStyle) && !pro) {
     throw new HttpError(402, 'Deze camerastijl hoort bij CamTrip Pro', 'pro_required');
   }
@@ -58,10 +66,7 @@ export const PATCH = handler<P>(async (req, { params }) => {
 export const DELETE = handler<P>(async (req, { params }) => {
   const user = await requireUser(req);
   const group = await requireAdmin((await params).id, user._id);
-  const photos = await Photo.find({ groupId: group._id }, { originalKey: 1, displayKey: 1, thumbKey: 1 }).lean();
-  await deleteKeys(photos.flatMap((p) => [p.originalKey, p.displayKey, p.thumbKey]));
-  await Photo.deleteMany({ groupId: group._id });
-  await Report.deleteMany({ groupId: group._id });
-  await Group.deleteOne({ _id: group._id });
-  return json({ ok: true });
+  // Everything goes for everyone, R2 files included. Nobody is notified.
+  const deletedPhotos = await deleteGroupEverywhere(group);
+  return json({ ok: true, deletedPhotos });
 });

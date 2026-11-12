@@ -14,9 +14,10 @@ import '../../core/widgets.dart';
 import '../../main.dart';
 import '../../models/models.dart';
 import '../groups/groups_controller.dart';
-import '../premium/premium_controller.dart';
+import '../premium/pro_gate.dart';
 import '../upload/upload_queue.dart';
 import 'processor.dart';
+import 'shutter_button.dart';
 import 'styles.dart';
 import 'video_processor.dart';
 
@@ -35,6 +36,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
   late CameraStyle _style;
   late bool _stamp;
   FlashMode _flash = FlashMode.auto;
+  /// Always starts in photo mode and is never persisted: video is a
+  /// deliberate per-session choice.
   bool _videoMode = false;
   bool _recording = false;
   bool _busy = false;
@@ -50,11 +53,30 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     WidgetsBinding.instance.addObserver(this);
     final prefs = ref.read(prefsProvider);
     _style = CameraStyle.byId(prefs.cameraStyle);
-    // A Pro style left over from a lapsed subscription would fail on upload.
-    if (_style.pro && !ref.read(isProProvider)) _style = CameraStyle.instant;
+    // A Pro style left over from a lapsed subscription (or another group's
+    // Pro) would fail on upload. Group Pro counts: one Pro member = Pro for all.
+    if (!ref.read(activeProGateProvider).canUseStyle(styleIsPro: _style.pro)) _style = CameraStyle.instant;
     _stamp = prefs.dateStamp;
     _flash = switch (prefs.flashMode) { 'on' => FlashMode.always, 'off' => FlashMode.off, _ => FlashMode.auto };
-    _init();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initAfterTransition());
+  }
+
+  /// Starting the camera is heavy on the platform side; wait for the slide-up
+  /// to finish so the transition stays at 60fps.
+  Future<void> _initAfterTransition() async {
+    if (!mounted) return;
+    final anim = ModalRoute.of(context)?.animation;
+    if (anim != null && !anim.isCompleted) {
+      final done = Completer<void>();
+      void listener(AnimationStatus s) {
+        if (s.isCompleted && !done.isCompleted) done.complete();
+      }
+
+      anim.addStatusListener(listener);
+      await done.future.timeout(const Duration(milliseconds: 600), onTimeout: () {});
+      anim.removeStatusListener(listener);
+    }
+    if (mounted) _init();
   }
 
   @override
@@ -72,16 +94,23 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
       if (c == null && _cameras.isNotEmpty && mounted) _start(_cameraIndex);
       return;
     }
-    if (c == null || !c.value.isInitialized) return;
-    if (state == AppLifecycleState.inactive) {
-      if (_recording) {
-        _recordTimer?.cancel();
-        _recording = false;
-      }
-      // Drop the preview from the tree before the controller goes away.
-      setState(() => _controller = null);
-      c.dispose();
-    }
+    if (state != AppLifecycleState.inactive || !mounted) return;
+    final live = c != null && c.value.isInitialized;
+    _recordTimer?.cancel();
+    // Coming back from the background always lands in photo mode. Also drop
+    // the preview from the tree before the controller goes away.
+    setState(() {
+      _recording = false;
+      _videoMode = false;
+      if (live) _controller = null;
+    });
+    if (live) c.dispose();
+  }
+
+  void _setVideoMode(bool video) {
+    if (_recording || video == _videoMode) return;
+    HapticFeedback.selectionClick();
+    setState(() => _videoMode = video);
   }
 
   Future<void> _init() async {
@@ -132,7 +161,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
   bool get _front => _cameras.isNotEmpty && _cameras[_cameraIndex].lensDirection == CameraLensDirection.front;
 
   Future<void> _selectStyle(CameraStyle s) async {
-    if (s.pro && !ref.read(isProProvider)) {
+    if (!ref.read(activeProGateProvider).canUseStyle(styleIsPro: s.pro)) {
       context.push('/pro');
       return;
     }
@@ -172,6 +201,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
   Future<void> _shoot(Group group) async {
     final c = _controller;
     if (c == null || _busy || !c.value.isInitialized) return;
+    if (!ref.read(activeProGateProvider).canUseStyle(styleIsPro: _style.pro)) {
+      // Switched to a group without Pro while a Pro style was picked.
+      setState(() => _style = CameraStyle.instant);
+      showMessage(context, 'Deze stijl hoort bij Pro. In deze groep schiet je met Instant.');
+      return;
+    }
     if (_videoMode) return _toggleRecording(group);
     HapticFeedback.mediumImpact();
     setState(() {
@@ -291,7 +326,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Schiet in groep', style: CT.title(22)),
             const SizedBox(height: 12),
-            for (final g in groups.where((g) => !g.isArchived))
+            for (final g in groups.where((g) => !g.isArchived && !g.archived))
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(g.name, style: CT.text(16, weight: FontWeight.w600)),
@@ -312,7 +347,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
   Widget build(BuildContext context) {
     final group = ref.watch(activeGroupProvider);
     final groups = ref.watch(groupsProvider).value ?? const <Group>[];
-    final isPro = ref.watch(isProProvider);
+    final gate = ref.watch(activeProGateProvider);
+    final isPro = gate.unlocked;
+    // Pro style picked but this group has no Pro (e.g. after switching groups).
+    if (group != null && !gate.canUseStyle(styleIsPro: _style.pro)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _style.pro && !ref.read(activeProGateProvider).unlocked) setState(() => _style = CameraStyle.instant);
+      });
+    }
     final pending = ref.watch(uploadQueueProvider).length;
 
     return Scaffold(
@@ -323,7 +365,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
             child: Row(children: [
-              IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.close)),
+              IconButton(tooltip: 'Sluiten', onPressed: _recording ? null : () => context.pop(), icon: const Icon(Icons.close)),
               TextButton.icon(
                 onPressed: _style.forceFlash ? null : _cycleFlash,
                 icon: Icon(
@@ -338,8 +380,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
               ),
               const Spacer(),
               GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: () => _pickGroup(groups),
                 child: Container(
+                  // 44pt tall hit target around the visible pill
+                  constraints: const BoxConstraints(minHeight: 44),
+                  alignment: Alignment.center,
+                  child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(border: Border.all(color: CT.ink, width: 1.5), borderRadius: BorderRadius.circular(10)),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -352,11 +399,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
                     ),
                     const Icon(Icons.expand_more, size: 18),
                   ]),
+                  ),
                 ),
               ),
               const Spacer(),
               IconButton(
-                onPressed: _cameras.length > 1 ? () => _start((_cameraIndex + 1) % _cameras.length) : null,
+                tooltip: 'Wissel camera',
+                onPressed: _cameras.length > 1 && !_recording ? () => _start((_cameraIndex + 1) % _cameras.length) : null,
                 icon: const Icon(Icons.cameraswitch_outlined),
               ),
             ]),
@@ -383,11 +432,27 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
               },
             ),
           ),
+          // Pro styles unlocked by someone else in this group ("Pro via Sanne").
+          if (gate.cameraHint != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                const Icon(Icons.star_rounded, size: 14, color: CT.accent),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(gate.cameraHint!,
+                      maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(12, color: CT.muted, weight: FontWeight.w500)),
+                ),
+              ]),
+            ),
+          // mode switch
+          CameraModeSwitch(videoMode: _videoMode, enabled: !_recording, onChanged: _setVideoMode),
           // shutter row
           Padding(
-            padding: const EdgeInsets.fromLTRB(32, 6, 32, 16),
+            padding: const EdgeInsets.fromLTRB(32, 0, 32, 8),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               GestureDetector(
+                behavior: HitTestBehavior.opaque,
                 onTap: group == null ? null : () => context.push('/group/${group.id}'),
                 child: SizedBox(
                   width: 56,
@@ -418,16 +483,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
                 ),
               ),
               _shutter(group),
-              GestureDetector(
-                onTap: _recording ? null : () => setState(() => _videoMode = !_videoMode),
-                child: SizedBox(
-                  width: 56,
-                  child: Column(children: [
-                    Text(_videoMode ? 'Foto' : 'Video', style: CT.text(14, weight: FontWeight.w600)),
-                    Text(_videoMode ? 'video · foto' : 'foto · video', style: CT.text(10, color: CT.muted)),
-                  ]),
-                ),
-              ),
+              // keeps the shutter centred
+              const SizedBox(width: 56),
             ]),
           ),
         ]),
@@ -436,36 +493,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
   }
 
   Widget _shutter(Group? group) {
-    final recordingFor = _recording && _recordStart != null ? DateTime.now().difference(_recordStart!).inSeconds : 0;
-    return GestureDetector(
-      onTap: group == null
-          ? () => showMessage(context, 'Maak of join eerst een groep')
-          : () => _shoot(group),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(
-          width: 84,
-          height: 84,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xFFEEEEEE), border: Border.all(color: CT.ink, width: 3)),
-          alignment: Alignment.center,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            width: _recording ? 30 : 58,
-            height: _recording ? 30 : 58,
-            decoration: BoxDecoration(
-              color: _videoMode ? CT.accent : CT.accent,
-              borderRadius: BorderRadius.circular(_recording ? 6 : 29),
-            ),
-            child: _busy && !_videoMode
-                ? const Padding(padding: EdgeInsets.all(18), child: CircularProgressIndicator(strokeWidth: 2.4, color: Colors.white))
-                : null,
-          ),
-        ),
-        if (_recording)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text('0:${recordingFor.toString().padLeft(2, '0')}', style: CT.text(12, color: CT.accent, weight: FontWeight.w700)),
-          ),
-      ]),
+    return ShutterButton(
+      videoMode: _videoMode,
+      recording: _recording,
+      busy: _busy,
+      elapsed: _recording && _recordStart != null ? DateTime.now().difference(_recordStart!) : Duration.zero,
+      onTap: group == null ? () => showMessage(context, 'Maak of join eerst een groep') : () => _shoot(group),
     );
   }
 
@@ -475,13 +508,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     Widget content;
     if (_error != null) {
       content = Container(
+        key: const ValueKey('vf-error'),
         color: CT.cream,
         padding: const EdgeInsets.all(24),
         alignment: Alignment.center,
         child: Text(_error!, textAlign: TextAlign.center, style: CT.text(15, color: CT.muted)),
       );
     } else if (c == null || !c.value.isInitialized) {
-      content = Container(color: CT.cream);
+      content = Container(key: const ValueKey('vf-loading'), color: CT.cream);
     } else {
       final preview = FittedBox(
         fit: BoxFit.cover,
@@ -491,7 +525,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
           child: CameraPreview(c),
         ),
       );
-      content = Stack(fit: StackFit.expand, children: [
+      content = Stack(key: ValueKey(c), fit: StackFit.expand, children: [
         ColorFiltered(colorFilter: ColorFilter.matrix(_style.matrix.m), child: preview),
         if (_style.leak > 0)
           IgnorePointer(child: Opacity(opacity: _style.leak.clamp(0, 1), child: Image.asset('assets/images/light_leak.png', fit: BoxFit.cover))),
@@ -561,7 +595,11 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
           child: Stack(clipBehavior: Clip.none, children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(instant ? 0 : 18),
-              child: SizedBox(width: photoW, height: photoH, child: content),
+              child: SizedBox(
+                width: photoW,
+                height: photoH,
+                child: AnimatedSwitcher(duration: const Duration(milliseconds: 250), child: content),
+              ),
             ),
             if (instant)
               Positioned(

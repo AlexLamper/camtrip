@@ -1,16 +1,48 @@
 import { Footer, Nav, StoreButtons } from '@/components/site';
+import { StyleLab } from '@/components/style-lab';
 
 function Phone({ src, alt, priority }: { src: string; alt: string; priority?: boolean }) {
   return (
     <img
       className="phone-shot"
-      src={`/screen-${src}.webp`}
+      src={`/examples/screens/screen-${src}.webp`}
       alt={alt}
       width={454}
       height={956}
       loading={priority ? 'eager' : 'lazy'}
       decoding="async"
     />
+  );
+}
+
+const PRINTS = [
+  { file: 'strand-instant', style: 'Instant', label: 'Strand, 13 juli', alt: 'Vrienden rond een kampvuur op het strand' },
+  { file: 'vrienden-film', style: 'Film', label: 'Boulevard', alt: 'Een groep vrienden loopt de ondergaande zon tegemoet' },
+  { file: 'roadtrip-wegwerp', style: 'Wegwerp', label: 'Roadtrip', alt: 'Iemand rent over een lege weg richting de bergen' },
+  { file: 'stad-golden', style: 'Golden', label: 'Citytrip', alt: 'Een smal steegje met uitzicht op zee' },
+  { file: 'bergen-chrome', style: 'Chrome', label: 'Bergen', alt: 'Een wandelaar met rugzak in een groen bergdal' },
+  { file: 'sneeuw-zw', style: 'Z/W', label: 'Sneeuw', alt: 'Twee toerskiers klimmen een besneeuwde helling op' },
+] as const;
+
+function Prints() {
+  return (
+    <section className="prints-band" aria-label="Voorbeeldfoto's in verschillende stijlen">
+      <div className="prints">
+        {PRINTS.map((p) => (
+          <figure key={p.file} className="pol print">
+            <picture>
+              <source type="image/webp" srcSet={`/examples/print-${p.file}.webp`} />
+              <img src={`/examples/print-${p.file}.jpg`} alt={p.alt} width={480} height={640} loading="lazy" decoding="async" />
+            </picture>
+            <figcaption>
+              {p.label}
+              <span>{p.style}</span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+      <p className="wrap prints-note">Voorbeeldfoto’s, bewerkt met de echte camerastijlen uit de app.</p>
+    </section>
   );
 }
 
@@ -46,6 +78,8 @@ export default function Home() {
             <Phone src="galerij" alt="De gedeelde galerij van een groep" priority />
           </div>
         </div>
+
+        <Prints />
 
         <section className="wrap">
           <h2 className="display">Zo werkt het</h2>
@@ -91,24 +125,8 @@ export default function Home() {
 
         <section className="wrap">
           <h2 className="display">Foto’s met karakter</h2>
-          <p className="sub">Kies je camera. Elke stijl zie je live in de zoeker, dus je weet precies wat je krijgt.</p>
-          <div className="styles-row section-body">
-            {(
-              [
-                ['film', 'Film', 'Warme kleuren, korrel en een oranje datumstempel'],
-                ['instant', 'Instant', 'Zachte kleuren en een witte rand'],
-                ['wegwerp', 'Wegwerp', 'Harde flits, vignet en lichtlekken'],
-              ] as const
-            ).map(([key, title, sub]) => (
-              <figure key={key} className="pol">
-                <img className="shot" src={`/style-${key}.webp`} alt={`Voorbeeldfoto met de stijl ${title}`} width={800} height={800} loading="lazy" decoding="async" />
-                <figcaption>
-                  {title}
-                  <span>{sub}</span>
-                </figcaption>
-              </figure>
-            ))}
-          </div>
+          <p className="sub">Kies je camera. Elke stijl zie je live in de zoeker, dus je weet precies wat je krijgt. Probeer ze hieronder uit op een echte foto.</p>
+          <StyleLab />
         </section>
 
         <section className="wrap">
@@ -140,7 +158,9 @@ export default function Home() {
 
         <section className="wrap">
           <h2 className="display">Gratis, of Pro</h2>
-          <p className="sub">Voor de meeste groepen is gratis genoeg. Pro is voor als je alles wilt.</p>
+          <p className="sub">
+            Voor de meeste groepen is gratis genoeg. En <strong>één Pro in de groep = Pro voor iedereen in die groep.</strong>
+          </p>
           <div className="pricing section-body">
             <div className="plan">
               <h3>Gratis</h3>
@@ -162,6 +182,7 @@ export default function Home() {
                 <li>Onbeperkt leden en opslag</li>
                 <li>Recaps zonder watermerk</li>
                 <li>Originele kwaliteit downloaden</li>
+                <li>Geldt voor je hele groep</li>
               </ul>
             </div>
           </div>
@@ -186,10 +207,18 @@ export default function Home() {
               <p>Alleen de mensen in je groep. Groepen zijn privé en alleen te joinen met de code of link.</p>
             </details>
             <details>
+              <summary>Moet iedereen in mijn groep Pro nemen?</summary>
+              <p>
+                Nee. Eén Pro-lid is genoeg: de groep wordt dan een Pro-groep voor iedereen erin, met alle camerastijlen,
+                onbeperkt leden, originele kwaliteit en recaps zonder watermerk. Gaat dat lid uit de groep of stopt het
+                abonnement, dan wordt de groep weer gratis.
+              </p>
+            </details>
+            <details>
               <summary>Hoe lang blijven de foto’s bewaard?</summary>
               <p>
-                Gratis groepen blijven tot 30 dagen na de einddatum, daarna worden ze verwijderd. Met Pro blijven ze altijd
-                bewaard. Vergeet niet op tijd op “Alles opslaan” te tikken.
+                Gratis groepen blijven tot 30 dagen na de einddatum, daarna worden ze verwijderd. Zodra iemand in de groep
+                Pro heeft, blijven ze altijd bewaard. Vergeet niet op tijd op “Alles opslaan” te tikken.
               </p>
             </details>
           </div>

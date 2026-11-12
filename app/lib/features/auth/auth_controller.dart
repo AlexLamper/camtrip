@@ -38,7 +38,7 @@ class AuthController extends AsyncNotifier<AppUser?> {
       unawaited(_afterSignIn(user));
       return user;
     } on ApiException catch (e) {
-      if (e.isUnauthorized) {
+      if (e.isUnauthorized || e.isBanned) {
         await ref.read(sessionStorageProvider).clear();
         return null;
       }
@@ -98,11 +98,38 @@ class AuthController extends AsyncNotifier<AppUser?> {
   }
 
   Future<void> signInWithGoogle() async {
+    // The button is hidden when unconfigured; this guards any other caller.
+    if (!AppConfig.googleSignInAvailable) throw ApiException('Inloggen met Google is nog niet beschikbaar');
     await _initGoogle();
     final account = await GoogleSignIn.instance.authenticate();
     final idToken = account.authentication.idToken;
     if (idToken == null) throw ApiException('Google gaf geen login terug');
     final res = await _api.post('/auth/google', {'idToken': idToken});
+    await _accept(res);
+  }
+
+  // ---- E-mail + password ----
+
+  /// Creates an e-mail account and signs in.
+  Future<void> register({required String name, required String email, required String password}) async {
+    final res = await _api.post('/auth/register', {'name': name.trim(), 'email': email.trim(), 'password': password});
+    await _accept(res);
+  }
+
+  Future<void> signInWithEmail({required String email, required String password}) async {
+    final res = await _api.post('/auth/login', {'email': email.trim(), 'password': password});
+    await _accept(res);
+  }
+
+  /// Asks the server to mail a 6-digit code. Always succeeds when the request
+  /// went through, whether or not the address has an account.
+  Future<void> requestPasswordReset(String email) async {
+    await _api.post('/auth/forgot', {'email': email.trim()});
+  }
+
+  /// Sets a new password with the mailed code and signs in.
+  Future<void> resetPassword({required String email, required String code, required String password}) async {
+    final res = await _api.post('/auth/reset', {'email': email.trim(), 'code': code.trim(), 'password': password});
     await _accept(res);
   }
 

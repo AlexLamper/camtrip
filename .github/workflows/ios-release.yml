@@ -140,6 +140,10 @@ jobs:
           # BUILD_NAME / BUILD_NUMBER come from the "Resolve version" step.
           echo "Building $BUILD_NAME ($BUILD_NUMBER)"
 
+          # Fall back to the defaults in config.dart when the variables are not set.
+          if [ -z "${GOOGLE_IOS_CLIENT_ID:-}" ]; then
+            GOOGLE_IOS_CLIENT_ID=$(sed -n "s/.*googleIosClientIdDefault = '\([^']*\)'.*/\1/p" lib/core/config.dart | head -n1)
+          fi
           # Google Sign-In on iOS needs the client id + its reversed form as URL scheme.
           if [ -n "${GOOGLE_IOS_CLIENT_ID:-}" ]; then
             REVERSED=$(echo "$GOOGLE_IOS_CLIENT_ID" | awk -F. '{for(i=NF;i>0;i--) printf "%s%s",$i,(i>1?".":"")}')
