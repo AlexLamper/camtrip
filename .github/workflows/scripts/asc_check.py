@@ -405,6 +405,46 @@ def set_review_details(client):
     log("App review information saved.")
 
 
+REVIEW_SHOT = os.path.join(os.path.dirname(__file__), "..", "..", "..", "store", "review", "paywall_review.png")
+
+
+def upload_asset(client, create_type, rel_name, parent_id, path):
+    """Reserve, upload and commit an image asset (App Store Connect asset flow)."""
+    import hashlib
+    data = open(path, "rb").read()
+    res = client.request("POST", create_type, json={"data": {
+        "type": create_type,
+        "attributes": {"fileName": os.path.basename(path), "fileSize": len(data)},
+        "relationships": {rel_name: {"data": {"type": "subscriptions", "id": parent_id}}},
+    }})["data"]
+    for op in res["attributes"]["uploadOperations"]:
+        chunk = data[op["offset"]:op["offset"] + op["length"]]
+        headers = {h["name"]: h["value"] for h in op.get("requestHeaders", [])}
+        r = requests.request(op["method"], op["url"], data=chunk, headers=headers, timeout=120)
+        r.raise_for_status()
+    client.request("PATCH", f"{create_type}/{res['id']}", json={"data": {
+        "type": create_type, "id": res["id"],
+        "attributes": {"uploaded": True, "sourceFileChecksum": hashlib.md5(data).hexdigest()},
+    }})
+    return res["id"]
+
+
+def set_subscription_review_shots(client):
+    path = os.path.abspath(REVIEW_SHOT)
+    if not os.path.exists(path):
+        log("::warning::store/review/paywall_review.png missing; subscription review screenshot skipped.")
+        return
+    groups = client.get(f"apps/{APP_ID}/subscriptionGroups", params={"include": "subscriptions"})
+    for sub in [i for i in groups.get("included", []) if i["type"] == "subscriptions"]:
+        sid = sub["id"]
+        current = client.request("GET", f"subscriptions/{sid}/appStoreReviewScreenshot")
+        if current.get("data"):
+            log(f"{sub['attributes']['productId']}: review screenshot already present.")
+            continue
+        upload_asset(client, "subscriptionAppStoreReviewScreenshots", "subscription", sid, path)
+        log(f"{sub['attributes']['productId']}: review screenshot uploaded.")
+
+
 def cmd_configure(client):
     """Content rights, age rating, free price, review details, primary locale."""
     failures = []
@@ -414,6 +454,7 @@ def cmd_configure(client):
         ("price", set_free_price, True),
         ("review details", set_review_details, False),
         ("primary locale", set_primary_locale, False),
+        ("subscription review screenshots", set_subscription_review_shots, False),
     ]:
         try:
             func(client)
