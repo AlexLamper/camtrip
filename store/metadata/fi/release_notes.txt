@@ -1,0 +1,8 @@
+CamTripin ensimmäinen versio!
+
+• Luo ryhmä ja kutsu kaverit koodilla, QR-koodilla tai linkillä
+• Kuvaa retrokameralla: Filmi, Instant, Kertakäyttö ja Prolla myös M/V, Golden ja Chrome
+• Kaikki näkevät jokaisen kuvan heti, ja se tallentuu myös omaan albumiisi
+• Automaattinen koostevideo rojaltivapaalla musiikilla
+
+Hauskaa seuraavalle reissulle! Palautetta voi lähettää osoitteessa camtrip.app.

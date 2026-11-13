@@ -1,0 +1,8 @@
+A primeira versão do CamTrip!
+
+• Cria um grupo e convida amigos com um código, código QR ou link
+• Fotografa com a câmara retro: Film, Instant, Descartável e, com o Pro, também P&B, Golden e Chrome
+• Todos veem cada foto na hora, e ela fica também no teu álbum
+• Vídeo resumo automático com música sem direitos de autor
+
+Diverte-te na próxima viagem! Comentários são bem-vindos em camtrip.app.

@@ -1,9 +1,9 @@
 One camera roll for the whole group.
 
-With CamTrip everyone in your group shoots photos with a retro camera, and everyone sees them right away. No more endless "can you send me the photos?" messages. After the holiday, the party or the weekend away you share one album, plus a recap video that makes itself.
+With CamTrip everyone in your group shoots photos with a retro camera, and everyone sees them right away. No more endless "can you send me the photos?" messages. After the vacation, the party or the weekend away you share one album, plus a recap video that makes itself.
 
 HOW IT WORKS
-• Create a group: holiday (with start and end date), event (one day or evening) or always open (your regular friend group)
+• Create a group: trip (with start and end date), event (one day or evening) or always open (your regular friend group)
 • Invite friends with a 6-character code, a QR code or a link
 • Shoot photos and short videos with the retro camera
 • Every photo is shared with the group instantly
@@ -11,8 +11,8 @@ HOW IT WORKS
 RETRO CAMERA STYLES
 • Film - warm colors, grain and an orange date stamp
 • Instant - soft colors and a white border
-• Wegwerp (disposable) - harsh flash, vignette and light leaks
-• Z/W (black and white), Golden and Chrome - extra styles with CamTrip Pro
+• Disposable - harsh flash, vignette and light leaks
+• B&W, Golden and Chrome - extra styles with CamTrip Pro
 
 EVERYTHING IN ONE PLACE
 • Gallery with a timeline per day
@@ -32,20 +32,19 @@ Notifications about new photos are bundled, so your phone does not buzz all day.
 
 FREE
 • Up to 10 members per group
-• 3 camera styles: Film, Instant and Wegwerp
+• 3 camera styles: Film, Instant and Disposable
 • Free groups are removed 30 days after the end date, so save your favorites in time
 
 CAMTRIP PRO
-• All camera styles (Z/W, Golden, Chrome)
+• All camera styles (B&W, Golden, Chrome)
 • Unlimited members and storage, photos are kept forever
 • Recap videos without watermark
 • Download in original quality
+• One Pro member unlocks Pro for the whole group
 
-CamTrip Pro costs €7.99 per month or €49.99 per year (or the equivalent in your local currency). The yearly plan starts with a 7-day free trial. Payment is charged to your Apple ID account at confirmation of purchase. The subscription renews automatically unless it is canceled at least 24 hours before the end of the current period. You can manage and cancel your subscription in your Apple ID account settings. Any unused portion of the free trial is forfeited when you purchase a subscription.
+CamTrip Pro costs €7.99 per month or €49.99 per year (or the equivalent in your local currency). The yearly plan starts with a 7-day free trial. Payment is charged to your Apple Account at confirmation of purchase. The subscription renews automatically unless it is canceled at least 24 hours before the end of the current period. You can manage and cancel your subscription in your Apple Account settings. Any unused portion of the free trial is forfeited when you purchase a subscription.
 
 Sign in with Apple or Google.
-
-Note: the app is currently in Dutch.
 
 Privacy policy: https://camtrip.app/privacy
 Terms of use: https://camtrip.app/voorwaarden
