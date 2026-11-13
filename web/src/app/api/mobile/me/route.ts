@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { Group, Photo, Report, User, type UserDoc } from '@/lib/models';
+import { AuthAttempt, Group, HiddenPhoto, Photo, Report, User, type UserDoc } from '@/lib/models';
+import { attemptKeyPattern, groupTraceUpdate } from '@/lib/cleanup';
 import { body, handler, json } from '@/lib/http';
 import { publicUser, requireUser, syncAdminRole } from '@/lib/auth';
 import { deleteKeys } from '@/lib/storage';
@@ -35,9 +36,14 @@ export const PATCH = handler(async (req) => {
  * Account deletion (required by the App Store). Removes the user's own photos
  * and their memberships. Groups they created pass to the longest-standing
  * remaining member; a group nobody is left in is deleted with its media.
+ * Also removes every personal trace: push tokens (first, so nothing is sent
+ * during deletion), hidden-photo records, reactions, favorites, archive flags,
+ * blocks in other accounts, reports they filed and rate-limit records for
+ * their address. Reports about their photos stay, for moderation.
  */
 export const DELETE = handler(async (req) => {
   const user = await requireUser(req);
+  await User.updateOne({ _id: user._id }, { $set: { pushTokens: [] } });
 
   // Sign in with Apple: revoke the user's tokens at Apple (guideline 5.1.1(v)).
   // Never throws, so deletion goes ahead even if Apple is unreachable.
@@ -47,6 +53,7 @@ export const DELETE = handler(async (req) => {
   const myPhotos = await Photo.find({ userId: user._id }, { originalKey: 1, displayKey: 1, thumbKey: 1, groupId: 1 }).lean();
   await deleteKeys(myPhotos.flatMap((p) => [p.originalKey, p.displayKey, p.thumbKey]));
   await Photo.deleteMany({ userId: user._id });
+  await HiddenPhoto.deleteMany({ $or: [{ userId: user._id }, { photoId: { $in: myPhotos.map((p) => p._id) } }] });
 
   const groups = await Group.find({ 'members.userId': user._id }).lean();
   for (const g of groups) {
@@ -55,6 +62,7 @@ export const DELETE = handler(async (req) => {
       const left = await Photo.find({ groupId: g._id }, { originalKey: 1, displayKey: 1, thumbKey: 1 }).lean();
       await deleteKeys(left.flatMap((p) => [p.originalKey, p.displayKey, p.thumbKey]));
       await Photo.deleteMany({ groupId: g._id });
+      await HiddenPhoto.deleteMany({ groupId: g._id });
       await Group.deleteOne({ _id: g._id });
       continue;
     }
@@ -82,7 +90,13 @@ export const DELETE = handler(async (req) => {
   await Photo.updateMany({ 'reactions.userId': user._id }, { $pull: { reactions: { userId: user._id } } });
   await Photo.updateMany({ favoritedBy: user._id }, { $pull: { favoritedBy: user._id } });
   await User.updateMany({ blockedUserIds: user._id }, { $pull: { blockedUserIds: user._id } });
+  await Group.updateMany(
+    { $or: [{ archivedBy: user._id }, { [`lastNotified.${user._id}`]: { $exists: true } }] },
+    groupTraceUpdate(String(user._id)),
+  );
   await Report.deleteMany({ reporterId: user._id });
+  const attempts = attemptKeyPattern(user.email ?? '');
+  if (attempts) await AuthAttempt.deleteMany({ key: attempts });
 
   await User.deleteOne({ _id: user._id });
   return json({ ok: true });

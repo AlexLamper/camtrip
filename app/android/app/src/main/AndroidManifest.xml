@@ -11,6 +11,7 @@
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
         android:label="CamTrip"
+        android:localeConfig="@xml/locales_config"
         android:requestLegacyExternalStorage="true"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

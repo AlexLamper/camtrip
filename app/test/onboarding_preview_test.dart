@@ -14,6 +14,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/l10n.dart';
 import 'support/real_fonts.dart';
 
 class _SignedOut extends AuthController {
@@ -42,7 +43,7 @@ void main() {
         key: key,
         child: ProviderScope(
           overrides: [authProvider.overrideWith(_SignedOut.new)],
-          child: MaterialApp(theme: CT.theme(), debugShowCheckedModeBanner: false, home: const OnboardingScreen()),
+          child: localizedApp(theme: CT.theme(), debugShowCheckedModeBanner: false, home: const OnboardingScreen()),
         ),
       ));
       final context = tester.element(find.byType(OnboardingScreen));

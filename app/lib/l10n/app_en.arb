@@ -1,0 +1,1166 @@
+{
+  "@@locale": "en",
+  "cancel": "Cancel",
+  "yes": "Yes",
+  "inviteMessageIntro": "Want to join \"{groupName}\" on CamTrip? Then we see each other's photos right away.",
+  "@inviteMessageIntro": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteMessageCode": "Or enter the code: {code}",
+  "@inviteMessageCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "memberFallbackName": "Friend",
+  "reportReasonInappropriate": "Inappropriate or offensive",
+  "reportReasonSpam": "Spam",
+  "reportReasonOther": "Something else",
+  "dateRangeSameMonth": "{month} {startDay}-{endDay}",
+  "@dateRangeSameMonth": {
+    "placeholders": {
+      "startDay": {
+        "type": "String"
+      },
+      "endDay": {
+        "type": "String"
+      },
+      "month": {
+        "type": "String"
+      },
+      "monthNum": {
+        "type": "String"
+      },
+      "endDate": {
+        "type": "String"
+      }
+    }
+  },
+  "errorOffline": "No connection. Try again in a moment.",
+  "errorSomethingWrongStatus": "Something went wrong ({status})",
+  "@errorSomethingWrongStatus": {
+    "placeholders": {
+      "status": {
+        "type": "int"
+      }
+    }
+  },
+  "errorSomethingWrong": "Something went wrong",
+  "apiInvalidCredentials": "E-mail address or password is incorrect",
+  "apiInvalidCode": "This code is incorrect or has expired. Request a new code.",
+  "apiEmailTaken": "An account with this e-mail address already exists. Sign in, or choose \"Forgot password?\".",
+  "apiEmailTakenProvider": "An account with this e-mail address already exists. Sign in with {provider}.",
+  "@apiEmailTakenProvider": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "apiWeakPassword": "Choose a password of at least {min} characters",
+  "@apiWeakPassword": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "apiNameTooLong": "Your name can be at most {max} characters",
+  "@apiNameTooLong": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "apiRateLimited": "Too many attempts. Try again in 15 minutes.",
+  "apiAccountBanned": "Your account has been blocked. Contact {email} if you think this is a mistake.",
+  "@apiAccountBanned": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "apiProRequired": "This camera style is part of CamTrip Pro",
+  "apiGroupClosed": "This group has been closed",
+  "apiGroupCodeNotFound": "No group found with this code",
+  "apiGroupFull": "This group is full (max. {max} members). If one member has CamTrip Pro, anyone can join.",
+  "@apiGroupFull": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "apiLastMember": "You are the last member. Delete the group instead.",
+  "apiAdminRequired": "Only for CamTrip administrators",
+  "apiUploadIncomplete": "The upload is not complete",
+  "apiInvalidInput": "Invalid input",
+  "apiNotSignedIn": "Not signed in",
+  "apiAccountGone": "This account no longer exists",
+  "apiPhotoNotFound": "Photo not found",
+  "apiGroupNotFound": "Group not found",
+  "apiMemberNotFound": "Member not found",
+  "apiPersonNotFound": "Person not found",
+  "apiUserNotFound": "User not found",
+  "apiAdminOnly": "Only an admin can do this",
+  "apiCannotBlockSelf": "You can't block yourself",
+  "apiCannotReportOwn": "You can't report your own photo",
+  "apiDeleteOwnOnly": "You can only delete your own photos",
+  "apiOwnerCannotBeRemoved": "The group's creator can't be removed",
+  "apiOwnerStaysAdmin": "The creator always stays an admin",
+  "apiNeedsOneAdmin": "A group needs at least one admin",
+  "apiEndBeforeStart": "The end date is before the start date",
+  "apiPermanentNoEndDate": "A group that's always open has no end date",
+  "apiCannotBanAdmin": "An administrator can't be blocked",
+  "apiReportNotFound": "Report not found",
+  "apiPhotoOwnerUnknown": "The person who took this photo is no longer known",
+  "validationNameRequired": "Enter your name",
+  "validationMaxChars": "At most {max} characters",
+  "@validationMaxChars": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "validationEmailRequired": "Enter your e-mail address",
+  "validationEmailInvalid": "This e-mail address isn't valid",
+  "validationPasswordRequired": "Choose a password",
+  "validationMinChars": "At least {min} characters",
+  "@validationMinChars": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "validationPasswordTooLong": "This password is too long",
+  "validationPasswordEmpty": "Enter your password",
+  "validationCodeRequired": "Enter the code from the e-mail",
+  "validationCodeDigits": "The code has 6 digits",
+  "onboarding1Title": "One roll\nfor the whole group.",
+  "onboarding1Body": "Shoot with a retro camera. Everyone sees your photos instantly, and they're right in your own album too.",
+  "onboarding2Title": "No more\nsending photos around.",
+  "onboarding2Body": "Create a group, share the code, done. Never again \"can you send me those photos?\"",
+  "onboarding3Title": "A recap video\nafterwards.",
+  "onboarding3Body": "CamTrip makes a video with music of your best moments together.",
+  "onboardingInvited": "You've been invited! Sign in to join.",
+  "signInAppleFailed": "Signing in with Apple didn't work",
+  "signInGoogleFailed": "Signing in with Google didn't work",
+  "signInFailed": "Signing in didn't work",
+  "next": "Next",
+  "legalPrefix": "By continuing you agree to the ",
+  "legalTerms": "terms",
+  "legalAnd": " and the ",
+  "legalPrivacy": "privacy policy",
+  "legalSuffix": ".",
+  "continueWithApple": "Continue with Apple",
+  "continueWithGoogle": "Continue with Google",
+  "createAccount": "Create account",
+  "signIn": "Sign in",
+  "or": "or",
+  "registerSubtitle": "So your friends can see who took the photos.",
+  "loginSubtitle": "Welcome back.",
+  "forgotPasswordTitle": "Forgot password",
+  "forgotPasswordPushSubtitle": "Still signed in somewhere? We'll send a 6-digit code there as a push notification so you can set a new password.",
+  "newPassword": "New password",
+  "resetPushInfo": "If you're still signed in somewhere, you'll get a push notification there with a code. Can't get in? Sign in with Apple or Google using the same e-mail address - your account will be linked.",
+  "sendCode": "Send code",
+  "savePassword": "Save password",
+  "errorTryAgain": "Something went wrong. Please try again.",
+  "back": "Back",
+  "name": "Name",
+  "email": "E-mail address",
+  "codeFromPush": "Code from the notification",
+  "password": "Password",
+  "hidePassword": "Hide password",
+  "showPassword": "Show password",
+  "forgotPasswordLink": "Forgot password?",
+  "haveAccount": "Already have an account?",
+  "newToCamTrip": "New to CamTrip?",
+  "rememberedIt": "Remembered it?",
+  "noCodeReceived": "Didn't get a code?",
+  "resendCode": "Send again",
+  "onboardingDemoRoll": "{count, plural, =1{1 photographer, 1 roll} other{{count} photographers, 1 roll}}",
+  "@onboardingDemoRoll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "membersCount": "{count, plural, =1{1 member} other{{count} members}}",
+  "@membersCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photosCount": "{count, plural, =1{1 photo} other{{count} photos}}",
+  "@photosCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "videosCount": "{count, plural, =1{1 video} other{{count} videos}}",
+  "@videosCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "justNow": "now",
+  "badgeNew": "New",
+  "recapTitle": "Recap {groupName}",
+  "@recapTitle": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "styleFilm": "Film",
+  "styleInstant": "Instant",
+  "styleDisposable": "Disposable",
+  "styleBw": "B&W",
+  "styleGolden": "Golden",
+  "styleChrome": "Chrome",
+  "styleFilmDescription": "Warm colours, grain and an orange date stamp",
+  "styleInstantDescription": "Soft colours and a white border",
+  "styleDisposableDescription": "Harsh flash, vignette and light leaks",
+  "styleBwDescription": "Grainy black and white with deep contrast",
+  "styleGoldenDescription": "Always golden hour, a soft golden glow",
+  "styleChromeDescription": "Cool, saturated and sharp, like slide film",
+  "shutterStopRecording": "Stop recording",
+  "shutterStartRecording": "Start video recording",
+  "shutterTakePhoto": "Take photo",
+  "modePhoto": "Photo",
+  "modeVideo": "Video",
+  "cameraNotFound": "No camera found",
+  "cameraAccessNeeded": "CamTrip needs access to your camera. Turn it on in Settings.",
+  "cameraStartFailed": "The camera couldn't start",
+  "albumAccessNeeded": "Give CamTrip access to your photos to also save them to your album",
+  "albumSaveFailed": "Saving to your album didn't work. The photo is still shared.",
+  "styleProFallback": "This style is part of Pro. In this group you shoot with {style}.",
+  "@styleProFallback": {
+    "placeholders": {
+      "style": {
+        "type": "String"
+      }
+    }
+  },
+  "photoFailed": "Taking the photo didn't work. Please try again.",
+  "recordingFailed": "Recording video didn't work",
+  "videoFailed": "Making the video didn't work. Please try again.",
+  "shootInGroup": "Shoot in group",
+  "close": "Close",
+  "flash": "Flash",
+  "flashOn": "On",
+  "flashOff": "Off",
+  "flashAuto": "Auto",
+  "chooseGroup": "Choose group",
+  "switchCamera": "Switch camera",
+  "createOrJoinFirst": "Create or join a group first",
+  "proViaGroup": "Pro via the group",
+  "proViaName": "Pro via {name}",
+  "@proViaName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "proStylesFreeViaMember": "Pro styles in this group are free for you thanks to a Pro member",
+  "proStylesFreeViaName": "Pro styles in this group: free for you thanks to {name}",
+  "@proStylesFreeViaName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionsUnavailable": "Subscriptions aren't available right now. Please try again later.",
+  "paymentPending": "Your payment is still being processed. Pro turns on as soon as it's done.",
+  "purchaseFailed": "The purchase didn't work. Please try again later.",
+  "restoreUnavailable": "Restoring purchases isn't possible right now. Please try again later.",
+  "restoreFailed": "Restoring didn't work. Please try again later.",
+  "welcomePro": "Welcome to CamTrip Pro! 🎉",
+  "proRestored": "Pro has been restored",
+  "noPurchaseFound": "No previous purchase found",
+  "periodDays": "{count, plural, =1{1 day} other{{count} days}}",
+  "@periodDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "periodWeeks": "{count, plural, =1{1 week} other{{count} weeks}}",
+  "@periodWeeks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "periodMonths": "{count, plural, =1{1 month} other{{count} months}}",
+  "@periodMonths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "periodYears": "{count, plural, =1{1 year} other{{count} years}}",
+  "@periodYears": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallHavePro": "You have CamTrip Pro",
+  "paywallSubtitle": "Everything for your next trip.",
+  "paywallFeatureStyles": "All camera styles ({styles})",
+  "@paywallFeatureStyles": {
+    "placeholders": {
+      "styles": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallFeatureUnlimited": "Unlimited members and storage, photos are kept forever",
+  "paywallFeatureNoWatermark": "Recaps without a watermark",
+  "paywallFeatureOriginal": "Download in original quality",
+  "planYear": "Year",
+  "planMonth": "Month",
+  "pricePerMonth": "{price} per month",
+  "@pricePerMonth": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallSaveBadge": "SAVE {percent}%",
+  "@paywallSaveBadge": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "planMonthCancelAnytime": "cancel anytime",
+  "tryFree": "Try {period} for free",
+  "@tryFree": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "becomePro": "Get Pro",
+  "subscriptionsLoadFailed": "Subscriptions couldn't be loaded. Check your connection.",
+  "legalAnnual": "CamTrip Pro annual subscription: {price} per year.",
+  "@legalAnnual": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "legalAnnualTrial": "CamTrip Pro annual subscription: {period} free, then {price} per year.",
+  "@legalAnnualTrial": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "legalMonthly": "CamTrip Pro monthly subscription: {price} per month.",
+  "@legalMonthly": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "legalMonthlyTrial": "CamTrip Pro monthly subscription: {period} free, then {price} per month.",
+  "@legalMonthlyTrial": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "legalBillingApple": "Payment is charged to your Apple ID. The subscription renews automatically unless you cancel it at least 24 hours before the end of the period. You can cancel and manage it in your App Store account settings.",
+  "legalBillingGoogle": "Payment is charged to your Google account. The subscription renews automatically unless you cancel it at least 24 hours before the end of the period. You can cancel and manage it in your Google Play account settings.",
+  "restorePurchases": "Restore purchases",
+  "terms": "Terms",
+  "privacy": "Privacy",
+  "groupProTitle": "One Pro in the group = Pro for everyone in that group",
+  "groupProBody": "If one person has Pro, the whole group gets all camera styles, unlimited members, photos that are kept, original quality and recaps without a watermark.",
+  "groupCreated": "Group created ✓",
+  "inviteFriends": "Invite your friends",
+  "codeCopied": "Code copied",
+  "shareLink": "Share link",
+  "inviteSubject": "Join {groupName} on CamTrip",
+  "@inviteSubject": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteMembersUnlimited": "{count, plural, =1{1 member} other{{count} members}} · unlimited (Pro)",
+  "@inviteMembersUnlimited": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "inviteMembersLimit": "{count} of {limit} members · Pro: unlimited",
+  "@inviteMembersLimit": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "toCamera": "Go to the camera",
+  "done": "Done",
+  "joinEnterCode": "Enter the 6-character code",
+  "joinGroupTitle": "Join a group",
+  "joinGroupSubtitle": "Enter your friends' code, or scan their QR code.",
+  "typeCode": "Type code",
+  "scanQr": "Scan QR",
+  "join": "Join",
+  "groupNameRequired": "Give your group a name",
+  "newGroup": "New group",
+  "groupType": "Group type",
+  "groupTypeVacation": "Holiday",
+  "groupTypeVacationDescription": "With a start and end date, then archived",
+  "groupTypeEvent": "Event",
+  "groupTypeEventDescription": "One day or evening, e.g. a party",
+  "groupTypePermanent": "Always open",
+  "groupTypePermanentDescription": "For your regular group of friends",
+  "date": "Date",
+  "departure": "Departure",
+  "returnDate": "Return",
+  "defaultCameraStyle": "Default camera style",
+  "freeLimitPermanent": "Free: up to {max} members. Unlimited with Pro.",
+  "@freeLimitPermanent": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "freeLimitDated": "Free: up to {max} members, photos are kept until {days} days after the end date. Unlimited and forever with Pro.",
+  "@freeLimitDated": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "createGroup": "Create group",
+  "group": "Group",
+  "groupCode": "code {code}",
+  "@groupCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "manage": "Manage",
+  "rename": "Rename",
+  "changeDates": "Change dates",
+  "finishTrip": "Finish trip",
+  "finishTripSubtitle": "Sets the end date to today",
+  "reopenGroup": "Reopen group",
+  "closeGroup": "Close group",
+  "reopenGroupSubtitle": "Members can add photos again",
+  "closeGroupSubtitle": "No one can add photos anymore; everything can still be viewed",
+  "members": "Members",
+  "memberYou": "{name} (you)",
+  "@memberYou": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockedTag": "blocked",
+  "adminTag": "admin",
+  "removeMemberTitle": "Remove {name}?",
+  "@removeMemberTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "removeMemberMessage": "Their photos stay in the group.",
+  "remove": "Delete",
+  "removeMember": "Remove",
+  "blockTitle": "Block {name}?",
+  "@blockTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "blockMessage": "You'll no longer see photos and videos from {name} or get notifications about them. You can undo this in Settings.",
+  "@blockMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "block": "Block",
+  "makeMember": "Make regular member",
+  "makeAdmin": "Make admin",
+  "removeFromGroup": "Remove from group",
+  "unblock": "Unblock",
+  "inviteFriendsButton": "Invite friends",
+  "you": "You",
+  "unarchive": "Restore from archive",
+  "archive": "Archive",
+  "unarchiveSubtitle": "The group is back with your albums",
+  "archiveSubtitle": "Only for you: the group moves to \"{section}\" at the bottom of your albums",
+  "@archiveSubtitle": {
+    "placeholders": {
+      "section": {
+        "type": "String"
+      }
+    }
+  },
+  "archivedSection": "Archived",
+  "hiddenPhotos": "Hidden photos",
+  "hiddenPhotosSubtitle": "Photos you've hidden for yourself",
+  "leaveGroup": "Leave group",
+  "leaveGroupSubtitle": "Your photos stay in the group for the others",
+  "deleteGroup": "Delete group",
+  "deleteGroupSubtitle": "All photos are deleted for everyone",
+  "groupArchived": "\"{groupName}\" archived",
+  "@groupArchived": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "groupUnarchived": "\"{groupName}\" is back with your albums",
+  "@groupUnarchived": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "undo": "Undo",
+  "groupNameTitle": "Group name",
+  "finishTripTitle": "Finish trip?",
+  "finishTripMessage": "The end date becomes today. You can still add photos; the recap is ready.",
+  "finishTripConfirm": "Finish",
+  "tripFinished": "Trip finished",
+  "leaveGroupTitle": "Leave \"{groupName}\"?",
+  "@leaveGroupTitle": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveGroupMessage": "Your photos stay in the group for the others. You can join again later with the code.",
+  "leave": "Leave",
+  "groupDeleted": "\"{groupName}\" has been deleted",
+  "@groupDeleted": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "youAreAdmin": "you're an admin",
+  "open": "Open",
+  "archiveMenuSubtitle": "Only for you, the others won't notice",
+  "deleteGroupMenuSubtitle": "For everyone, with all photos",
+  "deleteGroupTitle": "Delete group?",
+  "deleteGroupMessage": "All {count, plural, =1{1 photo or video} other{{count} photos and videos}} in \"{groupName}\" will disappear for all {memberCount, plural, =1{1 member} other{{memberCount} members}}. This can't be undone.",
+  "@deleteGroupMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "groupName": {
+        "type": "String"
+      },
+      "memberCount": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteGroupOwnRoll": "Your own camera roll stays unchanged.",
+  "deleteGroupTypeName": "Type the group name to confirm:",
+  "deleteForEveryone": "Delete for everyone",
+  "save": "Save",
+  "yourAlbums": "Your albums",
+  "uploadQueue": "Upload queue",
+  "noConnection": "No connection",
+  "albumsOfflineMessage": "Your albums will load once you're back online. The camera still works.",
+  "retry": "Try again",
+  "noAlbumsTitle": "No albums yet",
+  "noAlbumsMessage": "Create a group for your next trip, or join a friend's with their code.",
+  "haveCode": "I have a code",
+  "joinWithCode": "Join with a code or QR code",
+  "camera": "Camera",
+  "restore": "Restore",
+  "more": "More",
+  "newAlbum": "New",
+  "closedTag": "closed",
+  "activeTag": "active",
+  "uploadFailed": "Upload failed",
+  "queueNoSignal": "No signal.",
+  "queueNoSignalMessage": "Your photos are already in your album and will be shared as soon as you're back online.",
+  "queueWaitingForWifi": "Waiting for Wi-Fi.",
+  "queueWifiOnlyOn": "You have \"{setting}\" turned on.",
+  "@queueWifiOnlyOn": {
+    "placeholders": {
+      "setting": {
+        "type": "String"
+      }
+    }
+  },
+  "queueVideosWifiOnly": "Videos only go over Wi-Fi.",
+  "queueAllShared": "Everything has been shared ✓",
+  "queuePending": "{items} still to share",
+  "@queuePending": {
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
+  },
+  "queuePendingBoth": "{photos} and {videos} still to share",
+  "@queuePendingBoth": {
+    "placeholders": {
+      "photos": {
+        "type": "String"
+      },
+      "videos": {
+        "type": "String"
+      }
+    }
+  },
+  "retryUpload": "Try again",
+  "removeFromQueue": "Remove from queue",
+  "queueStatusWifi": "Wi-Fi",
+  "queueStatusWaiting": "waiting",
+  "videosWifiOnlyTitle": "Videos over Wi-Fi only",
+  "videosWifiOnlySubtitle": "Saves your mobile data",
+  "retryNow": "Try again now",
+  "yourName": "Your name",
+  "settings": "Settings",
+  "tapToChangeName": "Tap to change your name",
+  "getCamTripPro": "Get CamTrip Pro",
+  "photos": "Photos",
+  "saveOwnPhotos": "Save my own photos to an album per group",
+  "autoSaveOthers": "Automatically save others' photos",
+  "wifiOnlyTitle": "Upload over Wi-Fi only",
+  "dateStamp": "Date stamp",
+  "notifications": "Notifications",
+  "notifyNewPhotos": "New photos (bundled)",
+  "notifyRecapReady": "Recap ready",
+  "camTripTeam": "CamTrip team",
+  "adminEntrySubtitle": "Users, giving Pro, reports and stats",
+  "account": "Account",
+  "manageSubscription": "Manage subscription",
+  "blockedPeople": "Blocked people",
+  "nobody": "Nobody",
+  "peopleCount": "{count, plural, =1{1 person} other{{count} people}}",
+  "@peopleCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "privacyPolicy": "Privacy policy",
+  "contact": "Contact",
+  "signOut": "Sign out",
+  "deleteAccount": "Delete account",
+  "deleteAccountSubtitle": "Deletes your account and all your photos",
+  "deleteAccountTitle": "Delete account?",
+  "deleteAccountMessage": "Your account and all your photos and videos will be deleted, including from the groups. Cancel any active subscription in the App Store or Google Play.",
+  "blockedTitle": "Blocked",
+  "blockedSubtitle": "You don't see photos from these people.",
+  "blockedNone": "You haven't blocked anyone.",
+  "unblockShort": "Unblock",
+  "groupGone": "This group no longer exists, or you're no longer a member.",
+  "photosSavedToAlbum": "{count, plural, =1{1 photo saved to \"{album}\"} other{{count} photos saved to \"{album}\"}}",
+  "@photosSavedToAlbum": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "album": {
+        "type": "String"
+      }
+    }
+  },
+  "photosDeleted": "{count, plural, =1{1 photo deleted} other{{count} photos deleted}}",
+  "@photosDeleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photosDeletedSkipped": "{count, plural, =1{1 photo deleted} other{{count} photos deleted}}, {skipped} skipped",
+  "@photosDeletedSkipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "skipped": {
+        "type": "int"
+      }
+    }
+  },
+  "photosHiddenForYou": "{count, plural, =1{1 photo hidden for you} other{{count} photos hidden for you}}",
+  "@photosHiddenForYou": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addedToFavorites": "Added to favourites",
+  "removedFromFavorites": "Removed from favourites",
+  "photoAccessSettings": "Give CamTrip access to your photos in Settings",
+  "photosBeingAdded": "{count, plural, =1{1 photo is being added} other{{count} photos are being added}}",
+  "@photosBeingAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photosUnreadable": "{count, plural, =1{1 photo couldn't be read} other{{count} photos couldn't be read}}",
+  "@photosUnreadable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "groupNotLoaded": "Group not loaded",
+  "noFavoritesTitle": "No favourites yet",
+  "noPhotosTitle": "No photos yet",
+  "noFavoritesMessage": "Tap the star on a photo to put it here.",
+  "noPhotosMessage": "Take the first photo. Everyone in the group sees it right away.",
+  "openCamera": "Open the camera",
+  "savingProgress": "Saving... {done}/{total}",
+  "@savingProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "choosePhotos": "Choose photos",
+  "selectedCount": "{count} selected",
+  "@selectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "selectNone": "Select none",
+  "selectAll": "Select all",
+  "photosWaitingToShare": "{count, plural, =1{1 photo waiting to be shared} other{{count} photos waiting to be shared}}",
+  "@photosWaitingToShare": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recapReadyTitle": "Your recap is ready",
+  "recapReadySubtitle": "A video with music of your trip",
+  "watch": "Watch",
+  "makeRecapNow": "Make a recap video now",
+  "freeGroupDeleteNotice": "Free group: photos are kept until {date}. Save them or get Pro.",
+  "@freeGroupDeleteNotice": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "filterAll": "All",
+  "filterFavorites": "Favourites",
+  "filterPerPerson": "By person",
+  "filterPerson": "Person",
+  "select": "Select",
+  "hiddenFilter": "Hidden",
+  "photosBy": "Photos by...",
+  "uploadedTag": "uploaded",
+  "saveAll": "Save all",
+  "favorite": "Favourite",
+  "unfavorite": "Unfavourite",
+  "hide": "Hide",
+  "delete": "Delete",
+  "deletePhotosTitle": "{count, plural, =1{Delete photo?} other{Delete {count} photos?}}",
+  "@deletePhotosTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deletePhotosMessage": "{count, plural, =1{It disappears for everyone in the group. This can't be undone.} other{They disappear for everyone in the group. This can't be undone.}}",
+  "@deletePhotosMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deletePhotosNotAllowed": "{count, plural, =1{1 photo belongs to someone else. It stays; only an admin can delete it.} other{{count} photos belong to someone else. They stay; only an admin can delete them.}}",
+  "@deletePhotosNotAllowed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "photosBackInGroup": "{count, plural, =1{1 photo is back in the group} other{{count} photos are back in the group}}",
+  "@photosBackInGroup": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "showAll": "Show all",
+  "hiddenPhotosExplainer": "Only you no longer see these photos. For the others in the group they're still there.",
+  "nothingHidden": "Nothing hidden",
+  "nothingHiddenMessage": "Photos you hide will show up here.",
+  "showAgainCount": "Show again ({count})",
+  "@showAgainCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "someone": "Someone",
+  "savedToAlbum": "Saved to your photo album",
+  "share": "Share",
+  "shareFailed": "Sharing didn't work",
+  "reportTitle": "Why are you reporting this photo?",
+  "reportSubtitle": "We review every report within 24 hours. The photo is hidden for you right away.",
+  "reportThanks": "Thanks, we'll look into it",
+  "blockMessageAllGroups": "You'll no longer see photos and videos from {name} in any group, or get notifications about them. You can undo this in Settings.",
+  "@blockMessageAllGroups": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "userBlocked": "{name} has been blocked",
+  "@userBlocked": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "videoHiddenForYou": "Video hidden for you",
+  "photoHiddenForYou": "Photo hidden for you",
+  "setAsCover": "Set as cover",
+  "coverUpdated": "Cover photo updated",
+  "hideForMe": "Hide for me",
+  "hideForMeSubtitle": "The others in the group can still see it",
+  "reportPhoto": "Report photo",
+  "blockName": "Block {name}",
+  "@blockName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "forEveryoneInGroup": "For everyone in the group",
+  "videoDeleted": "Video deleted",
+  "photoDeleted": "Photo deleted",
+  "photoAccessToSave": "Give CamTrip access to your photos in Settings to save them",
+  "phoneFull": "Your phone is full",
+  "albumSaveFailedShort": "Saving to your album didn't work",
+  "recapTemplateGoldenHour": "Golden Hour",
+  "recapTemplateFast": "Fast",
+  "recapTemplateFilmRoll": "Film roll",
+  "recapTemplatePolaroid": "Polaroid",
+  "trackSummerEvening": "Summer Evening",
+  "trackGoldenHour": "Golden Hour",
+  "trackRoadtrip": "Road Trip",
+  "moodWarm": "warm",
+  "moodCheerful": "upbeat",
+  "friendsCount": "{count, plural, =1{1 friend} other{{count} friends}}",
+  "@friendsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "madeWithCamTrip": "Made with CamTrip",
+  "tagline": "One roll for the whole group",
+  "videoUnsupportedDevice": "Making the video didn't work on this device",
+  "groupLoadFailed": "This group couldn't be loaded.",
+  "recapNeedsPhotos": "You need at least {count} photos for a recap.",
+  "@recapNeedsPhotos": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "recapFailed": "Making the recap didn't work. Please try again.",
+  "recapSaved": "Recap saved to your photo album",
+  "recap": "Recap",
+  "recapRendering": "Making recap...",
+  "videoRendering": "Making video...",
+  "template": "Template",
+  "musicLicense": "CamTrip's own music · royalty-free",
+  "change": "Change",
+  "noWatermark": "No watermark ✓",
+  "removeWatermarkPro": "Remove the watermark with Pro",
+  "proSourceSubscription": "Subscription",
+  "proSourceGift": "Gift",
+  "proSourceAdmin": "Admin",
+  "proSourceGroup": "Via group",
+  "noPro": "No Pro",
+  "proStatusNoEnd": "Pro ({source}), no end date",
+  "@proStatusNoEnd": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "proStatusUntil": "Pro ({source}), until {date}",
+  "@proStatusUntil": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "lifetime": "Lifetime",
+  "pickDate": "Pick a date",
+  "noAccess": "No access",
+  "adminOnlyTeam": "Admin is only for the CamTrip team.",
+  "adminOverview": "Overview",
+  "adminUsers": "Users",
+  "adminReports": "Reports",
+  "adminsCount": "{count, plural, =1{1 admin} other{{count} admins}}",
+  "@adminsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminNewThisWeek": "New this week",
+  "adminGroups": "Groups",
+  "adminProSubscription": "Pro via subscription",
+  "adminProGift": "Pro as a gift",
+  "adminWithoutSubscription": "{count} without a subscription",
+  "@adminWithoutSubscription": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminOpenReports": "Open reports",
+  "adminSearchHint": "Search by name or e-mail",
+  "nobodyFound": "Nobody found",
+  "loadMore": "Load more",
+  "noEmail": "No e-mail",
+  "adminDeletePhotoMessage": "The photo disappears for everyone in \"{groupName}\". All reports on this photo are resolved.",
+  "@adminDeletePhotoMessage": {
+    "placeholders": {
+      "groupName": {
+        "type": "String"
+      }
+    }
+  },
+  "adminBanMessage": "This account can no longer sign in or use the app. You can undo this later.",
+  "adminDismissTitle": "Dismiss report?",
+  "adminDismissMessage": "The photo stays. The report is marked as resolved.",
+  "adminDismiss": "Dismiss",
+  "adminAccountBlocked": "Account blocked",
+  "adminReportDismissed": "Report dismissed",
+  "adminNoReports": "No open reports",
+  "adminNoReportsMessage": "Reported photos show up here.",
+  "deletedTag": "Deleted",
+  "adminReportedBy": "By {name}",
+  "@adminReportedBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminPhotoBy": "Photo by {name}",
+  "@adminPhotoBy": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "reportsCount": "{count, plural, =1{1 report} other{{count} reports}}",
+  "@reportsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminDeletePhoto": "Delete photo",
+  "adminBlockCreator": "Block creator",
+  "loadFailed": "Loading didn't work",
+  "adminLifetimeProGiven": "Lifetime Pro given",
+  "adminProGiven": "Pro given",
+  "adminGiveProUntil": "Give Pro until {date}",
+  "@adminGiveProUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "adminGiveProLifetime": "Give Pro for life",
+  "adminGiveProFor": "Give Pro for {period}",
+  "@adminGiveProFor": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "adminReasonHint": "Reason, e.g. friend, tester, influencer",
+  "adminGivePro": "Give Pro",
+  "adminRevokeTitle": "Revoke gift?",
+  "adminRevokeMessage": "The gifted Pro stops right away. Their own subscription keeps running.",
+  "adminRevoke": "Revoke",
+  "adminGiftRevoked": "Gift revoked",
+  "adminUnbanTitle": "Lift block?",
+  "adminUnbanMessage": "{name} can sign in again.",
+  "@adminUnbanMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminUnbanned": "Block lifted",
+  "adminBanUserMessage": "This account can no longer sign in or use the app. Photos stay.",
+  "adminUser": "User",
+  "adminNotVerified": "not verified",
+  "adminRole": "Role",
+  "adminCreated": "Created",
+  "unknown": "Unknown",
+  "adminSignInWith": "Signs in with",
+  "adminEmailMethod": "E-mail",
+  "adminPhotosAndVideos": "Photos and videos",
+  "adminStatus": "Status",
+  "adminActive": "Active",
+  "adminActiveUntil": "Active until {date}",
+  "@adminActiveUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "adminGiftFrom": "Gift from {name}",
+  "@adminGiftFrom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "adminExpiredOn": "Expired on {date}",
+  "@adminExpiredOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "adminExpired": "Expired",
+  "adminUntil": "Until {date}",
+  "@adminUntil": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "adminGiveProTitle": "Give Pro",
+  "adminGiveProNote": "Also works for this person's groups: one Pro in the group = Pro for everyone in that group.",
+  "adminRevokeGift": "Revoke gift",
+  "adminModeration": "Moderation",
+  "adminCannotBanSelf": "You can't block yourself.",
+  "adminCannotBanAdmin": "An admin can't be blocked.",
+  "adminUnban": "Lift block",
+  "adminBanAccount": "Block account",
+  "googleSignInUnavailable": "Signing in with Google isn't available yet",
+  "@resetPushInfo": {
+    "description": "Shown after \"Forgot password?\": neutral, never says whether the account exists. CamTrip sends no e-mail."
+  }
+}

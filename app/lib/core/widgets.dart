@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../models/models.dart';
 import 'theme.dart';
 
@@ -241,17 +242,18 @@ void showMessage(BuildContext context, String text) {
     ..showSnackBar(SnackBar(content: Text(text)));
 }
 
-Future<bool> confirm(BuildContext context, {required String title, required String message, String ok = 'Ja', bool danger = false}) async {
+Future<bool> confirm(BuildContext context, {required String title, required String message, String? ok, bool danger = false}) async {
+  final l = context.l10n;
   final r = await showDialog<bool>(
     context: context,
     builder: (c) => AlertDialog(
       title: Text(title, style: CT.title(20)),
       content: Text(message, style: CT.text(15, color: CT.muted)),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(c, false), child: Text('Annuleer', style: CT.text(15, color: CT.muted))),
+        TextButton(onPressed: () => Navigator.pop(c, false), child: Text(l.cancel, style: CT.text(15, color: CT.muted))),
         TextButton(
           onPressed: () => Navigator.pop(c, true),
-          child: Text(ok, style: CT.text(15, color: danger ? CT.accent : CT.ink, weight: FontWeight.w600)),
+          child: Text(ok ?? l.yes, style: CT.text(15, color: danger ? CT.accent : CT.ink, weight: FontWeight.w600)),
         ),
       ],
     ),

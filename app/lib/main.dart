@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -15,13 +14,15 @@ import 'features/groups/join_sheet.dart';
 import 'features/notifications/push.dart';
 import 'features/premium/premium_controller.dart';
 import 'features/upload/upload_queue.dart';
+import 'l10n/l10n.dart';
+import 'models/models.dart';
 
 /// Device preferences, loaded before the first frame.
 final prefsProvider = Provider<Prefs>((ref) => throw UnimplementedError('overridden in main'));
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('nl_NL');
+  await initializeDateFormatting(); // date names for every app language
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
   final prefs = await Prefs.load();
 
@@ -39,7 +40,7 @@ class CamTripApp extends ConsumerStatefulWidget {
 
 class _CamTripAppState extends ConsumerState<CamTripApp> {
   StreamSubscription<Uri>? _links;
-  StreamSubscription<String>? _pushOpens;
+  StreamSubscription<PushOpen>? _pushOpens;
   String? _pendingCode;
 
   @override
@@ -47,7 +48,16 @@ class _CamTripAppState extends ConsumerState<CamTripApp> {
     super.initState();
     final appLinks = AppLinks();
     _links = appLinks.uriLinkStream.listen(_handleLink);
-    _pushOpens = ref.read(pushOpenProvider).stream.listen((groupId) => ref.read(routerProvider).push('/group/$groupId'));
+    _pushOpens = ref.read(pushOpenProvider).stream.listen((open) async {
+      // A tap can come in at launch, before the profile is loaded.
+      AppUser? user;
+      try {
+        user = await ref.read(authProvider.future);
+      } catch (_) {}
+      if (!mounted) return;
+      final route = open.route(isAdmin: user?.isAppAdmin ?? false);
+      if (route != null) ref.read(routerProvider).push(route);
+    });
     ref.read(pushProvider); // registers the APNs channel handler
     // Keep the upload queue alive for the whole session.
     ref.read(uploadQueueProvider);
@@ -95,13 +105,10 @@ class _CamTripAppState extends ConsumerState<CamTripApp> {
       debugShowCheckedModeBanner: false,
       theme: CT.theme(),
       routerConfig: ref.watch(routerProvider),
-      locale: const Locale('nl'),
-      supportedLocales: const [Locale('nl'), Locale('en')],
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
+      // Follows the phone's language: one of ours, otherwise English.
+      supportedLocales: L10n.supportedLocales,
+      localeListResolutionCallback: L10n.resolveList,
+      localizationsDelegates: L10n.delegates,
     );
   }
 }

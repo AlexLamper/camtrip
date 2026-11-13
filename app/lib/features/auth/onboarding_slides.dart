@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 
 /// Photos for the onboarding visuals: real CC0 holiday shots, processed with
 /// CamTrip's own camera styles (see assets/images/onboarding/LICENSES.md).
@@ -190,7 +191,7 @@ class _GroupRoll extends StatelessWidget {
                       child: Text.rich(
                         TextSpan(children: [
                           TextSpan(text: "Mallorca '26", style: CT.text(12, weight: FontWeight.w600, height: 1)),
-                          TextSpan(text: '  ·  3 fotografen, 1 rolletje', style: CT.text(12, color: CT.muted, height: 1)),
+                          TextSpan(text: '  ·  ${context.l10n.onboardingDemoRoll(3)}', style: CT.text(12, color: CT.muted, height: 1)),
                         ]),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -250,7 +251,7 @@ class _LiveGallery extends StatelessWidget {
                   const _Dots(),
                 ]),
                 const SizedBox(height: 3),
-                Text('6 leden  ·  128 foto\'s', style: CT.text(9.5, color: CT.muted, height: 1.2)),
+                Text('${context.l10n.membersCount(6)}  ·  ${context.l10n.photosCount(128)}', style: CT.text(9.5, color: CT.muted, height: 1.2)),
                 const SizedBox(height: 10),
                 Wrap(spacing: 6, runSpacing: 8, children: [
                   for (var i = 0; i < 9; i++)
@@ -302,7 +303,7 @@ class _LiveGallery extends StatelessWidget {
                 child: InstantPrint(
                   rotation: 6,
                   bottom: 30,
-                  caption: const _Caption('M', 'Milan  ·  nu', _milan),
+                  caption: _Caption('M', 'Milan  ·  ${context.l10n.justNow}', _milan),
                   child: _photo(OnboardingPhotos.walk),
                 ),
               ),
@@ -322,7 +323,7 @@ class _LiveGallery extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
               decoration: BoxDecoration(color: CT.accent, borderRadius: BorderRadius.circular(12), boxShadow: CT.cardShadow),
-              child: Text('Nieuw', style: CT.text(11, color: Colors.white, weight: FontWeight.w700, height: 1)),
+              child: Text(context.l10n.badgeNew, style: CT.text(11, color: Colors.white, weight: FontWeight.w700, height: 1)),
             ),
           ),
         ),
@@ -473,13 +474,13 @@ class _VideoCard extends StatelessWidget {
             right: 12,
             bottom: 11,
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text("Recap Mallorca '26", maxLines: 1, style: CT.title(14, color: Colors.white)),
+              Text(context.l10n.recapTitle("Mallorca '26"), maxLines: 1, style: CT.title(14, color: Colors.white)),
               const SizedBox(height: 3),
               Row(children: [
                 const Icon(Icons.music_note_rounded, size: 12, color: Colors.white70),
                 const SizedBox(width: 3),
                 Flexible(
-                  child: Text('Golden hour  ·  0:45',
+                  child: Text('${context.l10n.recapTemplateGoldenHour}  ·  0:45',
                       maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(10, color: Colors.white70, height: 1)),
                 ),
               ]),

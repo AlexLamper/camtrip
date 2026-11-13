@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api.dart';
-import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 import 'gallery_controller.dart';
 
@@ -48,7 +48,7 @@ class _HiddenPhotosScreenState extends ConsumerState<HiddenPhotosScreen> {
       await _ctrl.unhide(photos);
       if (!mounted) return;
       setState(() => _picked.removeAll(photos.map((p) => p.id)));
-      showMessage(context, '${Fmt.count(photos.length, 'foto staat', 'foto\'s staan')} weer in de groep');
+      showMessage(context, context.l10n.photosBackInGroup(photos.length));
     } catch (e) {
       if (mounted) showMessage(context, ApiException.from(e).message);
     } finally {
@@ -62,15 +62,16 @@ class _HiddenPhotosScreenState extends ConsumerState<HiddenPhotosScreen> {
     final photos = state.photos;
     _picked.retainAll(photos.map((p) => p.id).toSet());
     final picked = photos.where((p) => _picked.contains(p.id)).toList();
+    final l = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Verborgen foto\'s'),
+        title: Text(l.hiddenPhotos),
         actions: [
           if (photos.isNotEmpty)
             TextButton(
               onPressed: _busy ? null : () => _show(photos),
-              child: Text('Alles tonen', style: CT.text(14, color: CT.accent, weight: FontWeight.w600)),
+              child: Text(l.showAll, style: CT.text(14, color: CT.accent, weight: FontWeight.w600)),
             ),
         ],
       ),
@@ -86,7 +87,7 @@ class _HiddenPhotosScreenState extends ConsumerState<HiddenPhotosScreen> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(22, 4, 22, 14),
                   child: Text(
-                    'Alleen jij ziet deze foto\'s niet meer. Voor de anderen in de groep staan ze er gewoon.',
+                    l.hiddenPhotosExplainer,
                     style: CT.text(14, color: CT.muted),
                   ),
                 ),
@@ -95,8 +96,8 @@ class _HiddenPhotosScreenState extends ConsumerState<HiddenPhotosScreen> {
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: EmptyState(
-                    title: 'Niets verborgen',
-                    message: state.error ?? 'Foto\'s die je verbergt, vind je hier terug.',
+                    title: l.nothingHidden,
+                    message: state.error ?? l.nothingHiddenMessage,
                   ),
                 ),
               if (photos.isEmpty && state.loading)
@@ -134,7 +135,7 @@ class _HiddenPhotosScreenState extends ConsumerState<HiddenPhotosScreen> {
             right: 18,
             bottom: 14 + MediaQuery.of(context).padding.bottom,
             child: CTButton(
-              'Weer tonen (${picked.length})',
+              l.showAgainCount(picked.length),
               icon: Icons.visibility_outlined,
               loading: _busy,
               onTap: () => _show(picked),

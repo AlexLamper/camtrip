@@ -2,28 +2,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api.dart';
 import '../../core/format.dart';
+import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 
 DateTime? _date(dynamic v) => v == null ? null : DateTime.tryParse(v.toString());
 int _int(dynamic v) => (v as num?)?.toInt() ?? 0;
 
-/// Dutch label for why someone has Pro.
+/// Label (in the app's language) for why someone has Pro.
 String proSourceLabel(String? source) => switch (source) {
-      'subscription' => 'Abonnement',
-      'gift' => 'Cadeau',
-      'admin' => 'Beheerder',
-      'group' => 'Via groep',
-      _ => 'Geen Pro',
+      'subscription' => L10n.current.proSourceSubscription,
+      'gift' => L10n.current.proSourceGift,
+      'admin' => L10n.current.proSourceAdmin,
+      'group' => L10n.current.proSourceGroup,
+      _ => L10n.current.noPro,
     };
 
 /// "Pro (Cadeau) tot 12 dec 2026" / "Pro (Beheerder), geen einddatum" / "Geen Pro".
 String proStatusText({required bool isPro, String? source, DateTime? until}) {
-  if (!isPro) return 'Geen Pro';
-  final end = until == null ? 'geen einddatum' : 'tot ${Fmt.shortYear(until)}';
-  return 'Pro (${proSourceLabel(source)}), $end';
+  final l = L10n.current;
+  if (!isPro) return l.noPro;
+  return until == null ? l.proStatusNoEnd(proSourceLabel(source)) : l.proStatusUntil(proSourceLabel(source), Fmt.shortYear(until));
 }
 
-/// Dutch label for a report reason id.
+/// Label (in the app's language) for a report reason id.
 String reportReasonLabel(String id) {
   for (final r in ReportReason.values) {
     if (r.name == id) return r.label;
@@ -33,13 +34,17 @@ String reportReasonLabel(String id) {
 
 /// The gift choices in "Pro geven". Ids match the API.
 enum GrantDuration {
-  month('1 maand'),
-  year('1 jaar'),
-  lifetime('Levenslang'),
-  custom('Kies datum');
+  month,
+  year,
+  lifetime,
+  custom;
 
-  const GrantDuration(this.label);
-  final String label;
+  String get label => switch (this) {
+        month => L10n.current.periodMonths(1),
+        year => L10n.current.periodYears(1),
+        lifetime => L10n.current.lifetime,
+        custom => L10n.current.pickDate,
+      };
 }
 
 class AdminPage<T> {
@@ -160,6 +165,9 @@ class AdminApi {
 
   Future<AdminStats> stats() async => AdminStats(await _api.get('/admin/stats'));
 
+  /// Number of open photo reports, for the badge on the Beheer row.
+  Future<int> openReportCount() async => _int((await _api.get('/admin/reports/count'))['open']);
+
   Future<AdminPage<AdminUser>> users({String q = '', int page = 1, int limit = 20}) async =>
       AdminPage.parse(await _api.get('/admin/users', query: {'q': q, 'page': page, 'limit': limit}), AdminUser.new);
 
@@ -189,3 +197,6 @@ class AdminApi {
 }
 
 final adminApiProvider = Provider((ref) => AdminApi(ref.watch(apiProvider)));
+
+/// Open reports, shown as a badge on Instellingen > Beheer. Refreshed when Beheer closes.
+final adminOpenReportsProvider = FutureProvider.autoDispose<int>((ref) => ref.watch(adminApiProvider).openReportCount());

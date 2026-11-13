@@ -11,6 +11,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/api.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 import '../camera/camera_screen.dart' show albumName;
 import '../groups/groups_controller.dart';
@@ -56,7 +57,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
   Future<void> _load() async {
     final group = ref.read(groupProvider(widget.groupId));
     if (group == null) {
-      setState(() => _error = 'Deze groep kon niet geladen worden.');
+      setState(() => _error = context.l10n.groupLoadFailed);
       return;
     }
     _builder = RecapBuilder(group);
@@ -87,7 +88,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
     try {
       final picked = pickRecapPhotos(_all, _template);
       if (picked.length < 3) {
-        setState(() => _error = 'Je hebt minstens 3 foto\'s nodig voor een recap.');
+        setState(() => _error = context.l10n.recapNeedsPhotos(3));
         return;
       }
       final frames = await _builder!.render(
@@ -102,7 +103,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
       _play();
     } catch (e) {
       debugPrint('recap render failed: $e');
-      if (mounted) setState(() => _error = e is ApiException ? e.message : 'Recap maken lukte niet. Probeer het nog eens.');
+      if (mounted) setState(() => _error = e is ApiException ? e.message : context.l10n.recapFailed);
     }
   }
 
@@ -143,7 +144,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
       return await _builder!.export(f, _track, onProgress: (p) => mounted ? setState(() => _exportProgress = p) : null);
     } catch (e) {
       debugPrint('recap export failed: $e');
-      if (mounted) showMessage(context, 'Video maken lukte niet op dit toestel');
+      if (mounted) showMessage(context, context.l10n.videoUnsupportedDevice);
       return null;
     } finally {
       if (mounted) setState(() => _exporting = false);
@@ -156,13 +157,13 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
     if (file == null || group == null) return;
     try {
       if (!await Gal.hasAccess(toAlbum: true) && !await Gal.requestAccess(toAlbum: true)) {
-        if (mounted) showMessage(context, 'Geef CamTrip toegang tot je foto\'s in Instellingen om op te slaan');
+        if (mounted) showMessage(context, context.l10n.photoAccessToSave);
         return;
       }
       await Gal.putVideo(file.path, album: albumName(group));
-      if (mounted) showMessage(context, 'Recap opgeslagen in je fotoalbum');
+      if (mounted) showMessage(context, context.l10n.recapSaved);
     } catch (_) {
-      if (mounted) showMessage(context, 'Opslaan in je album lukte niet');
+      if (mounted) showMessage(context, context.l10n.albumSaveFailedShort);
     }
   }
 
@@ -172,7 +173,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
     try {
       await SharePlus.instance.share(ShareParams(files: [XFile(file.path)]));
     } catch (_) {
-      if (mounted) showMessage(context, 'Delen lukte niet');
+      if (mounted) showMessage(context, context.l10n.shareFailed);
     }
   }
 
@@ -180,11 +181,12 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
   Widget build(BuildContext context) {
     final isPro = ref.watch(proGateProvider(widget.groupId)).unlocked;
     final f = _frames;
+    final l = context.l10n;
     return Scaffold(
       appBar: AppBar(
-        leading: TextButton(onPressed: () => context.pop(), child: Text('Sluit', style: CT.text(15))),
+        leading: TextButton(onPressed: () => context.pop(), child: Text(l.close, style: CT.text(15))),
         leadingWidth: 80,
-        title: Text('Recap', style: CT.title(17)),
+        title: Text(l.recap, style: CT.title(17)),
       ),
       body: SafeArea(
         child: Column(children: [
@@ -203,7 +205,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
                               child: Column(mainAxisSize: MainAxisSize.min, children: [
                                 SizedBox(width: 120, child: LinearProgressIndicator(value: _progress == 0 ? null : _progress, color: CT.accent, backgroundColor: CT.line)),
                                 const SizedBox(height: 10),
-                                Text('Recap maken...', style: CT.text(13, color: CT.muted)),
+                                Text(l.recapRendering, style: CT.text(13, color: CT.muted)),
                               ]),
                             )
                           : GestureDetector(
@@ -239,7 +241,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
                                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                                       SizedBox(width: 140, child: LinearProgressIndicator(value: _exportProgress, color: Colors.white, backgroundColor: Colors.white24)),
                                       const SizedBox(height: 10),
-                                      Text('Video maken...', style: CT.text(14, color: Colors.white, weight: FontWeight.w600)),
+                                      Text(l.videoRendering, style: CT.text(14, color: Colors.white, weight: FontWeight.w600)),
                                     ]),
                                   ),
                               ]),
@@ -251,7 +253,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('TEMPLATE', style: CT.label),
+              Text(l.template.toUpperCase(), style: CT.label),
               const SizedBox(height: 6),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -282,10 +284,10 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text('${_track.title} - ${_track.mood}', style: CT.text(14, weight: FontWeight.w500)),
-                        Text('eigen muziek van CamTrip · rechtenvrij', style: CT.text(11, color: CT.muted)),
+                        Text(l.musicLicense, style: CT.text(11, color: CT.muted)),
                       ]),
                     ),
-                    Text('Wissel', style: CT.text(13, color: CT.muted, weight: FontWeight.w600)),
+                    Text(l.change, style: CT.text(13, color: CT.muted, weight: FontWeight.w600)),
                   ]),
                 ),
               ),
@@ -295,14 +297,14 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
                 const SizedBox(width: 14),
                 GestureDetector(
                   onTap: isPro ? null : () => context.push('/pro'),
-                  child: Text(isPro ? 'Geen watermerk ✓' : 'Watermerk weghalen met Pro', style: CT.text(12, color: isPro ? CT.muted : CT.accent, weight: FontWeight.w500)),
+                  child: Text(isPro ? l.noWatermark : l.removeWatermarkPro, style: CT.text(12, color: isPro ? CT.muted : CT.accent, weight: FontWeight.w500)),
                 ),
               ]),
               const SizedBox(height: 12),
               Row(children: [
-                Expanded(child: CTButton('Opslaan', icon: Icons.download_rounded, onTap: f == null || _exporting ? null : _saveVideo)),
+                Expanded(child: CTButton(l.save, icon: Icons.download_rounded, onTap: f == null || _exporting ? null : _saveVideo)),
                 const SizedBox(width: 10),
-                Expanded(child: CTButton('Delen', kind: CTButtonKind.primary, icon: Icons.ios_share, onTap: f == null || _exporting ? null : _share)),
+                Expanded(child: CTButton(l.share, kind: CTButtonKind.primary, icon: Icons.ios_share, onTap: f == null || _exporting ? null : _share)),
               ]),
               const SizedBox(height: 10),
             ]),

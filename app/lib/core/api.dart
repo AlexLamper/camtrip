@@ -2,10 +2,11 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../l10n/l10n.dart';
 import 'config.dart';
 import 'storage.dart';
 
-/// A failed API call, with the server's Dutch message ready for a snackbar.
+/// A failed API call, with a message in the app's language ready for a snackbar.
 class ApiException implements Exception {
   ApiException(this.message, {this.status, this.code});
   final String message;
@@ -23,17 +24,90 @@ class ApiException implements Exception {
 
   static ApiException from(Object e) {
     if (e is ApiException) return e;
+    final l = L10n.current;
     if (e is DioException) {
       final data = e.response?.data;
       final status = e.response?.statusCode;
       if (data is Map && data['error'] is String) {
-        return ApiException(data['error'] as String, status: status, code: data['code'] as String?);
+        final code = data['code'] as String?;
+        return ApiException(localizeServerError(code, data['error'] as String), status: status, code: code);
       }
-      if (status == null) return ApiException('Geen verbinding. Probeer het zo nog eens.');
-      return ApiException('Er ging iets mis ($status)', status: status);
+      if (status == null) return ApiException(l.errorOffline);
+      return ApiException(l.errorSomethingWrongStatus(status), status: status);
     }
-    return ApiException('Er ging iets mis');
+    return ApiException(l.errorSomethingWrong);
   }
+}
+
+/// The API answers in Dutch ({error, code}). Known codes, and the most common
+/// messages without a code, are shown in the app's language; anything else
+/// falls back to the server's own text.
+String localizeServerError(String? code, String serverMessage) {
+  final l = L10n.current;
+  switch (code) {
+    case 'invalid_credentials':
+      return l.apiInvalidCredentials;
+    case 'invalid_code':
+      return serverMessage.contains('6 cijfers') ? l.validationCodeDigits : l.apiInvalidCode;
+    case 'email_taken':
+      if (serverMessage.contains('met Apple')) return l.apiEmailTakenProvider('Apple');
+      if (serverMessage.contains('met Google')) return l.apiEmailTakenProvider('Google');
+      return l.apiEmailTaken;
+    case 'invalid_email':
+      return serverMessage.startsWith('Vul') ? l.validationEmailRequired : l.validationEmailInvalid;
+    case 'weak_password':
+      return serverMessage.contains('te lang') ? l.validationPasswordTooLong : l.apiWeakPassword(8);
+    case 'invalid_name':
+      return serverMessage.startsWith('Vul') ? l.validationNameRequired : l.apiNameTooLong(40);
+    case 'rate_limited':
+      return l.apiRateLimited;
+    case 'account_banned':
+      return l.apiAccountBanned('support@camtrip.app');
+    case 'pro_required':
+      return l.apiProRequired;
+    case 'archived':
+      return l.apiGroupClosed;
+    case 'not_found':
+      return l.apiGroupCodeNotFound;
+    case 'group_full':
+    case 'member_limit':
+      final max = RegExp(r'max\. (\d+)').firstMatch(serverMessage)?.group(1);
+      return l.apiGroupFull(int.tryParse(max ?? '') ?? 10);
+    case 'last_member':
+      return l.apiLastMember;
+    case 'admin_required':
+      return l.apiAdminRequired;
+    case 'upload_incomplete':
+      return l.apiUploadIncomplete;
+  }
+  return switch (serverMessage) {
+    'Er ging iets mis' => l.errorSomethingWrong,
+    'Ongeldige invoer' => l.apiInvalidInput,
+    'Niet ingelogd' => l.apiNotSignedIn,
+    'Account bestaat niet meer' => l.apiAccountGone,
+    'Foto niet gevonden' => l.apiPhotoNotFound,
+    'Groep niet gevonden' => l.apiGroupNotFound,
+    'Lid niet gevonden' => l.apiMemberNotFound,
+    'Persoon niet gevonden' => l.apiPersonNotFound,
+    'Gebruiker niet gevonden' => l.apiUserNotFound,
+    'Geen groep gevonden met deze code' => l.apiGroupCodeNotFound,
+    'Deze groep is afgesloten' => l.apiGroupClosed,
+    'Alleen de beheerder kan dit doen' => l.apiAdminOnly,
+    'Je kunt jezelf niet blokkeren' => l.apiCannotBlockSelf,
+    'Je kunt je eigen foto niet rapporteren' => l.apiCannotReportOwn,
+    'Je kunt alleen je eigen foto’s verwijderen' => l.apiDeleteOwnOnly,
+    'De maker van de groep kan niet verwijderd worden' => l.apiOwnerCannotBeRemoved,
+    'De maker blijft beheerder' => l.apiOwnerStaysAdmin,
+    'Een groep heeft minstens één beheerder nodig' => l.apiNeedsOneAdmin,
+    'Einddatum ligt voor de begindatum' => l.apiEndBeforeStart,
+    'Een groep die altijd open is heeft geen einddatum' => l.apiPermanentNoEndDate,
+    'Inloggen met Apple is mislukt' => l.signInAppleFailed,
+    'Inloggen met Google is mislukt' => l.signInGoogleFailed,
+    'Een beheerder kan niet geblokkeerd worden' => l.apiCannotBanAdmin,
+    'Melding niet gevonden' => l.apiReportNotFound,
+    'De maker van deze foto is niet meer bekend' => l.apiPhotoOwnerUnknown,
+    _ => serverMessage,
+  };
 }
 
 class Api {

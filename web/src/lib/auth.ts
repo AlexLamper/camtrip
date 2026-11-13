@@ -5,6 +5,7 @@ import { User, type UserDoc } from './models';
 import { HttpError, json } from './http';
 import { normalizeEmail } from './password';
 import { isBootstrapAdmin, parseAdminEmails, userPro } from './entitlements';
+import { linkPlan, newProviderAccount } from './provider';
 
 const SESSION_DAYS = 180;
 
@@ -122,9 +123,10 @@ export async function signInWithProvider(input: {
 
   if (email && input.emailVerified) {
     const account = await User.findOne({ email, passwordHash: { $type: 'string' }, [input.provider]: { $exists: false } });
-    if (account) {
+    const plan = account ? linkPlan(input.emailVerified, account) : 'none';
+    if (account && plan !== 'none') {
       account.set(input.provider, input.sub);
-      if (!account.emailVerified) {
+      if (plan === 'link_drop_password') {
         account.set('passwordHash', undefined);
         account.emailVerified = true;
       }
@@ -135,8 +137,7 @@ export async function signInWithProvider(input: {
 
   const created = await User.create({
     [input.provider]: input.sub,
-    email,
-    emailVerified: Boolean(email && input.emailVerified),
+    ...newProviderAccount(email, input.emailVerified),
     name: input.name || 'Fotograaf',
     avatarColor: randomAvatarColor(),
   });

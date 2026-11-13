@@ -4,6 +4,7 @@ import { handler, HttpError, json, type Params } from '@/lib/http';
 import { requireUser } from '@/lib/auth';
 import { serializePhoto } from '@/lib/photos';
 import { pushToUsers } from '@/lib/push';
+import { newMediaNotice } from '@/lib/push-i18n';
 import { objectExists } from '@/lib/storage';
 
 // One push per person per group per window, however many photos they take:
@@ -57,11 +58,7 @@ export const POST = handler<Params<{ id: string }>>(async (req, { params }) => {
       // Fire and forget: an upload never waits on push delivery.
       pushToUsers(
         others,
-        {
-          title: group.name,
-          body: `${me?.name || 'Iemand'} deelt ${photo.kind === 'video' ? "video's" : "foto's"} in ${group.name}`,
-          data: { type: 'new_photos', groupId: String(group._id) },
-        },
+        (locale) => newMediaNotice(locale, me?.name ?? '', group.name, photo.kind === 'video' ? 'video' : 'photo', String(group._id)),
         'notifyNewPhotos',
       ).catch((e) => console.error('push failed', e));
     }

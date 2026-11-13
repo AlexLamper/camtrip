@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { connectDB } from '@/lib/db';
 import { body, handler, HttpError } from '@/lib/http';
 import { sessionResponse, signInWithProvider } from '@/lib/auth';
+import { googleIdentity } from '@/lib/provider';
 
 const Body = z.object({ idToken: z.string().min(10) });
 const client = new OAuth2Client();
@@ -22,12 +23,6 @@ export const POST = handler(async (req) => {
   if (!payload?.sub) throw new HttpError(401, 'Inloggen met Google is mislukt');
 
   await connectDB();
-  const { user } = await signInWithProvider({
-    provider: 'googleId',
-    sub: payload.sub,
-    email: payload.email ?? '',
-    emailVerified: payload.email_verified === true,
-    name: payload.given_name ?? payload.name ?? '',
-  });
+  const { user } = await signInWithProvider({ provider: 'googleId', ...googleIdentity(payload) });
   return sessionResponse(user);
 });

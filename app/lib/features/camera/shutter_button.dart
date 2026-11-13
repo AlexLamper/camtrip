@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme.dart';
+import '../../l10n/l10n.dart';
 
 /// Shutter colours, public so tests can check them.
 class ShutterColors {
@@ -45,7 +46,8 @@ class ShutterButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final inner = videoMode ? ShutterColors.video : ShutterColors.photo;
     final size = recording ? _stop : _disc;
-    final label = recording ? 'Stop opname' : (videoMode ? 'Start video-opname' : 'Maak foto');
+    final l = context.l10n;
+    final label = recording ? l.shutterStopRecording : (videoMode ? l.shutterStartRecording : l.shutterTakePhoto);
     return Semantics(
       button: true,
       label: label,
@@ -122,12 +124,13 @@ class CameraModeSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     Widget item(String text, bool video) {
       final selected = videoMode == video;
       return Semantics(
         button: true,
         selected: selected,
-        label: video ? 'Video' : 'Foto',
+        label: video ? l.modeVideo : l.modePhoto,
         excludeSemantics: true,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -151,7 +154,7 @@ class CameraModeSwitch extends StatelessWidget {
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 200),
       opacity: enabled ? 1 : 0.4,
-      child: Row(mainAxisSize: MainAxisSize.min, children: [item('FOTO', false), item('VIDEO', true)]),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [item(l.modePhoto.toUpperCase(), false), item(l.modeVideo.toUpperCase(), true)]),
     );
   }
 }

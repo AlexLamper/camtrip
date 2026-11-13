@@ -16,9 +16,9 @@ Een app van AL Design.
 ## Hoe het werkt
 
 - **Inloggen**: account met e-mail + wachtwoord, Sign in with Apple of Google → de API geeft een eigen JWT (180 dagen).
-  - `POST /api/mobile/auth/register` `{name, email, password}` (min. 8 tekens), `POST /auth/login` `{email, password}`, `POST /auth/forgot` `{email}` (altijd 200; mailt een 6-cijferige code, 15 min geldig, via Resend), `POST /auth/reset` `{email, code, password}`. Alle geven `{token, user}` terug, net als `/auth/apple` en `/auth/google`.
+  - `POST /api/mobile/auth/register` `{name, email, password}` (min. 8 tekens), `POST /auth/login` `{email, password}`, `POST /auth/forgot` `{email}` (altijd 200 `{ok: true}`, ook als het account niet bestaat; is het account nog ergens ingelogd, dan gaat er een 6-cijferige code, 15 min geldig, als **pushmelding** naar die toestellen - CamTrip verstuurt geen e-mail), `POST /auth/reset` `{email, code, password}`. Alle geven `{token, user}` terug, net als `/auth/apple` en `/auth/google`.
   - Wachtwoorden: scrypt met eigen salt per gebruiker (`web/src/lib/password.ts`, tests: `cd web && npm test`). Login/forgot/reset: max. 10 (forgot 5) pogingen per 15 min per e-mail + IP, opgeslagen in Mongo (`AuthAttempt`, TTL). Een resetcode vervalt na 5 foute pogingen.
-  - Koppelen: logt iemand in met Apple/Google met een *geverifieerd* e-mailadres waarvoor al een wachtwoord-account bestaat, dan wordt dat account gekoppeld. Was dat adres nog niet bevestigd (geen resetcode gebruikt), dan vervalt het wachtwoord (bescherming tegen vooraf kapen); met "Wachtwoord vergeten?" stel je een nieuw in.
+  - Koppelen: logt iemand in met Apple/Google met een *geverifieerd* e-mailadres waarvoor al een wachtwoord-account bestaat, dan wordt dat account gekoppeld. Was dat adres nog niet bevestigd, dan vervalt het wachtwoord (bescherming tegen vooraf kapen). Dit is ook de uitweg als iemand zijn wachtwoord kwijt is en nergens meer ingelogd is: log in met Apple of Google met hetzelfde e-mailadres. Een resetcode via push bevestigt het e-mailadres niet (alleen Apple/Google doen dat; dat telt voor koppelen en `ADMIN_EMAILS`).
   - Google-knop verschijnt pas als `GOOGLE_IOS_CLIENT_ID` (iOS) / `GOOGLE_SERVER_CLIENT_ID` (Android) gezet is (dart-define of default in `app/lib/core/config.dart`).
 - **Groepen**: vakantie (met datum), event of altijd open. Joinen met een code van 6 tekens, QR-code of de link `camtrip.app/j/CODE` (opent de app direct via universal links / app links).
 - **Camera**: 6 stijlen (Film, Instant, Wegwerp gratis; Z/W, Golden, Chrome Pro). Live in de zoeker via een kleurmatrix + korrel/vignet/lichtlek; dezelfde berekening wordt op de foto zelf toegepast (`processor.dart`), plus datumstempel en instant-rand. Video's krijgen de stijl via ffmpeg.
@@ -27,7 +27,8 @@ Een app van AL Design.
 - **Recap**: video 9:16 met 4 templates en 3 eigen (rechtenvrije) muziekstukken in `app/assets/music`.
 - **Pro** (RevenueCat, entitlement `pro`): €7,99/maand of €49,99/jaar, 7 dagen proef. Alle stijlen, onbeperkt leden, altijd bewaard, geen watermerk, originele kwaliteit.
 - **Gratis groepen** worden 30 dagen na de einddatum verwijderd (Vercel Cron, dagelijks).
-- **Push** (rechtstreeks via Apple APNs, geen Firebase): gebundeld - één melding per persoon per groep per 20 minuten - en "recap klaar".
+- **Push** (rechtstreeks via Apple APNs, geen Firebase): gebundeld - één melding per persoon per groep per 20 minuten - en "recap klaar". Ook: resetcodes voor "Wachtwoord vergeten?" en "Nieuwe melding" voor beheerders (role `admin` of geverifieerd adres in `ADMIN_EMAILS`) als een foto gerapporteerd wordt; tikken opent Instellingen > Beheer > Meldingen. Alle pushteksten staan in 18 talen in `web/src/lib/push-i18n.ts` (zelfde termen als `app/lib/l10n/GLOSSARY.md`, fallback Engels); de app stuurt zijn taal mee met `POST /me/push-token` `{token, platform, locale}`.
+- **Privacy bij uploads**: foto's worden opnieuw gecodeerd zonder EXIF/GPS (oriëntatie zit in de pixels), video's gaan altijd door ffmpeg met `-map_metadata -1 -map_chapters -1` (ook uit de filmrol: remux met `-c copy`), dus er gaat geen locatie mee naar de server.
 
 ## Lokaal draaien
 
@@ -42,7 +43,7 @@ cd app && flutter run --dart-define=API_BASE_URL=http://localhost:3000/api/mobil
 
 ## Configuratie
 
-**Vercel (web/)** - zie `web/.env.example`: `MONGODB_URI`, `JWT_SECRET`, `APPLE_CLIENT_IDS`, `GOOGLE_CLIENT_IDS` (kommalijst: web- + iOS-client id), `RESEND_API_KEY`, `MAIL_FROM` (optioneel), `R2_*`, `REVENUECAT_*`, `APNS_KEY_ID`, `APNS_KEY_P8`, `CRON_SECRET`, `APPLE_TEAM_ID`, `ANDROID_SHA256_FINGERPRINTS`.
+**Vercel (web/)** - zie `web/.env.example`: `MONGODB_URI`, `JWT_SECRET`, `APPLE_CLIENT_IDS`, `GOOGLE_CLIENT_IDS` (kommalijst: web- + iOS-client id), `ADMIN_EMAILS`, `R2_*`, `REVENUECAT_*`, `APNS_KEY_ID`, `APNS_KEY_P8`, `CRON_SECRET`, `APPLE_TEAM_ID`, `ANDROID_SHA256_FINGERPRINTS`.
 
 **Sign in with Apple token-intrekking (guideline 5.1.1(v))**: `APPLE_SIWA_KEY_ID` + `APPLE_SIWA_KEY_P8` (inhoud van een AuthKey_XXXX.p8 met "Sign in with Apple" aan voor `app.camtrip.camtrip`; ruwe PEM, met `\n` of base64), samen met `APPLE_TEAM_ID` (4K4D59MXKW). Optioneel: `APPLE_CLIENT_ID` (default `app.camtrip.camtrip`) en `APPLE_TOKEN_ENC_KEY` (default afgeleid van `JWT_SECRET`). Bij inloggen wisselt de API de `authorizationCode` in voor een refresh token (versleuteld opgeslagen als `appleRefreshToken`); bij account verwijderen wordt dat token ingetrokken bij Apple. Zonder key wordt dit overgeslagen (waarschuwing in de log), inloggen en verwijderen werken gewoon. `/api/health` toont `siwa: ok|missing`.
 

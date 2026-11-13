@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:video_player/video_player.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../../core/api.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 import '../auth/auth_controller.dart';
 import '../camera/styles.dart';
@@ -62,7 +63,7 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFF1EFE9),
         title: Text('${index + 1} / ${total < photos.length ? photos.length : total}', style: CT.text(13, color: CT.muted, weight: FontWeight.w600)),
-        actions: [IconButton(onPressed: () => _more(group, photo), icon: const Icon(Icons.more_horiz))],
+        actions: [IconButton(tooltip: context.l10n.more, onPressed: () => _more(group, photo), icon: const Icon(Icons.more_horiz))],
       ),
       body: SafeArea(
         child: Column(children: [
@@ -102,9 +103,9 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
               if (m != null) Avatar.member(m, size: 28),
               const SizedBox(width: 10),
               Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(m?.name ?? 'Iemand', style: CT.text(14, weight: FontWeight.w600)),
+                Text(m?.name ?? context.l10n.someone, style: CT.text(14, weight: FontWeight.w600)),
                 Text(
-                  '${Fmt.day(p.takenAt).toLowerCase()} · ${Fmt.time(p.takenAt)} · ${p.fromRoll ? 'geüpload' : CameraStyle.byId(p.style).name}',
+                  '${Fmt.dayInline(p.takenAt)} · ${Fmt.time(p.takenAt)} · ${p.fromRoll ? context.l10n.uploadedTag : CameraStyle.byId(p.style).name}',
                   style: CT.text(11, color: CT.muted),
                 ),
               ]),
@@ -158,22 +159,22 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
           ),
         );
     return Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-      action(Icons.download_rounded, 'Opslaan', () async {
+      action(Icons.download_rounded, context.l10n.save, () async {
         try {
           await Downloader.save(ref.read(apiProvider), group, [p.id]);
-          if (mounted) showMessage(context, 'Opgeslagen in je fotoalbum');
+          if (mounted) showMessage(context, context.l10n.savedToAlbum);
         } catch (e) {
           if (mounted) showMessage(context, ApiException.from(e).message);
         }
       }),
-      action(p.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded, 'Favoriet', () async {
+      action(p.isFavorite ? Icons.star_rounded : Icons.star_outline_rounded, context.l10n.favorite, () async {
         try {
           await ref.read(galleryProvider(widget.groupId).notifier).toggleFavorite(p);
         } catch (e) {
           if (mounted) showMessage(context, ApiException.from(e).message);
         }
       }, color: p.isFavorite ? CT.warn : null),
-      action(Icons.ios_share, 'Delen', () => _share(p)),
+      action(Icons.ios_share, context.l10n.share, () => _share(p)),
     ]);
   }
 
@@ -182,11 +183,11 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
       final tmp = await getTemporaryDirectory();
       final path = '${tmp.path}/share_${p.id}.${p.isVideo ? 'mp4' : 'jpg'}';
       final url = p.isVideo ? p.videoUrl : p.displayUrl;
-      if (url == null || url.isEmpty) throw ApiException('Geen bestand');
+      if (url == null || url.isEmpty) throw ApiException(L10n.current.shareFailed);
       await Api.download(url, path);
       await SharePlus.instance.share(ShareParams(files: [XFile(path)]));
     } catch (e) {
-      if (mounted) showMessage(context, 'Delen lukte niet');
+      if (mounted) showMessage(context, context.l10n.shareFailed);
     }
   }
 
@@ -197,14 +198,14 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-            child: Text('Waarom rapporteer je deze foto?', style: CT.title(20)),
+            child: Text(context.l10n.reportTitle, style: CT.title(20)),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-            child: Text('We bekijken elke melding binnen 24 uur. De foto is meteen verborgen voor jou.', style: CT.text(13, color: CT.muted)),
+            child: Text(context.l10n.reportSubtitle, style: CT.text(13, color: CT.muted)),
           ),
           for (final r in ReportReason.values) ListTile(title: Text(r.label), onTap: () => Navigator.pop(c, r)),
-          ListTile(leading: const Icon(Icons.close), title: const Text('Annuleer'), onTap: () => Navigator.pop(c)),
+          ListTile(leading: const Icon(Icons.close), title: Text(context.l10n.cancel), onTap: () => Navigator.pop(c)),
         ]),
       ),
     );
@@ -212,7 +213,7 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
     try {
       await ref.read(galleryProvider(widget.groupId).notifier).report(p, reason);
       if (!mounted) return;
-      showMessage(context, 'Bedankt, we kijken ernaar');
+      showMessage(context, context.l10n.reportThanks);
       if (ref.read(galleryProvider(widget.groupId)).photos.isEmpty) context.pop();
     } catch (e) {
       if (mounted) showMessage(context, ApiException.from(e).message);
@@ -221,16 +222,16 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
 
   Future<void> _block(Member m) async {
     if (!await confirm(context,
-        title: '${m.name} blokkeren?',
-        message: 'Je ziet geen foto\'s en video\'s van ${m.name} meer, in geen enkele groep, en krijgt er geen meldingen over. Opheffen kan in Instellingen.',
-        ok: 'Blokkeer',
+        title: context.l10n.blockTitle(m.name),
+        message: context.l10n.blockMessageAllGroups(m.name),
+        ok: context.l10n.block,
         danger: true)) {
       return;
     }
     try {
       await ref.read(authProvider.notifier).block(m.id);
       if (!mounted) return;
-      showMessage(context, '${m.name} is geblokkeerd');
+      showMessage(context, context.l10n.userBlocked(m.name));
       context.pop(); // the gallery reloads without their photos
     } catch (e) {
       if (mounted) showMessage(context, ApiException.from(e).message);
@@ -245,7 +246,7 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
       final hidden = await ctrl.hide([p.id]);
       if (!mounted) return;
       final empty = ref.read(galleryProvider(widget.groupId)).photos.isEmpty;
-      showUndo(context, p.isVideo ? 'Video verborgen voor jou' : 'Foto verborgen voor jou', () {
+      showUndo(context, p.isVideo ? context.l10n.videoHiddenForYou : context.l10n.photoHiddenForYou, () {
         ctrl.unhide(hidden).catchError((Object e) {
           messenger.showSnackBar(SnackBar(content: Text(ApiException.from(e).message)));
         });
@@ -261,6 +262,7 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
     final canDelete = p.canDelete(me, group);
     final mine = p.userId == me;
     final owner = group.member(p.userId);
+    final l = context.l10n;
     showModalBottomSheet<void>(
       context: context,
       builder: (c) => SafeArea(
@@ -268,12 +270,12 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
           if (group.isAdmin && !p.isVideo)
             ListTile(
               leading: const Icon(Icons.photo_outlined),
-              title: const Text('Als omslag instellen'),
+              title: Text(l.setAsCover),
               onTap: () async {
                 Navigator.pop(c);
                 try {
                   await ref.read(groupsProvider.notifier).setCover(group.id, p.id);
-                  if (mounted) showMessage(context, 'Omslagfoto aangepast');
+                  if (mounted) showMessage(context, l.coverUpdated);
                 } catch (e) {
                   if (mounted) showMessage(context, ApiException.from(e).message);
                 }
@@ -281,8 +283,8 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
             ),
           ListTile(
             leading: const Icon(Icons.visibility_off_outlined),
-            title: const Text('Verbergen voor mij'),
-            subtitle: Text('De anderen in de groep zien hem nog wel', style: CT.text(12, color: CT.muted)),
+            title: Text(l.hideForMe),
+            subtitle: Text(l.hideForMeSubtitle, style: CT.text(12, color: CT.muted)),
             onTap: () {
               Navigator.pop(c);
               _hide(p);
@@ -291,7 +293,7 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
           if (!mine)
             ListTile(
               leading: const Icon(Icons.flag_outlined),
-              title: const Text('Foto rapporteren'),
+              title: Text(l.reportPhoto),
               onTap: () {
                 Navigator.pop(c);
                 _report(p);
@@ -300,7 +302,7 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
           if (!mine && owner != null)
             ListTile(
               leading: const Icon(Icons.block),
-              title: Text('${owner.name} blokkeren'),
+              title: Text(l.blockName(owner.name)),
               onTap: () {
                 Navigator.pop(c);
                 _block(owner);
@@ -309,8 +311,8 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
           if (canDelete)
             ListTile(
               leading: const Icon(Icons.delete_outline, color: CT.accent),
-              title: Text('Verwijderen', style: CT.text(16, color: CT.accent)),
-              subtitle: Text('Voor iedereen in de groep', style: CT.text(12, color: CT.muted)),
+              title: Text(l.delete, style: CT.text(16, color: CT.accent)),
+              subtitle: Text(l.forEveryoneInGroup, style: CT.text(12, color: CT.muted)),
               onTap: () async {
                 Navigator.pop(c);
                 if (!await confirmDeletePhotos(context, count: 1)) return;
@@ -318,14 +320,14 @@ class _PhotoScreenState extends ConsumerState<PhotoScreen> {
                   // The group's counts and cover come back with the response.
                   await ref.read(galleryProvider(widget.groupId).notifier).delete(p);
                   if (!mounted) return;
-                  showMessage(context, p.isVideo ? 'Video verwijderd' : 'Foto verwijderd');
+                  showMessage(context, p.isVideo ? l.videoDeleted : l.photoDeleted);
                   if (ref.read(galleryProvider(widget.groupId)).photos.isEmpty) context.pop();
                 } catch (e) {
                   if (mounted) showMessage(context, ApiException.from(e).message);
                 }
               },
             ),
-          ListTile(leading: const Icon(Icons.close), title: const Text('Annuleer'), onTap: () => Navigator.pop(c)),
+          ListTile(leading: const Icon(Icons.close), title: Text(l.cancel), onTap: () => Navigator.pop(c)),
         ]),
       ),
     );

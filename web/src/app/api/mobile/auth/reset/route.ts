@@ -45,7 +45,9 @@ export const POST = handler(async (req) => {
   }
 
   user.passwordHash = await hashPassword(password);
-  user.emailVerified = true; // the code proved they read this mailbox
+  // No emailVerified here: the code came as a push to a signed-in device, which
+  // proves access to this account, not to the mailbox. Only Apple/Google verify
+  // an address (that matters for linking and ADMIN_EMAILS).
   user.resetCodeHash = null;
   user.resetExpires = null;
   user.resetAttempts = 0;

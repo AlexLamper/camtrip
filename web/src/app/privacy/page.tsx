@@ -52,7 +52,7 @@ export default function Privacy() {
           </li>
           <li>
             <strong>Pushtokens en meldingsinstellingen:</strong> een token van je toestel en je keuzes voor meldingen over
-            nieuwe foto’s en recaps. Waarom: om je meldingen te sturen. Grondslag: toestemming, die je geeft via de
+            nieuwe foto’s en recaps. Waarom: om je meldingen te sturen, ook de code als je je wachtwoord bent vergeten. Grondslag: toestemming, die je geeft via de
             meldingsvraag van je telefoon. Je kunt die altijd intrekken in de instellingen van je telefoon of in de app.
           </li>
           <li>
@@ -71,9 +71,8 @@ export default function Privacy() {
           </li>
         </ul>
         <p>
-          We vragen geen toegang tot je locatie en slaan geen locatie op als apart gegeven. Let op: video’s en foto’s uit je
-          filmrol kunnen metadata bevatten die je telefoon erin heeft gezet (zoals een locatie). Wie zo’n bestand
-          downloadt, kan die metadata zien. We gebruiken geen advertenties, maken geen profielen van je en verkopen nooit
+          We vragen geen toegang tot je locatie en slaan geen locatie op. De app haalt metadata zoals de locatie (EXIF/GPS)
+          uit elke foto en video voordat die wordt geüpload, ook bij bestanden uit je filmrol. We gebruiken geen advertenties, maken geen profielen van je en verkopen nooit
           gegevens aan anderen.
         </p>
 
@@ -102,8 +101,9 @@ export default function Privacy() {
         <p>
           Kies je voor een account met e-mail en wachtwoord, dan bewaren we je wachtwoord nooit als leesbare tekst. We
           slaan alleen een hash op die gemaakt is met scrypt, met een unieke salt per wachtwoord. Na te veel inlogpogingen
-          in korte tijd blokkeren we tijdelijk verdere pogingen. Ben je je wachtwoord vergeten, dan sturen we je een code
-          van 6 cijfers per e-mail. Die code is 15 minuten geldig en we bewaren alleen een versleutelde versie ervan.
+          in korte tijd blokkeren we tijdelijk verdere pogingen. Ben je je wachtwoord vergeten, dan sturen we een code van 6
+          cijfers als pushmelding naar de toestellen waarop je nog bent ingelogd. We sturen geen e-mail. Die code is 15
+          minuten geldig en we bewaren alleen een versleutelde versie ervan.
         </p>
 
         <h2>Inloggen met Apple of Google</h2>
@@ -170,7 +170,6 @@ export default function Privacy() {
           <li>Cloudflare R2: opslag van foto’s en video’s.</li>
           <li>Apple Push Notification service: het afleveren van pushmeldingen.</li>
           <li>RevenueCat: beheer van abonnementen. De betaling zelf loopt via de App Store of Google Play.</li>
-          <li>Resend: het versturen van e-mails, zoals codes om je wachtwoord te herstellen.</li>
           <li>Apple en Google: inloggen met je Apple- of Google-account, als je daarvoor kiest.</li>
         </ul>
         <p>
@@ -239,12 +238,12 @@ export default function Privacy() {
         <p>
           CamTrip is made by Alex Lamper (AL Design, Middelharnis, the Netherlands). We only process what the app needs: your
           account (name, e-mail, a scrypt password hash or your Apple/Google id), your groups, the photos and videos you share
-          with their metadata, reactions, push tokens (with your consent) and your Pro status. Your photos are only visible to
+          (location and other metadata are removed before upload), reactions, push tokens (with your consent) and your Pro status. Your photos are only visible to
           members of the group you share them in. You can report photos and block people; reports are reviewed within 24
           hours and we may remove content and ban accounts. Free groups are deleted 30 days after their end date. Deleting
           your account in the app removes your data (and revokes Sign in with Apple); backups and logs are cleared within
           about 30 days and login-attempt records after 15 minutes. We use processors (Vercel, MongoDB Atlas in Frankfurt,
-          Cloudflare R2, Apple Push Notification service, RevenueCat, Resend, Apple and Google sign-in) with safeguards such
+          Cloudflare R2, Apple Push Notification service, RevenueCat, Apple and Google sign-in) with safeguards such
           as SCCs or the EU-US Data Privacy Framework for transfers outside the EU. CamTrip is for ages 13 and up, with
           parental consent where national law requires it. You have the right to access, correct, delete and export your data,
           to object, and to complain to the Dutch Data Protection Authority (Autoriteit Persoonsgegevens). The website only

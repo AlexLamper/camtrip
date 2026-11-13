@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import '../../l10n/l10n.dart';
+
 /// 4x5 colour matrix in Flutter's ColorFilter.matrix layout (offsets in 0..255).
 class ColorMatrix {
   const ColorMatrix(this.m);
@@ -56,8 +58,6 @@ enum FrameKind { none, instant }
 class CameraStyle {
   const CameraStyle({
     required this.id,
-    required this.name,
-    required this.description,
     required this.matrix,
     this.pro = false,
     this.grain = 0.25,
@@ -69,8 +69,32 @@ class CameraStyle {
   });
 
   final String id;
-  final String name;
-  final String description;
+
+  /// Shown name in the app's language ("Wegwerp" / "Disposable").
+  String get name => nameIn(L10n.current);
+
+  /// One-line description in the app's language.
+  String get description => descriptionIn(L10n.current);
+
+  String nameIn(AppLocalizations l) => switch (id) {
+        'film' => l.styleFilm,
+        'instant' => l.styleInstant,
+        'disposable' => l.styleDisposable,
+        'bw' => l.styleBw,
+        'golden' => l.styleGolden,
+        'chrome' => l.styleChrome,
+        _ => id,
+      };
+
+  String descriptionIn(AppLocalizations l) => switch (id) {
+        'film' => l.styleFilmDescription,
+        'instant' => l.styleInstantDescription,
+        'disposable' => l.styleDisposableDescription,
+        'bw' => l.styleBwDescription,
+        'golden' => l.styleGoldenDescription,
+        'chrome' => l.styleChromeDescription,
+        _ => '',
+      };
   final ColorMatrix matrix;
   final bool pro;
   final double grain; // 0..1
@@ -82,8 +106,6 @@ class CameraStyle {
 
   static final film = CameraStyle(
     id: 'film',
-    name: 'Film',
-    description: 'Warme kleuren, korrel en een oranje datumstempel',
     matrix: ColorMatrix.compose([
       ColorMatrix.saturation(1.12),
       ColorMatrix.contrast(1.06),
@@ -97,8 +119,6 @@ class CameraStyle {
 
   static final instant = CameraStyle(
     id: 'instant',
-    name: 'Instant',
-    description: 'Zachte kleuren en een witte rand',
     matrix: ColorMatrix.compose([
       ColorMatrix.saturation(0.9),
       ColorMatrix.contrast(0.92),
@@ -113,8 +133,6 @@ class CameraStyle {
 
   static final disposable = CameraStyle(
     id: 'disposable',
-    name: 'Wegwerp',
-    description: 'Harde flits, vignet en lichtlekken',
     matrix: ColorMatrix.compose([
       ColorMatrix.saturation(1.28),
       ColorMatrix.contrast(1.16),
@@ -128,8 +146,6 @@ class CameraStyle {
 
   static final bw = CameraStyle(
     id: 'bw',
-    name: 'Z/W',
-    description: 'Korrelig zwart-wit met diep contrast',
     pro: true,
     matrix: ColorMatrix.compose([ColorMatrix.saturation(0), ColorMatrix.contrast(1.25), ColorMatrix.fade(0.04)]),
     grain: 0.45,
@@ -138,8 +154,6 @@ class CameraStyle {
 
   static final golden = CameraStyle(
     id: 'golden',
-    name: 'Golden',
-    description: 'Altijd golden hour, zachte gouden gloed',
     pro: true,
     matrix: ColorMatrix.compose([
       ColorMatrix.saturation(1.05),
@@ -153,8 +167,6 @@ class CameraStyle {
 
   static final chrome = CameraStyle(
     id: 'chrome',
-    name: 'Chrome',
-    description: 'Koel, verzadigd en scherp, als dia-film',
     pro: true,
     matrix: ColorMatrix.compose([
       ColorMatrix.saturation(1.35),

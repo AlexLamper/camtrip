@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/config.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import 'groups_controller.dart';
 
 class InviteScreen extends ConsumerWidget {
@@ -21,6 +22,7 @@ class InviteScreen extends ConsumerWidget {
     final g = ref.watch(groupProvider(groupId));
     if (g == null) return Scaffold(appBar: AppBar());
     final message = AppConfig.inviteMessage(g.name, g.code);
+    final l = context.l10n;
 
     return Scaffold(
       appBar: AppBar(leading: justCreated ? const SizedBox() : const BackButton()),
@@ -28,9 +30,9 @@ class InviteScreen extends ConsumerWidget {
         child: Column(children: [
           Expanded(
             child: ListView(padding: const EdgeInsets.fromLTRB(26, 0, 26, 20), children: [
-              if (justCreated) Text('Groep aangemaakt ✓', textAlign: TextAlign.center, style: CT.text(13, color: CT.muted, weight: FontWeight.w600)),
+              if (justCreated) Text(l.groupCreated, textAlign: TextAlign.center, style: CT.text(13, color: CT.muted, weight: FontWeight.w600)),
               const SizedBox(height: 4),
-              Text('Nodig je vrienden uit', textAlign: TextAlign.center, style: CT.title(28)),
+              Text(l.inviteFriends, textAlign: TextAlign.center, style: CT.title(28)),
               const SizedBox(height: 26),
               Center(
                 child: InstantPrint(
@@ -42,7 +44,7 @@ class InviteScreen extends ConsumerWidget {
                     child: GestureDetector(
                       onTap: () {
                         Clipboard.setData(ClipboardData(text: g.code));
-                        showMessage(context, 'Code gekopieerd');
+                        showMessage(context, l.codeCopied);
                       },
                       child: Text(g.code, textAlign: TextAlign.center, style: CT.title(28).copyWith(letterSpacing: 6)),
                     ),
@@ -76,16 +78,16 @@ class InviteScreen extends ConsumerWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: CTButton('Deel link', kind: CTButtonKind.ghost, icon: Icons.ios_share, onTap: () {
-                    SharePlus.instance.share(ShareParams(text: message, subject: 'Doe mee met ${g.name} op CamTrip'));
+                  child: CTButton(l.shareLink, kind: CTButtonKind.ghost, icon: Icons.ios_share, onTap: () {
+                    SharePlus.instance.share(ShareParams(text: message, subject: l.inviteSubject(g.name)));
                   }),
                 ),
               ]),
               const SizedBox(height: 16),
               Text(
                 g.memberLimit == null
-                    ? '${g.members.length} leden · onbeperkt (Pro)'
-                    : '${g.members.length} van ${g.memberLimit} leden · Pro: onbeperkt',
+                    ? l.inviteMembersUnlimited(g.members.length)
+                    : l.inviteMembersLimit(g.members.length, g.memberLimit!),
                 textAlign: TextAlign.center,
                 style: CT.text(13, color: CT.muted, weight: FontWeight.w500),
               ),
@@ -94,13 +96,13 @@ class InviteScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
             child: justCreated
-                ? CTButton('Naar de camera', icon: Icons.photo_camera, onTap: () {
+                ? CTButton(l.toCamera, icon: Icons.photo_camera, onTap: () {
                     ref.read(activeGroupIdProvider.notifier).set(g.id);
                     context.go('/');
                     context.push('/group/${g.id}');
                     context.push('/camera');
                   })
-                : CTButton('Klaar', onTap: () => context.pop()),
+                : CTButton(l.done, onTap: () => context.pop()),
           ),
         ]),
       ),

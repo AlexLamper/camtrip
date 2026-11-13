@@ -27,17 +27,55 @@ class VideoProcessor {
     return parts.join(',');
   }
 
+  /// ffmpeg options that keep location and other metadata out of an
+  /// uploaded video: no global/stream/chapter metadata, only the first video
+  /// and audio stream (iOS can add timed metadata tracks with the location),
+  /// the QuickTime location keys explicitly empty, and the index up front.
+  @visibleForTesting
+  static const privacyArgs = '-map 0:v:0 -map 0:a:0? -dn -sn '
+      '-map_metadata -1 -map_chapters -1 '
+      '-metadata location= -metadata location-eng= -metadata com.apple.quicktime.location.ISO6709= '
+      '-movflags +faststart';
+
+  /// The ffmpeg command that bakes [style] into [input] with [codec].
+  @visibleForTesting
+  static String styleCommand(String input, String output, CameraStyle style, String codec) {
+    final quality = codec == 'mpeg4' ? '-q:v 4' : '-b:v 8M';
+    return '-y -i "$input" $privacyArgs -vf "${_filter(style)}" -c:v $codec $quality -c:a aac -b:a 128k "$output"';
+  }
+
+  /// The ffmpeg command that only drops metadata: a remux, no re-encode.
+  @visibleForTesting
+  static String stripCommand(String input, String output) => '-y -i "$input" $privacyArgs -c copy "$output"';
+
+  /// Bakes [style] into the recording; every result is free of metadata.
+  /// If the device cannot encode, the untouched picture is remuxed without
+  /// metadata instead. Throws when not even that works, so a video with its
+  /// location is never uploaded.
   static Future<File> applyStyle(File input, CameraStyle style) async {
     final dir = await getTemporaryDirectory();
     final out = File('${dir.path}/styled_${DateTime.now().millisecondsSinceEpoch}.mp4');
     for (final codec in [_encoder(), 'mpeg4']) {
-      final quality = codec == 'mpeg4' ? '-q:v 4' : '-b:v 8M';
-      final cmd = '-y -i "${input.path}" -vf "${_filter(style)}" -c:v $codec $quality -c:a aac -b:a 128k -movflags +faststart "${out.path}"';
-      final session = await FFmpegKit.execute(cmd);
-      if (ReturnCode.isSuccess(await session.getReturnCode()) && await out.exists() && await out.length() > 0) return out;
-      debugPrint('ffmpeg $codec failed: ${await session.getAllLogsAsString()}');
+      if (await _run(styleCommand(input.path, out.path, style, codec), out)) return out;
     }
-    return input;
+    return stripMetadata(input);
+  }
+
+  /// Copies [input] without any metadata (location, device, dates in tags).
+  /// Cheap: the streams are copied, not re-encoded. Use for every video that
+  /// is uploaded without [applyStyle], e.g. from the camera roll.
+  static Future<File> stripMetadata(File input) async {
+    final dir = await getTemporaryDirectory();
+    final out = File('${dir.path}/clean_${DateTime.now().microsecondsSinceEpoch}.mp4');
+    if (await _run(stripCommand(input.path, out.path), out)) return out;
+    throw const VideoMetadataException();
+  }
+
+  static Future<bool> _run(String cmd, File out) async {
+    final session = await FFmpegKit.execute(cmd);
+    if (ReturnCode.isSuccess(await session.getReturnCode()) && await out.exists() && await out.length() > 0) return true;
+    debugPrint('ffmpeg failed ($cmd): ${await session.getAllLogsAsString()}');
+    return false;
   }
 
   /// First frame as a JPEG.
@@ -48,4 +86,11 @@ class VideoProcessor {
     if (ReturnCode.isSuccess(await session.getReturnCode()) && await out.exists()) return out;
     return null;
   }
+}
+
+/// The video could not be cleaned of its metadata, so it is not uploaded.
+class VideoMetadataException implements Exception {
+  const VideoMetadataException();
+  @override
+  String toString() => 'VideoMetadataException: could not strip metadata';
 }

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import '../../main.dart';
 import 'upload_queue.dart';
 
@@ -19,21 +20,24 @@ class QueueScreen extends ConsumerWidget {
     final prefs = ref.watch(prefsProvider);
     final photos = items.where((i) => !i.isVideo).length;
     final videos = items.length - photos;
+    final l = context.l10n;
 
     return Scaffold(
       appBar: AppBar(),
       body: ListView(padding: const EdgeInsets.fromLTRB(22, 0, 22, 120), children: [
         if (!queue.online)
-          _banner('Geen bereik.', 'Je foto\'s staan al in je album en worden gedeeld zodra je weer internet hebt.')
+          _banner(l.queueNoSignal, l.queueNoSignalMessage)
         else if (!queue.onWifi && (prefs.wifiOnly || (videos > 0 && prefs.videosWifiOnly)))
-          _banner('Wacht op wifi.', prefs.wifiOnly ? 'Je hebt "alleen uploaden via wifi" aan staan.' : 'Video\'s gaan alleen via wifi.'),
+          _banner(l.queueWaitingForWifi, prefs.wifiOnly ? l.queueWifiOnlyOn(l.wifiOnlyTitle) : l.queueVideosWifiOnly),
         const SizedBox(height: 16),
-        Text('Wachtrij', style: CT.title(28)),
+        Text(l.uploadQueue, style: CT.title(28)),
         const SizedBox(height: 4),
         Text(
           items.isEmpty
-              ? 'Alles is gedeeld ✓'
-              : '${[if (photos > 0) '$photos ${photos == 1 ? 'foto' : 'foto\'s'}', if (videos > 0) '$videos ${videos == 1 ? 'video' : 'video\'s'}'].join(' en ')} nog te delen',
+              ? l.queueAllShared
+              : photos > 0 && videos > 0
+                  ? l.queuePendingBoth(l.photosCount(photos), l.videosCount(videos))
+                  : l.queuePending(photos > 0 ? l.photosCount(photos) : l.videosCount(videos)),
           style: CT.text(14, color: CT.muted),
         ),
         const SizedBox(height: 10),
@@ -49,7 +53,7 @@ class QueueScreen extends ConsumerWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(i.isVideo ? 'Video' : 'Foto', style: CT.text(14, weight: FontWeight.w500)),
+                  Text(i.isVideo ? l.modeVideo : l.modePhoto, style: CT.text(14, weight: FontWeight.w500)),
                   const SizedBox(height: 6),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(2),
@@ -68,14 +72,14 @@ class QueueScreen extends ConsumerWidget {
               if (i.status == UploadStatus.failed)
                 PopupMenuButton<String>(
                   onSelected: (v) => v == 'retry' ? queue.retry(i.id) : queue.remove(i.id),
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'retry', child: Text('Opnieuw proberen')),
-                    PopupMenuItem(value: 'remove', child: Text('Uit wachtrij halen')),
+                  itemBuilder: (_) => [
+                    PopupMenuItem(value: 'retry', child: Text(l.retryUpload)),
+                    PopupMenuItem(value: 'remove', child: Text(l.removeFromQueue)),
                   ],
                 )
               else
                 Text(
-                  i.status == UploadStatus.uploading ? '${(i.progress * 100).round()}%' : (i.isVideo && prefs.videosWifiOnly && !queue.onWifi ? 'wifi' : 'wacht'),
+                  i.status == UploadStatus.uploading ? '${(i.progress * 100).round()}%' : (i.isVideo && prefs.videosWifiOnly && !queue.onWifi ? l.queueStatusWifi : l.queueStatusWaiting),
                   style: CT.text(12, color: CT.muted),
                 ),
             ]),
@@ -88,8 +92,8 @@ class QueueScreen extends ConsumerWidget {
             child: Row(children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Video\'s alleen via wifi', style: CT.text(14, weight: FontWeight.w600)),
-                  Text('Spaart je mobiele data', style: CT.text(12, color: CT.muted)),
+                  Text(l.videosWifiOnlyTitle, style: CT.text(14, weight: FontWeight.w600)),
+                  Text(l.videosWifiOnlySubtitle, style: CT.text(12, color: CT.muted)),
                 ]),
               ),
               Switch(value: prefs.videosWifiOnly, onChanged: (v) {
@@ -103,7 +107,7 @@ class QueueScreen extends ConsumerWidget {
       bottomNavigationBar: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
-          child: items.isEmpty ? CTButton('Klaar', onTap: () => context.pop()) : CTButton('Nu opnieuw proberen', onTap: queue.retryAll),
+          child: items.isEmpty ? CTButton(l.done, onTap: () => context.pop()) : CTButton(l.retryNow, onTap: queue.retryAll),
         ),
       ),
     );

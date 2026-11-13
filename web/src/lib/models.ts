@@ -5,6 +5,8 @@ const pushTokenSchema = new Schema(
   {
     token: { type: String, required: true },
     platform: { type: String, enum: ['ios', 'android'], required: true },
+    // App language on this device ("nl", "pt_BR" ...), for localized push texts.
+    locale: { type: String, default: null },
     updatedAt: { type: Date, default: () => new Date() },
   },
   { _id: false },
@@ -39,6 +41,8 @@ const userSchema = new Schema(
     appleRefreshToken: { type: String, default: null, select: false },
     googleId: { type: String, unique: true, sparse: true },
     avatarColor: { type: String, default: '#d9472b' },
+    // Last app language seen (from POST /me/push-token). Fallback for push texts.
+    locale: { type: String, default: null },
     pushTokens: { type: [pushTokenSchema], default: [] },
     // Pro comes from the stores via RevenueCat. Expiry is kept so an access
     // check never trusts a flag whose subscription has already lapsed.
@@ -82,7 +86,8 @@ export interface UserDoc {
   appleRefreshToken?: string | null;
   googleId?: string;
   avatarColor: string;
-  pushTokens: { token: string; platform: 'ios' | 'android'; updatedAt: Date }[];
+  locale?: string | null;
+  pushTokens: { token: string; platform: 'ios' | 'android'; locale?: string | null; updatedAt: Date }[];
   proStore: boolean;
   proExpiresAt: Date | null;
   settings?: { notifyNewPhotos?: boolean; notifyRecap?: boolean };

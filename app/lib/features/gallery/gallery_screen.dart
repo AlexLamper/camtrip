@@ -8,6 +8,7 @@ import '../../core/api.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 import '../auth/auth_controller.dart';
 import '../camera/processor.dart';
@@ -49,7 +50,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       await ref.read(groupsProvider.notifier).refreshOne(widget.groupId);
       if (mounted && _groupError != null) setState(() => _groupError = null);
     } on ApiException catch (e) {
-      if (mounted) setState(() => _groupError = e.status == 404 ? 'Deze groep bestaat niet meer, of je bent geen lid meer.' : e.message);
+      if (mounted) setState(() => _groupError = e.status == 404 ? context.l10n.groupGone : e.message);
     }
   }
 
@@ -66,7 +67,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     try {
       final n = await Downloader.save(ref.read(apiProvider), group, ids, onProgress: (p) => mounted ? setState(() => _download = p) : null);
       if (!mounted) return;
-      showMessage(context, '$n ${n == 1 ? 'foto' : 'foto\'s'} opgeslagen in "CamTrip - ${group.name}"');
+      showMessage(context, context.l10n.photosSavedToAlbum(n, 'CamTrip - ${group.name}'));
       setState(_sel.exit);
     } catch (e) {
       if (mounted) showMessage(context, ApiException.from(e).message);
@@ -89,8 +90,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     try {
       final r = await _ctrl.deletePhotos(allowed.map((p) => p.id).toList());
       if (!mounted) return;
-      final done = '${Fmt.count(r.deleted, 'foto', 'foto\'s')} verwijderd';
-      showMessage(context, r.forbidden > 0 ? '$done, ${r.forbidden} overgeslagen' : done);
+      final l = context.l10n;
+      showMessage(context, r.forbidden > 0 ? l.photosDeletedSkipped(r.deleted, r.forbidden) : l.photosDeleted(r.deleted));
     } catch (e) {
       if (mounted) showMessage(context, ApiException.from(e).message);
     }
@@ -104,7 +105,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     try {
       final hidden = await _ctrl.hide(ids);
       if (!mounted) return;
-      showUndo(context, '${Fmt.count(hidden.length, 'foto', 'foto\'s')} verborgen voor jou', () {
+      showUndo(context, context.l10n.photosHiddenForYou(hidden.length), () {
         _ctrl.unhide(hidden).catchError((Object e) {
           if (mounted) showMessage(context, ApiException.from(e).message);
         });
@@ -120,7 +121,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     setState(_sel.exit);
     try {
       await _ctrl.setFavorite(ids, target);
-      if (mounted) showMessage(context, target ? 'Toegevoegd aan favorieten' : 'Uit favorieten gehaald');
+      if (mounted) showMessage(context, target ? context.l10n.addedToFavorites : context.l10n.removedFromFavorites);
     } catch (e) {
       if (mounted) showMessage(context, ApiException.from(e).message);
     }
@@ -131,11 +132,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     try {
       files = await ImagePicker().pickMultiImage(imageQuality: 95, limit: 50);
     } catch (_) {
-      if (mounted) showMessage(context, 'Geef CamTrip toegang tot je foto\'s in Instellingen');
+      if (mounted) showMessage(context, context.l10n.photoAccessSettings);
       return;
     }
     if (files.isEmpty) return;
-    if (mounted) showMessage(context, '${Fmt.count(files.length, 'foto wordt', 'foto\'s worden')} toegevoegd');
+    if (mounted) showMessage(context, context.l10n.photosBeingAdded(files.length));
     var failed = 0;
     for (final f in files) {
       try {
@@ -145,7 +146,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
         failed++;
       }
     }
-    if (failed > 0 && mounted) showMessage(context, '${Fmt.count(failed, 'foto kon', 'foto\'s konden')} niet worden gelezen');
+    if (failed > 0 && mounted) showMessage(context, context.l10n.photosUnreadable(failed));
   }
 
   Future<void> _enqueueRoll(Group group, XFile f) async {
@@ -184,11 +185,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
         body: _groupError == null
             ? const Center(child: CircularProgressIndicator(color: CT.ink))
             : EmptyState(
-                title: 'Groep niet geladen',
+                title: context.l10n.groupNotLoaded,
                 message: _groupError!,
                 action: SizedBox(
                   width: 200,
-                  child: CTButton('Opnieuw', onTap: () {
+                  child: CTButton(context.l10n.retry, onTap: () {
                     setState(() => _groupError = null);
                     _refreshGroup();
                   }),
@@ -222,14 +223,14 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                   SliverFillRemaining(
                     hasScrollBody: false,
                     child: EmptyState(
-                      title: gallery.filter.favorites ? 'Nog geen favorieten' : 'Nog geen foto\'s',
+                      title: gallery.filter.favorites ? context.l10n.noFavoritesTitle : context.l10n.noPhotosTitle,
                       message: gallery.error ??
                           (gallery.filter.favorites
-                              ? 'Tik op het sterretje bij een foto om hem hier te zetten.'
-                              : 'Maak de eerste foto. Iedereen in de groep ziet hem meteen.'),
+                              ? context.l10n.noFavoritesMessage
+                              : context.l10n.noPhotosMessage),
                       action: gallery.filter.favorites
                           ? null
-                          : SizedBox(width: 220, child: CTButton('Open de camera', kind: CTButtonKind.primary, onTap: () => _openCamera(group))),
+                          : SizedBox(width: 220, child: CTButton(context.l10n.openCamera, kind: CTButtonKind.primary, onTap: () => _openCamera(group))),
                     ),
                   ),
                 for (final (day, photos) in gallery.byDay) ...[
@@ -279,7 +280,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       padding: EdgeInsets.fromLTRB(16, 10, 16, 12 + MediaQuery.of(context).padding.bottom),
       child: SelectionActionBar(
         count: _sel.count,
-        busyLabel: d == null ? null : 'Opslaan... ${d.done}/${d.total}',
+        busyLabel: d == null ? null : context.l10n.savingProgress(d.done, d.total),
         favoriteOn: _sel.favoriteTarget(photos),
         onSave: () => _saveAll(group),
         onFavorite: _favoriteSelected,
@@ -293,10 +294,10 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   Widget _selectionHeader(List<Photo> photos) {
     final all = _sel.allSelected(photos.map((p) => p.id));
     return Row(children: [
-      IconButton(key: const Key('sel-close'), onPressed: () => setState(_sel.exit), icon: const Icon(Icons.close)),
+      IconButton(key: const Key('sel-close'), tooltip: context.l10n.close, onPressed: () => setState(_sel.exit), icon: const Icon(Icons.close)),
       Expanded(
         child: Text(
-          _sel.count == 0 ? 'Kies foto\'s' : '${_sel.count} geselecteerd',
+          _sel.count == 0 ? context.l10n.choosePhotos : context.l10n.selectedCount(_sel.count),
           textAlign: TextAlign.center,
           style: CT.text(15, weight: FontWeight.w600),
         ),
@@ -304,7 +305,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       TextButton(
         key: const Key('sel-all'),
         onPressed: photos.isEmpty ? null : () => setState(() => _sel.toggleAll(photos.map((p) => p.id))),
-        child: Text(all ? 'Niets selecteren' : 'Alles selecteren', style: CT.text(14, color: CT.accent, weight: FontWeight.w600)),
+        child: Text(all ? context.l10n.selectNone : context.l10n.selectAll, style: CT.text(14, color: CT.accent, weight: FontWeight.w600)),
       ),
     ]);
   }
@@ -315,6 +316,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   }
 
   Widget _header(Group group, int pending) {
+    final l = context.l10n;
     final gallery = ref.watch(galleryProvider(widget.groupId));
     final ctrl = ref.read(galleryProvider(widget.groupId).notifier);
     return Padding(
@@ -324,7 +326,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
           _selectionHeader(gallery.photos)
         else
           Row(children: [
-            IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back)),
+            IconButton(tooltip: l.back, onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back)),
             Expanded(
               child: Text(
                 [group.code, Fmt.range(group.startDate, group.endDate)].where((s) => s.isNotEmpty).join(' · '),
@@ -333,6 +335,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
               ),
             ),
             IconButton(
+              tooltip: l.group,
               onPressed: () => context.push('/group/${group.id}/settings'),
               icon: const Icon(Icons.more_horiz),
             ),
@@ -350,7 +353,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                 const SizedBox(width: 10),
                 Flexible(
                   child: Text(
-                    '${Fmt.count(group.photoCount, 'foto', 'foto\'s')}${group.videoCount > 0 ? ' · ${Fmt.count(group.videoCount, 'video', 'video\'s')}' : ''}',
+                    '${l.photosCount(group.photoCount)}${group.videoCount > 0 ? ' · ${l.videosCount(group.videoCount)}' : ''}',
                     style: CT.text(13, color: CT.muted),
                   ),
                 ),
@@ -368,7 +371,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                   child: Row(children: [
                     const Icon(Icons.cloud_upload_outlined, size: 18, color: CT.warn),
                     const SizedBox(width: 8),
-                    Expanded(child: Text('${Fmt.count(pending, 'foto wacht', 'foto\'s wachten')} om gedeeld te worden', style: CT.text(13, weight: FontWeight.w500))),
+                    Expanded(child: Text(l.photosWaitingToShare(pending), style: CT.text(13, weight: FontWeight.w500))),
                     const Icon(Icons.chevron_right, size: 18),
                   ]),
                 ),
@@ -389,11 +392,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('Je recap is klaar', style: CT.text(14, weight: FontWeight.w600)),
-                        Text('Video met muziek van jullie trip', style: CT.text(12, color: CT.muted)),
+                        Text(l.recapReadyTitle, style: CT.text(14, weight: FontWeight.w600)),
+                        Text(l.recapReadySubtitle, style: CT.text(12, color: CT.muted)),
                       ]),
                     ),
-                    Text('Bekijk ▶', style: CT.text(13, color: CT.accent, weight: FontWeight.w600)),
+                    Text('${l.watch} ▶', style: CT.text(13, color: CT.accent, weight: FontWeight.w600)),
                   ]),
                 ),
               ),
@@ -401,13 +404,13 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
               const SizedBox(height: 12),
               GestureDetector(
                 onTap: () => context.push('/group/${group.id}/recap'),
-                child: Text('🎞️  Maak nu een recap-video', style: CT.text(13, color: CT.accent, weight: FontWeight.w600)),
+                child: Text('🎞️  ${l.makeRecapNow}', style: CT.text(13, color: CT.accent, weight: FontWeight.w600)),
               ),
             ],
             if (group.deleteAfter != null && group.hasEnded) ...[
               const SizedBox(height: 10),
               Text(
-                'Gratis groep: foto\'s blijven tot ${Fmt.shortYear(group.deleteAfter!)}. Sla ze op of neem Pro.',
+                l.freeGroupDeleteNotice(Fmt.shortYear(group.deleteAfter!)),
                 style: CT.text(12, color: CT.muted),
               ),
             ],
@@ -415,24 +418,24 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(children: [
-                CTChip('Alles', selected: !gallery.filter.favorites && gallery.filter.userId == null, onTap: () => ctrl.setFilter(const GalleryFilter.all())),
+                CTChip(l.filterAll, selected: !gallery.filter.favorites && gallery.filter.userId == null, onTap: () => ctrl.setFilter(const GalleryFilter.all())),
                 const SizedBox(width: 8),
-                CTChip('Favorieten', icon: Icons.star_rounded, selected: gallery.filter.favorites, onTap: () => ctrl.setFilter(const GalleryFilter.favorites())),
+                CTChip(l.filterFavorites, icon: Icons.star_rounded, selected: gallery.filter.favorites, onTap: () => ctrl.setFilter(const GalleryFilter.favorites())),
                 const SizedBox(width: 8),
                 CTChip(
-                  gallery.filter.userId == null ? 'Per persoon' : (group.member(gallery.filter.userId!)?.name ?? 'Persoon'),
+                  gallery.filter.userId == null ? l.filterPerPerson : (group.member(gallery.filter.userId!)?.name ?? l.filterPerson),
                   icon: Icons.person_outline,
                   selected: gallery.filter.userId != null,
                   onTap: () => _pickPerson(group),
                 ),
                 const SizedBox(width: 8),
-                CTChip(_selecting ? 'Klaar' : 'Selecteer', icon: Icons.check_circle_outline, selected: _selecting, onTap: () {
+                CTChip(_selecting ? l.done : l.select, icon: Icons.check_circle_outline, selected: _selecting, onTap: () {
                   setState(() => _selecting ? _sel.exit() : _sel.active = true);
                 }),
                 if (group.hiddenCount > 0) ...[
                   const SizedBox(width: 8),
                   CTChip(
-                    'Verborgen (${group.hiddenCount})',
+                    '${l.hiddenFilter} (${group.hiddenCount})',
                     icon: Icons.visibility_off_outlined,
                     dashed: true,
                     onTap: () => context.push('/group/${group.id}/hidden'),
@@ -451,7 +454,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       context: context,
       builder: (c) => SafeArea(
         child: ListView(shrinkWrap: true, padding: const EdgeInsets.fromLTRB(20, 0, 20, 16), children: [
-          Text('Foto\'s van...', style: CT.title(22)),
+          Text(context.l10n.photosBy, style: CT.title(22)),
           const SizedBox(height: 8),
           for (final m in group.members)
             ListTile(
@@ -496,7 +499,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
               if (m != null) Avatar.member(m, size: 17),
               const SizedBox(width: 5),
               Text(Fmt.dm(p.takenAt), style: CT.text(10, color: CT.muted)),
-              if (p.fromRoll) ...[const SizedBox(width: 4), Text('· geüpload', style: CT.text(10, color: CT.muted))],
+              if (p.fromRoll) ...[const SizedBox(width: 4), Text('· ${context.l10n.uploadedTag}', style: CT.text(10, color: CT.muted))],
               const Spacer(),
               if (p.isFavorite) const Icon(Icons.star_rounded, size: 13, color: CT.warn),
               if (p.heartCount > 0) ...[
@@ -541,8 +544,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
         Expanded(
           child: CTButton(
             d != null
-                ? 'Opslaan... ${d.done}/${d.total}'
-                : 'Alles opslaan',
+                ? context.l10n.savingProgress(d.done, d.total)
+                : context.l10n.saveAll,
             icon: Icons.download_rounded,
             onTap: d != null || group.totalCount == 0 ? null : () => _saveAll(group),
           ),

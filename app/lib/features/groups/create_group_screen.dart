@@ -6,6 +6,7 @@ import '../../core/api.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 import '../camera/styles.dart';
 import '../premium/premium_controller.dart';
@@ -38,7 +39,6 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
       firstDate: now.subtract(const Duration(days: 60)),
       lastDate: now.add(const Duration(days: 730)),
       initialDateRange: _range ?? DateTimeRange(start: now, end: now.add(const Duration(days: 7))),
-      locale: const Locale('nl'),
       builder: (c, child) => Theme(data: CT.theme(), child: child!),
     );
     if (r != null) setState(() => _range = r);
@@ -51,7 +51,6 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
       firstDate: now.subtract(const Duration(days: 60)),
       lastDate: now.add(const Duration(days: 730)),
       initialDate: _eventDay,
-      locale: const Locale('nl'),
     );
     if (d != null) setState(() => _eventDay = d);
   }
@@ -59,7 +58,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
   Future<void> _create() async {
     final name = _name.text.trim();
     if (name.isEmpty) {
-      showMessage(context, 'Geef je groep een naam');
+      showMessage(context, context.l10n.groupNameRequired);
       return;
     }
     if (_type == GroupType.vacation && _range == null) {
@@ -85,6 +84,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
   @override
   Widget build(BuildContext context) {
     final isPro = ref.watch(isProProvider);
+    final l = context.l10n;
     Widget typeOption(GroupType t, IconData icon, String title, String sub) {
       final on = _type == t;
       return GestureDetector(
@@ -113,12 +113,12 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(leading: const CloseButton(), title: const Text('Nieuwe groep')),
+      appBar: AppBar(leading: const CloseButton(), title: Text(l.newGroup)),
       body: SafeArea(
         child: Column(children: [
           Expanded(
             child: ListView(padding: const EdgeInsets.fromLTRB(22, 4, 22, 24), children: [
-              const SectionLabel('Naam'),
+              SectionLabel(l.name),
               TextField(
                 controller: _name,
                 autofocus: true,
@@ -127,26 +127,26 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                 style: CT.title(18, weight: FontWeight.w600),
                 decoration: const InputDecoration(hintText: 'Mallorca \'27', counterText: ''),
               ),
-              const SectionLabel('Soort groep'),
-              typeOption(GroupType.vacation, Icons.beach_access_outlined, 'Vakantie', 'Met begin- en einddatum, daarna archief'),
-              typeOption(GroupType.event, Icons.celebration_outlined, 'Event', 'Eén dag of avond, bijv. een feest'),
-              typeOption(GroupType.permanent, Icons.all_inclusive, 'Altijd open', 'Voor je vaste vriendengroep'),
+              SectionLabel(l.groupType),
+              typeOption(GroupType.vacation, Icons.beach_access_outlined, l.groupTypeVacation, l.groupTypeVacationDescription),
+              typeOption(GroupType.event, Icons.celebration_outlined, l.groupTypeEvent, l.groupTypeEventDescription),
+              typeOption(GroupType.permanent, Icons.all_inclusive, l.groupTypePermanent, l.groupTypePermanentDescription),
               if (_type == GroupType.vacation) ...[
-                const SectionLabel('Datum'),
+                SectionLabel(l.date),
                 GestureDetector(
                   onTap: _pickRange,
                   child: Row(children: [
-                    Expanded(child: _dateBox(_range == null ? 'Vertrek' : Fmt.shortYear(_range!.start))),
+                    Expanded(child: _dateBox(_range == null ? l.departure : Fmt.shortYear(_range!.start))),
                     const SizedBox(width: 10),
-                    Expanded(child: _dateBox(_range == null ? 'Terug' : Fmt.shortYear(_range!.end))),
+                    Expanded(child: _dateBox(_range == null ? l.returnDate : Fmt.shortYear(_range!.end))),
                   ]),
                 ),
               ],
               if (_type == GroupType.event) ...[
-                const SectionLabel('Datum'),
+                SectionLabel(l.date),
                 GestureDetector(onTap: _pickDay, child: _dateBox(Fmt.shortYear(_eventDay))),
               ],
-              const SectionLabel('Standaard camerastijl'),
+              SectionLabel(l.defaultCameraStyle),
               Wrap(spacing: 8, runSpacing: 8, children: [
                 for (final s in CameraStyle.all)
                   CTChip(
@@ -161,8 +161,8 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                 const SizedBox(height: 18),
                 Text(
                   _type == GroupType.permanent
-                      ? 'Gratis: tot 10 leden. Met Pro onbeperkt.'
-                      : 'Gratis: tot 10 leden, foto\'s blijven tot 30 dagen na de einddatum. Met Pro onbeperkt en voor altijd.',
+                      ? l.freeLimitPermanent(10)
+                      : l.freeLimitDated(10, 30),
                   style: CT.text(12, color: CT.muted),
                 ),
               ],
@@ -170,7 +170,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
-            child: CTButton('Groep aanmaken', kind: CTButtonKind.primary, loading: _busy, onTap: _create),
+            child: CTButton(l.createGroup, kind: CTButtonKind.primary, loading: _busy, onTap: _create),
           ),
         ]),
       ),

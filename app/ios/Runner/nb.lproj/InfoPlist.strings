@@ -1,0 +1,5 @@
+/* Permission texts shown by iOS. Keep in sync with Info.plist (English) and lib/l10n/GLOSSARY.md. */
+"NSCameraUsageDescription" = "CamTrip bruker kameraet ditt til å ta bilder og videoer til gruppen din.";
+"NSMicrophoneUsageDescription" = "CamTrip bruker mikrofonen din til å ta opp lyd til videoer.";
+"NSPhotoLibraryAddUsageDescription" = "CamTrip lagrer bildene dine i bildebiblioteket, i et album med navnet på gruppen din.";
+"NSPhotoLibraryUsageDescription" = "Velg bilder fra bildebiblioteket for å dele dem med gruppen din.";

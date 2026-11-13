@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../core/format.dart';
 import '../../core/theme.dart';
+import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 
 /// Which photos are picked in the gallery's selection mode. Plain Dart so it
@@ -89,6 +89,7 @@ class SelectionActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = count > 0 && busyLabel == null;
+    final l = context.l10n;
     Widget action(Key key, IconData icon, String label, VoidCallback? onTap, {Color? color}) {
       final on = enabled && onTap != null;
       return Expanded(
@@ -103,7 +104,8 @@ class SelectionActionBar extends StatelessWidget {
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Icon(icon, color: color ?? Colors.white, size: 22),
                 const SizedBox(height: 4),
-                Text(label, style: CT.text(12, color: color ?? Colors.white, weight: FontWeight.w600)),
+                Text(label,
+                    maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(12, color: color ?? Colors.white, weight: FontWeight.w600)),
               ]),
             ),
           ),
@@ -120,11 +122,11 @@ class SelectionActionBar extends StatelessWidget {
               child: Center(child: Text(busyLabel!, style: CT.text(14, color: Colors.white, weight: FontWeight.w600))),
             )
           : Row(children: [
-              action(const Key('sel-save'), Icons.download_rounded, 'Opslaan', onSave),
-              action(const Key('sel-favorite'), favoriteOn ? Icons.star_outline_rounded : Icons.star_rounded, favoriteOn ? 'Favoriet' : 'Geen favoriet',
+              action(const Key('sel-save'), Icons.download_rounded, l.save, onSave),
+              action(const Key('sel-favorite'), favoriteOn ? Icons.star_outline_rounded : Icons.star_rounded, favoriteOn ? l.favorite : l.unfavorite,
                   onFavorite),
-              action(const Key('sel-hide'), Icons.visibility_off_outlined, 'Verbergen', onHide),
-              action(const Key('sel-delete'), Icons.delete_outline, 'Verwijderen', onDelete, color: const Color(0xFFFF8A73)),
+              action(const Key('sel-hide'), Icons.visibility_off_outlined, l.hide, onHide),
+              action(const Key('sel-delete'), Icons.delete_outline, l.delete, onDelete, color: const Color(0xFFFF8A73)),
             ]),
     );
   }
@@ -133,32 +135,32 @@ class SelectionActionBar extends StatelessWidget {
 /// Confirmation before deleting photos for the whole group.
 /// [notAllowed] = picked photos of others that this user cannot delete.
 Future<bool> confirmDeletePhotos(BuildContext context, {required int count, int notAllowed = 0}) async {
-  final what = Fmt.count(count, 'foto', 'foto\'s');
+  final l = context.l10n;
   final r = await showDialog<bool>(
     context: context,
     builder: (c) => AlertDialog(
-      title: Text(count == 1 ? 'Foto verwijderen?' : '$what verwijderen?', style: CT.title(20)),
+      title: Text(l.deletePhotosTitle(count), style: CT.title(20)),
       content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(
-          '${count == 1 ? 'Hij verdwijnt' : 'Ze verdwijnen'} voor iedereen in de groep. Dit kan niet ongedaan worden.',
+          l.deletePhotosMessage(count),
           style: CT.text(15, color: CT.muted),
         ),
         const SizedBox(height: 10),
-        Text('Je eigen fotorol blijft ongewijzigd.', style: CT.text(14, color: CT.muted, weight: FontWeight.w500)),
+        Text(l.deleteGroupOwnRoll, style: CT.text(14, color: CT.muted, weight: FontWeight.w500)),
         if (notAllowed > 0) ...[
           const SizedBox(height: 10),
           Text(
-            '${Fmt.count(notAllowed, 'foto is', 'foto\'s zijn')} van iemand anders. Die blijven staan; alleen een beheerder kan ze verwijderen.',
+            l.deletePhotosNotAllowed(notAllowed),
             style: CT.text(13, color: CT.warn),
           ),
         ],
       ]),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(c, false), child: Text('Annuleer', style: CT.text(15, color: CT.muted))),
+        TextButton(onPressed: () => Navigator.pop(c, false), child: Text(l.cancel, style: CT.text(15, color: CT.muted))),
         TextButton(
           key: const Key('confirm-delete'),
           onPressed: () => Navigator.pop(c, true),
-          child: Text('Verwijder', style: CT.text(15, color: CT.accent, weight: FontWeight.w600)),
+          child: Text(l.remove, style: CT.text(15, color: CT.accent, weight: FontWeight.w600)),
         ),
       ],
     ),
@@ -173,6 +175,6 @@ void showUndo(BuildContext context, String text, VoidCallback onUndo) {
     ..showSnackBar(SnackBar(
       content: Text(text),
       duration: const Duration(seconds: 5),
-      action: SnackBarAction(label: 'Ongedaan maken', textColor: const Color(0xFFFF8A73), onPressed: onUndo),
+      action: SnackBarAction(label: context.l10n.undo, textColor: const Color(0xFFFF8A73), onPressed: onUndo),
     ));
 }

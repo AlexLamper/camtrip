@@ -141,9 +141,9 @@ export function parseAdminEmails(raw: string | null | undefined): Set<string> {
 
 /**
  * True when this account should be bootstrapped as admin: its e-mail is in
- * ADMIN_EMAILS AND the address is verified (by Apple/Google, or a reset code
- * for e-mail accounts). An unverified address never counts, otherwise anyone
- * could register the owner's address and become admin.
+ * ADMIN_EMAILS AND the address is verified by Apple/Google (a push reset code
+ * proves nothing about the mailbox). An unverified address never counts,
+ * otherwise anyone could register the owner's address and become admin.
  */
 export function isBootstrapAdmin(
   user: { email?: string | null; emailVerified?: boolean | null } | null | undefined,
@@ -151,6 +151,18 @@ export function isBootstrapAdmin(
 ): boolean {
   if (!user?.email || !user.emailVerified || !adminEmails.size) return false;
   return adminEmails.has(user.email.trim().toLowerCase());
+}
+
+/**
+ * Mongo filter for everyone who should get admin alerts (e.g. a new report):
+ * users with role 'admin', plus users whose *verified* e-mail is in
+ * ADMIN_EMAILS (they become admin on their next sign-in anyway). Banned
+ * accounts are left out.
+ */
+export function adminRecipientsFilter(adminEmails: Set<string>): Record<string, unknown> {
+  const or: Record<string, unknown>[] = [{ role: 'admin' }];
+  if (adminEmails.size) or.push({ email: { $in: [...adminEmails] }, emailVerified: true });
+  return { $or: or, banned: { $ne: true } };
 }
 
 // ---------------------------------------------------------------- gifts

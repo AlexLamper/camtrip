@@ -7,6 +7,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../core/api.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import 'groups_controller.dart';
 
 /// Extracts a group code from a typed code, a camtrip.app/j/CODE link or camtrip://join/CODE.
@@ -54,7 +55,7 @@ class _JoinSheetState extends ConsumerState<JoinSheet> {
   Future<void> _join([String? value]) async {
     final code = parseInvite(value ?? _code.text);
     if (code == null) {
-      setState(() => _error = 'Vul de code van 6 tekens in');
+      setState(() => _error = context.l10n.joinEnterCode);
       return;
     }
     setState(() {
@@ -78,12 +79,13 @@ class _JoinSheetState extends ConsumerState<JoinSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return Padding(
       padding: EdgeInsets.fromLTRB(22, 0, 22, MediaQuery.of(context).viewInsets.bottom + 24),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text('Join een groep', style: CT.title(24)),
+        Text(l.joinGroupTitle, style: CT.title(24)),
         const SizedBox(height: 4),
-        Text('Vul de code van je vrienden in, of scan hun QR-code.', style: CT.text(14, color: CT.muted)),
+        Text(l.joinGroupSubtitle, style: CT.text(14, color: CT.muted)),
         const SizedBox(height: 18),
         if (_scan)
           ClipRRect(
@@ -116,11 +118,11 @@ class _JoinSheetState extends ConsumerState<JoinSheet> {
         const SizedBox(height: 16),
         Row(children: [
           Expanded(
-            child: CTButton(_scan ? 'Typ code' : 'Scan QR', kind: CTButtonKind.outline, icon: _scan ? Icons.keyboard : Icons.qr_code_scanner,
+            child: CTButton(_scan ? l.typeCode : l.scanQr, kind: CTButtonKind.outline, icon: _scan ? Icons.keyboard : Icons.qr_code_scanner,
                 onTap: () => setState(() => _scan = !_scan)),
           ),
           const SizedBox(width: 10),
-          Expanded(child: CTButton('Join', kind: CTButtonKind.primary, loading: _busy, onTap: _join)),
+          Expanded(child: CTButton(l.join, kind: CTButtonKind.primary, loading: _busy, onTap: _join)),
         ]),
       ]),
     );

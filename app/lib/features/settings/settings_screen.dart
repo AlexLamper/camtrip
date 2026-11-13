@@ -8,11 +8,12 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api.dart';
 import '../../core/config.dart';
-import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import '../../main.dart';
 import '../../models/models.dart';
+import '../admin/admin_api.dart';
 import '../auth/auth_controller.dart';
 import '../premium/premium_controller.dart';
 
@@ -34,14 +35,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _rename() async {
     final user = ref.read(authProvider).value;
     final c = TextEditingController(text: user?.name ?? '');
+    final l = context.l10n;
     final name = await showDialog<String>(
       context: context,
       builder: (d) => AlertDialog(
-        title: Text('Je naam', style: CT.title(20)),
+        title: Text(l.yourName, style: CT.title(20)),
         content: TextField(controller: c, autofocus: true, maxLength: 40, textCapitalization: TextCapitalization.words),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(d), child: const Text('Annuleer')),
-          TextButton(onPressed: () => Navigator.pop(d, c.text.trim()), child: const Text('Opslaan')),
+          TextButton(onPressed: () => Navigator.pop(d), child: Text(l.cancel)),
+          TextButton(onPressed: () => Navigator.pop(d, c.text.trim()), child: Text(l.save)),
         ],
       ),
     );
@@ -62,6 +64,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final user = ref.watch(authProvider).value;
     final isPro = ref.watch(isProProvider);
     final prefs = ref.watch(prefsProvider);
+    final l = context.l10n;
 
     Widget toggle(String title, bool value, ValueChanged<bool> onChanged, {String? subtitle}) =>
         SettingRow(title: title, subtitle: subtitle, trailing: Switch(value: value, onChanged: (v) => setState(() => onChanged(v))));
@@ -69,7 +72,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('')),
       body: ListView(padding: const EdgeInsets.fromLTRB(22, 0, 22, 40), children: [
-        Text('Instellingen', style: CT.title(30)),
+        Text(l.settings, style: CT.title(30)),
         const SizedBox(height: 16),
         GestureDetector(
           onTap: _rename,
@@ -81,8 +84,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(user?.name.isNotEmpty == true ? user!.name : 'Jij', style: CT.text(16, weight: FontWeight.w600)),
-                  Text(user?.email.isNotEmpty == true ? user!.email : 'Tik om je naam te wijzigen', style: CT.text(12, color: CT.muted)),
+                  Text(user?.name.isNotEmpty == true ? user!.name : l.you, style: CT.text(16, weight: FontWeight.w600)),
+                  Text(user?.email.isNotEmpty == true ? user!.email : l.tapToChangeName, style: CT.text(12, color: CT.muted)),
                 ]),
               ),
               if (isPro)
@@ -96,56 +99,62 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
         if (!isPro) ...[
           const SizedBox(height: 12),
-          CTButton('Word CamTrip Pro', kind: CTButtonKind.primary, icon: Icons.star_rounded, onTap: () => context.push('/pro')),
+          CTButton(l.getCamTripPro, kind: CTButtonKind.primary, icon: Icons.star_rounded, onTap: () => context.push('/pro')),
         ],
-        const SectionLabel('Foto\'s'),
-        toggle('Eigen foto\'s opslaan in album per groep', prefs.saveOwnToAlbum, (v) => prefs.saveOwnToAlbum = v),
-        toggle('Foto\'s van anderen automatisch opslaan', prefs.autoSaveOthers, (v) => prefs.autoSaveOthers = v),
-        toggle('Alleen uploaden via wifi', prefs.wifiOnly, (v) => prefs.wifiOnly = v),
-        toggle('Video\'s alleen via wifi', prefs.videosWifiOnly, (v) => prefs.videosWifiOnly = v, subtitle: 'Spaart je mobiele data'),
-        toggle('Datumstempel', prefs.dateStamp, (v) => prefs.dateStamp = v),
-        SettingRow(title: 'Wachtrij', trailing: const Icon(Icons.chevron_right), onTap: () => context.push('/queue')),
-        const SectionLabel('Meldingen'),
-        toggle('Nieuwe foto\'s (gebundeld)', user?.notifyNewPhotos ?? true,
+        SectionLabel(l.photos),
+        toggle(l.saveOwnPhotos, prefs.saveOwnToAlbum, (v) => prefs.saveOwnToAlbum = v),
+        toggle(l.autoSaveOthers, prefs.autoSaveOthers, (v) => prefs.autoSaveOthers = v),
+        toggle(l.wifiOnlyTitle, prefs.wifiOnly, (v) => prefs.wifiOnly = v),
+        toggle(l.videosWifiOnlyTitle, prefs.videosWifiOnly, (v) => prefs.videosWifiOnly = v, subtitle: l.videosWifiOnlySubtitle),
+        toggle(l.dateStamp, prefs.dateStamp, (v) => prefs.dateStamp = v),
+        SettingRow(title: l.uploadQueue, trailing: const Icon(Icons.chevron_right), onTap: () => context.push('/queue')),
+        SectionLabel(l.notifications),
+        toggle(l.notifyNewPhotos, user?.notifyNewPhotos ?? true,
             (v) => ref.read(authProvider.notifier).updateProfile(notifyNewPhotos: v).ignore()),
-        toggle('Recap klaar', user?.notifyRecap ?? true, (v) => ref.read(authProvider.notifier).updateProfile(notifyRecap: v).ignore()),
+        toggle(l.notifyRecapReady, user?.notifyRecap ?? true, (v) => ref.read(authProvider.notifier).updateProfile(notifyRecap: v).ignore()),
         if (user?.isAppAdmin ?? false) ...[
-          const SectionLabel('CamTrip-team'),
+          SectionLabel(l.camTripTeam),
           SettingRow(
-            title: 'Beheer',
-            subtitle: 'Gebruikers, Pro geven, meldingen en cijfers',
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/admin'),
+            title: l.manage,
+            subtitle: l.adminEntrySubtitle,
+            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+              _OpenReportsBadge(count: ref.watch(adminOpenReportsProvider).value ?? 0),
+              const Icon(Icons.chevron_right),
+            ]),
+            onTap: () async {
+              await context.push('/admin');
+              if (mounted) ref.invalidate(adminOpenReportsProvider);
+            },
           ),
         ],
-        const SectionLabel('Account'),
+        SectionLabel(l.account),
         SettingRow(
-          title: 'Abonnement beheren',
+          title: l.manageSubscription,
           trailing: const Icon(Icons.chevron_right),
           onTap: () => launchUrl(
             Uri.parse(Platform.isIOS ? 'https://apps.apple.com/account/subscriptions' : 'https://play.google.com/store/account/subscriptions'),
             mode: LaunchMode.externalApplication,
           ),
         ),
-        SettingRow(title: 'Aankopen herstellen', onTap: () async {
+        SettingRow(title: l.restorePurchases, onTap: () async {
           try {
             final ok = await ref.read(premiumProvider.notifier).restore();
-            if (context.mounted) showMessage(context, ok ? 'Pro is hersteld' : 'Geen eerdere aankoop gevonden');
+            if (context.mounted) showMessage(context, ok ? l.proRestored : l.noPurchaseFound);
           } on ApiException catch (e) {
             if (context.mounted) showMessage(context, e.message);
           }
         }),
         SettingRow(
-          title: 'Geblokkeerde personen',
-          subtitle: (user?.blockedUserIds.isEmpty ?? true) ? 'Niemand' : Fmt.count(user!.blockedUserIds.length, 'persoon', 'personen'),
+          title: l.blockedPeople,
+          subtitle: (user?.blockedUserIds.isEmpty ?? true) ? l.nobody : l.peopleCount(user!.blockedUserIds.length),
           trailing: const Icon(Icons.chevron_right),
           onTap: _blocked,
         ),
-        SettingRow(title: 'Privacybeleid', trailing: const Icon(Icons.open_in_new, size: 18), onTap: () => launchUrl(Uri.parse(AppConfig.privacyUrl))),
-        SettingRow(title: 'Voorwaarden', trailing: const Icon(Icons.open_in_new, size: 18), onTap: () => launchUrl(Uri.parse(AppConfig.termsUrl))),
-        SettingRow(title: 'Contact', subtitle: AppConfig.supportEmail, onTap: () => launchUrl(Uri.parse('mailto:${AppConfig.supportEmail}'))),
+        SettingRow(title: l.privacyPolicy, trailing: const Icon(Icons.open_in_new, size: 18), onTap: () => launchUrl(Uri.parse(AppConfig.privacyUrl))),
+        SettingRow(title: l.terms, trailing: const Icon(Icons.open_in_new, size: 18), onTap: () => launchUrl(Uri.parse(AppConfig.termsUrl))),
+        SettingRow(title: l.contact, subtitle: AppConfig.supportEmail, onTap: () => launchUrl(Uri.parse('mailto:${AppConfig.supportEmail}'))),
         SettingRow(
-          title: 'Uitloggen',
+          title: l.signOut,
           color: CT.accent,
           onTap: () async {
             await ref.read(authProvider.notifier).signOut();
@@ -153,15 +162,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           },
         ),
         SettingRow(
-          title: 'Account verwijderen',
-          subtitle: 'Verwijdert je account en al je foto\'s',
+          title: l.deleteAccount,
+          subtitle: l.deleteAccountSubtitle,
           color: CT.accent,
           divider: false,
           onTap: () async {
             if (!await confirm(context,
-                title: 'Account verwijderen?',
-                message: 'Je account en al je foto\'s en video\'s worden verwijderd, ook uit de groepen. Een lopend abonnement zeg je op via de App Store of Google Play.',
-                ok: 'Verwijder',
+                title: l.deleteAccountTitle,
+                message: l.deleteAccountMessage,
+                ok: l.remove,
                 danger: true)) {
               return;
             }
@@ -218,20 +227,21 @@ class _BlockedSheetState extends ConsumerState<_BlockedSheet> {
   @override
   Widget build(BuildContext context) {
     final users = _users;
+    final l = context.l10n;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Geblokkeerd', style: CT.title(22)),
+          Text(l.blockedTitle, style: CT.title(22)),
           const SizedBox(height: 4),
-          Text('Je ziet geen foto\'s van deze mensen.', style: CT.text(13, color: CT.muted)),
+          Text(l.blockedSubtitle, style: CT.text(13, color: CT.muted)),
           const SizedBox(height: 12),
           if (_error != null)
             Text(_error!, style: CT.text(14, color: CT.accent))
           else if (users == null)
             const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator(color: CT.ink)))
           else if (users.isEmpty)
-            Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text('Je hebt niemand geblokkeerd.', style: CT.text(15)))
+            Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: Text(l.blockedNone, style: CT.text(15)))
           else
             ConstrainedBox(
               constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.5),
@@ -241,11 +251,34 @@ class _BlockedSheetState extends ConsumerState<_BlockedSheet> {
                     contentPadding: EdgeInsets.zero,
                     leading: Avatar.member(m, size: 34),
                     title: Text(m.name, style: CT.text(16, weight: FontWeight.w500)),
-                    trailing: TextButton(onPressed: () => _unblock(m), child: const Text('Opheffen')),
+                    trailing: TextButton(onPressed: () => _unblock(m), child: Text(l.unblockShort)),
                   ),
               ]),
             ),
         ]),
+      ),
+    );
+  }
+}
+
+/// Red count of open reports next to "Beheer"; nothing when there are none.
+class _OpenReportsBadge extends StatelessWidget {
+  const _OpenReportsBadge({required this.count});
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    if (count <= 0) return const SizedBox.shrink();
+    return Semantics(
+      label: '${context.l10n.adminOpenReports}: $count',
+      excludeSemantics: true,
+      child: Container(
+        key: const ValueKey('openReportsBadge'),
+        margin: const EdgeInsets.only(right: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        constraints: const BoxConstraints(minWidth: 22),
+        decoration: BoxDecoration(color: CT.accent, borderRadius: BorderRadius.circular(11)),
+        child: Text(count > 99 ? '99+' : '$count', textAlign: TextAlign.center, style: CT.text(12, weight: FontWeight.w700, color: Colors.white)),
       ),
     );
   }

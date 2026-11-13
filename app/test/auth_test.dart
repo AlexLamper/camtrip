@@ -8,6 +8,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/l10n.dart';
+
 /// Signed-out session that never touches storage or the network.
 class _SignedOut extends AuthController {
   @override
@@ -16,10 +18,11 @@ class _SignedOut extends AuthController {
 
 Widget _app(Widget child) => ProviderScope(
       overrides: [authProvider.overrideWith(_SignedOut.new)],
-      child: MaterialApp(home: child),
+      child: localizedApp(home: child),
     );
 
 void main() {
+  setUpAll(useDutch);
   group('AuthValidators', () {
     test('name', () {
       expect(AuthValidators.name(''), 'Vul je naam in');

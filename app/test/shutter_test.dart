@@ -6,12 +6,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-Widget _wrap(Widget child) => MaterialApp(home: Scaffold(body: Center(child: child)));
+import 'support/l10n.dart';
+
+Widget _wrap(Widget child) => localizedApp(home: Scaffold(body: Center(child: child)));
 
 BoxDecoration _disc(WidgetTester t) =>
     (t.widget<AnimatedContainer>(find.byKey(const ValueKey('shutter-disc'))).decoration ?? const BoxDecoration()) as BoxDecoration;
 
 void main() {
+  setUpAll(useDutch);
   group('ShutterButton', () {
     testWidgets('photo mode is an ink disc in a white ring, not red', (t) async {
       await t.pumpWidget(_wrap(const ShutterButton(videoMode: false, recording: false, busy: false)));

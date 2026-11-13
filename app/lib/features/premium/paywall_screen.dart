@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -10,6 +11,7 @@ import '../../core/api.dart';
 import '../../core/config.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import 'premium_controller.dart';
 
 class PaywallScreen extends ConsumerStatefulWidget {
@@ -29,13 +31,13 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 
   Future<void> _buy(Package? p) async {
     if (p == null) {
-      showMessage(context, 'Abonnementen zijn nu niet beschikbaar. Probeer het later.');
+      showMessage(context, context.l10n.subscriptionsUnavailable);
       return;
     }
     try {
       final ok = await ref.read(premiumProvider.notifier).purchase(p);
       if (ok && mounted) {
-        showMessage(context, 'Welkom bij CamTrip Pro! 🎉');
+        showMessage(context, context.l10n.welcomePro);
         context.pop();
       }
     } on ApiException catch (e) {
@@ -46,25 +48,27 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   Future<void> _restore() async {
     try {
       final ok = await ref.read(premiumProvider.notifier).restore();
-      if (mounted) showMessage(context, ok ? 'Pro is hersteld' : 'Geen eerdere aankoop gevonden');
+      if (mounted) showMessage(context, ok ? context.l10n.proRestored : context.l10n.noPurchaseFound);
       if (ok && mounted) context.pop();
     } on ApiException catch (e) {
       if (mounted) showMessage(context, e.message);
     }
   }
 
-  String _price(Package? p, String fallback) => p?.storeProduct.priceString ?? fallback;
+  /// The store's price, or the list price in euros while the store has not answered.
+  String _price(Package? p, double fallback) =>
+      p?.storeProduct.priceString ?? NumberFormat.simpleCurrency(locale: L10n.intlLocale, name: 'EUR').format(fallback);
 
   /// "7 dagen" / "1 maand" from the store's introductory offer, if it is free.
-  static String? _trialText(Package? p) {
+  static String? _trialText(AppLocalizations l, Package? p) {
     final intro = p?.storeProduct.introductoryPrice;
     if (intro == null || intro.price > 0) return null;
     final n = intro.periodNumberOfUnits * intro.cycles;
     return switch (intro.periodUnit) {
-      PeriodUnit.day => '$n ${n == 1 ? 'dag' : 'dagen'}',
-      PeriodUnit.week => n == 1 ? '7 dagen' : '$n weken',
-      PeriodUnit.month => '$n ${n == 1 ? 'maand' : 'maanden'}',
-      PeriodUnit.year => '$n jaar',
+      PeriodUnit.day => l.periodDays(n),
+      PeriodUnit.week => n == 1 ? l.periodDays(7) : l.periodWeeks(n),
+      PeriodUnit.month => l.periodMonths(n),
+      PeriodUnit.year => l.periodYears(n),
       _ => null,
     };
   }
@@ -77,7 +81,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final isPro = ref.watch(isProProvider);
     final annual = s.annual, monthly = s.monthly;
     final selected = _annual ? annual : monthly;
-    final trial = _trialText(selected);
+    final l = context.l10n;
+    final trial = _trialText(l, selected);
+    final annualPrice = _price(annual, 49.99), monthlyPrice = _price(monthly, 7.99);
     final unavailable = s.configured && s.offering == null;
 
     Widget plan({required bool selected, required String title, required String price, required String sub, String? badge, required VoidCallback onTap}) {
@@ -117,7 +123,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     return Scaffold(
       body: SafeArea(
         child: Column(children: [
-          Align(alignment: Alignment.topRight, child: IconButton(onPressed: () => context.pop(), icon: const Icon(Icons.close, color: CT.muted))),
+          Align(alignment: Alignment.topRight, child: IconButton(tooltip: l.close, onPressed: () => context.pop(), icon: const Icon(Icons.close, color: CT.muted))),
           Expanded(
             child: ListView(padding: const EdgeInsets.symmetric(horizontal: 26), children: [
               SizedBox(
@@ -129,15 +135,15 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 ]),
               ),
               const SizedBox(height: 10),
-              Text(isPro ? 'Je hebt CamTrip Pro' : 'CamTrip Pro', style: CT.title(30)),
+              Text(isPro ? l.paywallHavePro : 'CamTrip Pro', style: CT.title(30)),
               const SizedBox(height: 6),
-              Text('Alles voor je volgende trip.', style: CT.text(15, color: CT.muted)),
+              Text(l.paywallSubtitle, style: CT.text(15, color: CT.muted)),
               const SizedBox(height: 16),
-              for (final f in const [
-                'Alle camerastijlen (Z/W, Golden, Chrome)',
-                'Onbeperkt leden en opslag, foto\'s blijven altijd bewaard',
-                'Recaps zonder watermerk',
-                'Originele kwaliteit downloaden',
+              for (final f in [
+                l.paywallFeatureStyles('${l.styleBw}, ${l.styleGolden}, ${l.styleChrome}'),
+                l.paywallFeatureUnlimited,
+                l.paywallFeatureNoWatermark,
+                l.paywallFeatureOriginal,
               ])
                 Padding(
                   padding: const EdgeInsets.only(bottom: 9),
@@ -154,18 +160,18 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 Row(children: [
                   plan(
                     selected: _annual,
-                    title: 'Jaar',
-                    price: _price(annual, '€49,99'),
-                    sub: '${annual?.storeProduct.pricePerMonthString ?? '€4,17'} per maand',
-                    badge: 'BESPAAR 48%',
+                    title: l.planYear,
+                    price: annualPrice,
+                    sub: l.pricePerMonth(annual?.storeProduct.pricePerMonthString ?? _price(null, 4.17)),
+                    badge: l.paywallSaveBadge(48),
                     onTap: () => setState(() => _annual = true),
                   ),
                   const SizedBox(width: 10),
                   plan(
                     selected: !_annual,
-                    title: 'Maand',
-                    price: _price(monthly, '€7,99'),
-                    sub: 'maandelijks opzegbaar',
+                    title: l.planMonth,
+                    price: monthlyPrice,
+                    sub: l.planMonthCancelAnytime,
                     onTap: () => setState(() => _annual = false),
                   ),
                 ]),
@@ -176,7 +182,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(22, 8, 22, 4),
               child: CTButton(
-                trial != null ? 'Probeer $trial gratis' : 'Word Pro',
+                trial != null ? l.tryFree(trial) : l.becomePro,
                 kind: CTButtonKind.primary,
                 loading: s.busy,
                 onTap: () => _buy(_annual ? annual : monthly),
@@ -188,31 +194,32 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
               if (unavailable)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 6),
-                  child: Text('Abonnementen konden niet geladen worden. Controleer je verbinding.',
+                  child: Text(l.subscriptionsLoadFailed,
                       textAlign: TextAlign.center, style: CT.text(12, color: CT.accent)),
                 ),
               if (!isPro)
                 Text(
                   [
-                    _annual
-                        ? 'CamTrip Pro jaarabonnement: ${trial != null ? '$trial gratis, daarna ' : ''}${_price(annual, '€49,99')} per jaar.'
-                        : 'CamTrip Pro maandabonnement: ${trial != null ? '$trial gratis, daarna ' : ''}${_price(monthly, '€7,99')} per maand.',
-                    'De betaling loopt via je ${Platform.isIOS ? 'Apple ID' : 'Google-account'}. Het abonnement verlengt automatisch, '
-                        'tenzij je het uiterlijk 24 uur voor het einde van de periode opzegt. '
-                        'Opzeggen en beheren kan in de instellingen van je ${Platform.isIOS ? 'App Store-account' : 'Google Play-account'}.',
+                    switch ((_annual, trial)) {
+                      (true, null) => l.legalAnnual(annualPrice),
+                      (true, final t?) => l.legalAnnualTrial(t, annualPrice),
+                      (false, null) => l.legalMonthly(monthlyPrice),
+                      (false, final t?) => l.legalMonthlyTrial(t, monthlyPrice),
+                    },
+                    Platform.isIOS ? l.legalBillingApple : l.legalBillingGoogle,
                   ].join(' '),
                   textAlign: TextAlign.center,
                   style: CT.text(11, color: CT.muted),
                 ),
               const SizedBox(height: 6),
               Wrap(alignment: WrapAlignment.center, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                TextButton(onPressed: s.busy ? null : _restore, child: Text('Herstel aankopen', style: CT.text(12, color: CT.muted))),
+                TextButton(onPressed: s.busy ? null : _restore, child: Text(l.restorePurchases, style: CT.text(12, color: CT.muted))),
                 Text('·', style: CT.text(12, color: CT.muted)),
-                TextButton(onPressed: () => _open(AppConfig.termsUrl), child: Text('Voorwaarden', style: CT.text(12, color: CT.muted))),
+                TextButton(onPressed: () => _open(AppConfig.termsUrl), child: Text(l.terms, style: CT.text(12, color: CT.muted))),
                 Text('·', style: CT.text(12, color: CT.muted)),
                 TextButton(onPressed: () => _open(AppConfig.appleEulaUrl), child: Text('EULA', style: CT.text(12, color: CT.muted))),
                 Text('·', style: CT.text(12, color: CT.muted)),
-                TextButton(onPressed: () => _open(AppConfig.privacyUrl), child: Text('Privacy', style: CT.text(12, color: CT.muted))),
+                TextButton(onPressed: () => _open(AppConfig.privacyUrl), child: Text(l.privacy, style: CT.text(12, color: CT.muted))),
               ]),
             ]),
           ),
@@ -226,12 +233,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
 class GroupProNote extends StatelessWidget {
   const GroupProNote({super.key});
 
-  static const title = 'Eén Pro in de groep = Pro voor iedereen in die groep';
-  static const body = 'Heeft één iemand Pro, dan krijgt de hele groep alle camerastijlen, onbeperkt leden, '
-      'foto\'s die bewaard blijven, originele kwaliteit en recaps zonder watermerk.';
-
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: CT.cream, borderRadius: BorderRadius.circular(14)),
@@ -240,9 +244,9 @@ class GroupProNote extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: CT.text(14, weight: FontWeight.w700)),
+            Text(l.groupProTitle, style: CT.text(14, weight: FontWeight.w700)),
             const SizedBox(height: 3),
-            Text(body, style: CT.text(13, color: CT.muted)),
+            Text(l.groupProBody, style: CT.text(13, color: CT.muted)),
           ]),
         ),
       ]),

@@ -1,6 +1,8 @@
-/// Form checks for the e-mail sign-in screens. Pure functions (no Flutter), so
-/// they are easy to test. Each returns a Dutch message, or null when valid.
-/// The server checks the same rules again.
+import '../../l10n/l10n.dart';
+
+/// Form checks for the e-mail sign-in screens. Pure functions (no widgets), so
+/// they are easy to test. Each returns a message in the app's language (or in
+/// [l] when given), or null when valid. The server checks the same rules again.
 class AuthValidators {
   AuthValidators._();
 
@@ -8,36 +10,41 @@ class AuthValidators {
 
   static final _email = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]{2,}$');
 
-  static String? name(String? v) {
+  static String? name(String? v, [AppLocalizations? l]) {
+    l ??= L10n.current;
     final s = (v ?? '').trim();
-    if (s.isEmpty) return 'Vul je naam in';
-    if (s.length > 40) return 'Maximaal 40 tekens';
+    if (s.isEmpty) return l.validationNameRequired;
+    if (s.length > 40) return l.validationMaxChars(40);
     return null;
   }
 
-  static String? email(String? v) {
+  static String? email(String? v, [AppLocalizations? l]) {
+    l ??= L10n.current;
     final s = (v ?? '').trim();
-    if (s.isEmpty) return 'Vul je e-mailadres in';
-    if (s.length > 254 || !_email.hasMatch(s)) return 'Dit e-mailadres klopt niet';
+    if (s.isEmpty) return l.validationEmailRequired;
+    if (s.length > 254 || !_email.hasMatch(s)) return l.validationEmailInvalid;
     return null;
   }
 
   /// For a new password (register / reset).
-  static String? newPassword(String? v) {
+  static String? newPassword(String? v, [AppLocalizations? l]) {
+    l ??= L10n.current;
     final s = v ?? '';
-    if (s.isEmpty) return 'Kies een wachtwoord';
-    if (s.length < passwordMin) return 'Minstens $passwordMin tekens';
-    if (s.length > 200) return 'Dit wachtwoord is te lang';
+    if (s.isEmpty) return l.validationPasswordRequired;
+    if (s.length < passwordMin) return l.validationMinChars(passwordMin);
+    if (s.length > 200) return l.validationPasswordTooLong;
     return null;
   }
 
   /// For signing in: only checks that something was typed.
-  static String? password(String? v) => (v ?? '').isEmpty ? 'Vul je wachtwoord in' : null;
+  static String? password(String? v, [AppLocalizations? l]) =>
+      (v ?? '').isEmpty ? (l ?? L10n.current).validationPasswordEmpty : null;
 
-  static String? code(String? v) {
+  static String? code(String? v, [AppLocalizations? l]) {
+    l ??= L10n.current;
     final s = (v ?? '').replaceAll(RegExp(r'\s'), '');
-    if (s.isEmpty) return 'Vul de code uit de mail in';
-    if (!RegExp(r'^\d{6}$').hasMatch(s)) return 'De code bestaat uit 6 cijfers';
+    if (s.isEmpty) return l.validationCodeRequired;
+    if (!RegExp(r'^\d{6}$').hasMatch(s)) return l.validationCodeDigits;
     return null;
   }
 }

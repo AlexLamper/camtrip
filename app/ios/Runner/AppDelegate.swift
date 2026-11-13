@@ -47,7 +47,7 @@ import UserNotifications
       case "initialOpen":
         let open = self.pendingOpen
         self.pendingOpen = nil
-        result(open?["groupId"] as? String)
+        result(open?.filter { $0.key != "aps" && $0.value is String })
       default:
         result(FlutterMethodNotImplemented)
       }
@@ -81,12 +81,17 @@ import UserNotifications
     didReceive response: UNNotificationResponse,
     withCompletionHandler completionHandler: @escaping () -> Void
   ) {
-    let info = response.notification.request.content.userInfo
-    if let groupId = info["groupId"] as? String {
+    // The custom payload keys (type, groupId, reportId ...) as strings; Dart routes on them.
+    var data: [String: String] = [:]
+    for (key, value) in response.notification.request.content.userInfo {
+      guard let k = key as? String, k != "aps" else { continue }
+      if let v = value as? String { data[k] = v } else { data[k] = "\(value)" }
+    }
+    if !data.isEmpty {
       if let channel = pushChannel {
-        channel.invokeMethod("open", arguments: groupId)
+        channel.invokeMethod("open", arguments: data)
       } else {
-        pendingOpen = ["groupId": groupId]
+        pendingOpen = data
       }
     }
     completionHandler()

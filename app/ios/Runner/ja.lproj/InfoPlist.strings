@@ -1,0 +1,5 @@
+/* Permission texts shown by iOS. Keep in sync with Info.plist (English) and lib/l10n/GLOSSARY.md. */
+"NSCameraUsageDescription" = "CamTripはグループ用の写真や動画を撮影するためにカメラを使用します。";
+"NSMicrophoneUsageDescription" = "CamTripは動画の音声を録音するためにマイクを使用します。";
+"NSPhotoLibraryAddUsageDescription" = "CamTripは写真を、写真ライブラリ内のグループ名のアルバムに保存します。";
+"NSPhotoLibraryUsageDescription" = "グループで共有する写真をライブラリから選択します。";

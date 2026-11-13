@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import '../../main.dart';
 import '../../models/models.dart';
 import '../groups/groups_controller.dart';
@@ -21,6 +22,7 @@ import 'shutter_button.dart';
 import 'styles.dart';
 import 'video_processor.dart';
 
+/// Album on the phone; the same name in every language, so it never splits.
 String albumName(Group g) => 'CamTrip - ${g.name}';
 
 class CameraScreen extends ConsumerStatefulWidget {
@@ -117,7 +119,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     try {
       _cameras = await availableCameras();
       if (_cameras.isEmpty) {
-        setState(() => _error = 'Geen camera gevonden');
+        setState(() => _error = context.l10n.cameraNotFound);
         return;
       }
       final back = _cameras.indexWhere((c) => c.lensDirection == CameraLensDirection.back);
@@ -128,8 +130,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
   }
 
   String _cameraError(CameraException e) => e.code.contains('AccessDenied') || e.code.contains('AccessRestricted')
-      ? 'CamTrip heeft toegang tot je camera nodig. Zet dit aan in Instellingen.'
-      : 'Camera kon niet starten';
+      ? context.l10n.cameraAccessNeeded
+      : context.l10n.cameraStartFailed;
 
   Future<void> _start(int index) async {
     final old = _controller;
@@ -189,12 +191,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
   Future<void> _saveToAlbum(Future<void> Function() save) async {
     try {
       if (!await Gal.hasAccess(toAlbum: true) && !await Gal.requestAccess(toAlbum: true)) {
-        if (mounted) showMessage(context, 'Geef CamTrip toegang tot je foto\'s om ze ook in je album op te slaan');
+        if (mounted) showMessage(context, context.l10n.albumAccessNeeded);
         return;
       }
       await save();
     } catch (_) {
-      if (mounted) showMessage(context, 'Opslaan in je album lukte niet. De foto wordt wel gedeeld.');
+      if (mounted) showMessage(context, context.l10n.albumSaveFailed);
     }
   }
 
@@ -204,7 +206,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     if (!ref.read(activeProGateProvider).canUseStyle(styleIsPro: _style.pro)) {
       // Switched to a group without Pro while a Pro style was picked.
       setState(() => _style = CameraStyle.instant);
-      showMessage(context, 'Deze stijl hoort bij Pro. In deze groep schiet je met Instant.');
+      showMessage(context, context.l10n.styleProFallback(CameraStyle.instant.name));
       return;
     }
     if (_videoMode) return _toggleRecording(group);
@@ -248,7 +250,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
       } catch (_) {}
     } catch (e) {
       debugPrint('shoot failed: $e');
-      if (mounted) showMessage(context, 'Foto maken lukte niet. Probeer het nog eens.');
+      if (mounted) showMessage(context, context.l10n.photoFailed);
     } finally {
       if (mounted && _busy) setState(() => _busy = false);
     }
@@ -262,7 +264,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
         await c.startVideoRecording();
       } on CameraException catch (e) {
         debugPrint('record failed: $e');
-        if (mounted) showMessage(context, 'Video opnemen lukte niet');
+        if (mounted) showMessage(context, context.l10n.recordingFailed);
         return;
       }
       _recordStart = DateTime.now();
@@ -311,7 +313,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
       }
     } catch (e) {
       debugPrint('video failed: $e');
-      if (mounted) showMessage(context, 'Video maken lukte niet. Probeer het nog eens.');
+      if (mounted) showMessage(context, context.l10n.videoFailed);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -324,13 +326,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Schiet in groep', style: CT.title(22)),
+            Text(context.l10n.shootInGroup, style: CT.title(22)),
             const SizedBox(height: 12),
             for (final g in groups.where((g) => !g.isArchived && !g.archived))
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(g.name, style: CT.text(16, weight: FontWeight.w600)),
-                subtitle: Text('${g.members.length} leden · ${g.totalCount} foto\'s', style: CT.text(13, color: CT.muted)),
+                subtitle: Text('${context.l10n.membersCount(g.members.length)} · ${context.l10n.photosCount(g.totalCount)}', style: CT.text(13, color: CT.muted)),
                 trailing: g.id == ref.read(activeGroupIdProvider) ? const Icon(Icons.check_circle, color: CT.accent) : null,
                 onTap: () {
                   ref.read(activeGroupIdProvider.notifier).set(g.id);
@@ -356,6 +358,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
       });
     }
     final pending = ref.watch(uploadQueueProvider).length;
+    final l = context.l10n;
 
     return Scaffold(
       backgroundColor: CT.bg,
@@ -365,7 +368,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
             child: Row(children: [
-              IconButton(tooltip: 'Sluiten', onPressed: _recording ? null : () => context.pop(), icon: const Icon(Icons.close)),
+              IconButton(tooltip: l.close, onPressed: _recording ? null : () => context.pop(), icon: const Icon(Icons.close)),
               TextButton.icon(
                 onPressed: _style.forceFlash ? null : _cycleFlash,
                 icon: Icon(
@@ -375,36 +378,42 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
                   color: CT.ink,
                   size: 20,
                 ),
-                label: Text(_style.forceFlash ? 'Flits' : (_flash == FlashMode.always ? 'Aan' : _flash == FlashMode.off ? 'Uit' : 'Auto'),
-                    style: CT.text(14, weight: FontWeight.w600)),
+                label: Text(_style.forceFlash ? l.flash : (_flash == FlashMode.always ? l.flashOn : _flash == FlashMode.off ? l.flashOff : l.flashAuto),
+                    maxLines: 1, style: CT.text(14, weight: FontWeight.w600)),
               ),
-              const Spacer(),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _pickGroup(groups),
-                child: Container(
-                  // 44pt tall hit target around the visible pill
-                  constraints: const BoxConstraints(minHeight: 44),
-                  alignment: Alignment.center,
-                  child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(border: Border.all(color: CT.ink, width: 1.5), borderRadius: BorderRadius.circular(10)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.circle, size: 8, color: CT.accent),
-                    const SizedBox(width: 6),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 150),
-                      child: Text(group == null ? 'Kies groep' : '${group.name} · ${group.members.length}',
-                          overflow: TextOverflow.ellipsis, style: CT.text(13, weight: FontWeight.w600)),
+              // Centred between the two buttons; shrinks (with an ellipsis)
+              // when a long group name or flash label leaves less room.
+              Expanded(
+                child: Center(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _pickGroup(groups),
+                    child: Container(
+                      // 44pt tall hit target around the visible pill
+                      constraints: const BoxConstraints(minHeight: 44),
+                      alignment: Alignment.center,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(border: Border.all(color: CT.ink, width: 1.5), borderRadius: BorderRadius.circular(10)),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          const Icon(Icons.circle, size: 8, color: CT.accent),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 150),
+                              child: Text(group == null ? l.chooseGroup : '${group.name} · ${group.members.length}',
+                                  maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(13, weight: FontWeight.w600)),
+                            ),
+                          ),
+                          const Icon(Icons.expand_more, size: 18),
+                        ]),
+                      ),
                     ),
-                    const Icon(Icons.expand_more, size: 18),
-                  ]),
                   ),
                 ),
               ),
-              const Spacer(),
               IconButton(
-                tooltip: 'Wissel camera',
+                tooltip: l.switchCamera,
                 onPressed: _cameras.length > 1 && !_recording ? () => _start((_cameraIndex + 1) % _cameras.length) : null,
                 icon: const Icon(Icons.cameraswitch_outlined),
               ),
@@ -498,7 +507,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
       recording: _recording,
       busy: _busy,
       elapsed: _recording && _recordStart != null ? DateTime.now().difference(_recordStart!) : Duration.zero,
-      onTap: group == null ? () => showMessage(context, 'Maak of join eerst een groep') : () => _shoot(group),
+      onTap: group == null ? () => showMessage(context, context.l10n.createOrJoinFirst) : () => _shoot(group),
     );
   }
 

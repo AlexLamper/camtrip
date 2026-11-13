@@ -1,0 +1,5 @@
+/* Permission texts shown by iOS. Keep in sync with Info.plist (English) and lib/l10n/GLOSSARY.md. */
+"NSCameraUsageDescription" = "CamTrip 需要使用相机为你的群组拍摄照片和视频。";
+"NSMicrophoneUsageDescription" = "CamTrip 需要使用麦克风为视频录制声音。";
+"NSPhotoLibraryAddUsageDescription" = "CamTrip 会把你的照片保存到照片图库中以群组命名的相簿里。";
+"NSPhotoLibraryUsageDescription" = "从图库中选择照片，与你的群组分享。";

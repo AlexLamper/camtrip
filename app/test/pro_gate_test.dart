@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'support/l10n.dart';
+
 Group makeGroup({bool pro = false, String? source, String? by, String id = 'g1'}) => Group.fromJson({
       'id': id,
       'name': 'Mallorca',
@@ -26,7 +28,10 @@ Group makeGroup({bool pro = false, String? source, String? by, String id = 'g1'}
     });
 
 void main() {
-  setUpAll(() => initializeDateFormatting('nl_NL'));
+  setUpAll(() async {
+    await initializeDateFormatting('nl_NL');
+    useDutch();
+  });
 
   group('ProGate: personal Pro OR the group\'s Pro', () {
     test('free user in a free group: Pro styles locked, watermark on', () {

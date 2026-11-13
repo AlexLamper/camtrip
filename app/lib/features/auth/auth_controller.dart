@@ -12,6 +12,7 @@ import '../premium/premium_controller.dart';
 import '../gallery/gallery_controller.dart';
 import '../notifications/push.dart';
 import '../upload/upload_queue.dart';
+import '../../l10n/l10n.dart';
 
 /// Session state. `null` = signed out. Loading only during restore / sign-in.
 final authProvider = AsyncNotifierProvider<AuthController, AppUser?>(AuthController.new);
@@ -78,9 +79,11 @@ class AuthController extends AsyncNotifier<AppUser?> {
       scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
     );
     final token = cred.identityToken;
-    if (token == null) throw ApiException('Apple gaf geen login terug');
+    if (token == null) throw ApiException(L10n.current.signInAppleFailed);
     final res = await _api.post('/auth/apple', {
       'identityToken': token,
+      // Lets the server get a refresh token it can revoke when the account is deleted.
+      'authorizationCode': cred.authorizationCode,
       'givenName': ?cred.givenName,
       'familyName': ?cred.familyName,
       'email': ?cred.email,
@@ -99,11 +102,11 @@ class AuthController extends AsyncNotifier<AppUser?> {
 
   Future<void> signInWithGoogle() async {
     // The button is hidden when unconfigured; this guards any other caller.
-    if (!AppConfig.googleSignInAvailable) throw ApiException('Inloggen met Google is nog niet beschikbaar');
+    if (!AppConfig.googleSignInAvailable) throw ApiException(L10n.current.googleSignInUnavailable);
     await _initGoogle();
     final account = await GoogleSignIn.instance.authenticate();
     final idToken = account.authentication.idToken;
-    if (idToken == null) throw ApiException('Google gaf geen login terug');
+    if (idToken == null) throw ApiException(L10n.current.signInGoogleFailed);
     final res = await _api.post('/auth/google', {'idToken': idToken});
     await _accept(res);
   }
@@ -121,13 +124,14 @@ class AuthController extends AsyncNotifier<AppUser?> {
     await _accept(res);
   }
 
-  /// Asks the server to mail a 6-digit code. Always succeeds when the request
+  /// Asks the server to push a 6-digit code to devices where this account is
+  /// still signed in (no e-mail). Always succeeds when the request
   /// went through, whether or not the address has an account.
   Future<void> requestPasswordReset(String email) async {
     await _api.post('/auth/forgot', {'email': email.trim()});
   }
 
-  /// Sets a new password with the mailed code and signs in.
+  /// Sets a new password with the code from the push and signs in.
   Future<void> resetPassword({required String email, required String code, required String password}) async {
     final res = await _api.post('/auth/reset', {'email': email.trim(), 'code': code.trim(), 'password': password});
     await _accept(res);

@@ -14,6 +14,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'support/l10n.dart';
+
 // ------------------------------------------------------------------ fixtures
 
 Map<String, dynamic> photoJson(String id, {String user = 'me', int day = 1, bool fav = false}) => {
@@ -113,6 +115,7 @@ List<String> ids(ProviderContainer c) => c.read(galleryProvider('g1')).photos.ma
 // ------------------------------------------------------------------ tests
 
 void main() {
+  setUpAll(useDutch);
   group('PhotoSelection', () {
     test('long-press starts, tap toggles, exit clears', () {
       final s = PhotoSelection()..start('a');
@@ -295,7 +298,7 @@ void main() {
   group('widgets', () {
     testWidgets('SelectionActionBar: delete disabled without deletable photos', (t) async {
       var saved = 0, deleted = 0;
-      Future<void> pump({required bool canDelete}) => t.pumpWidget(MaterialApp(
+      Future<void> pump({required bool canDelete}) => t.pumpWidget(localizedApp(
             home: Scaffold(
               body: SelectionActionBar(
                 count: 2,
@@ -320,7 +323,7 @@ void main() {
 
     testWidgets('delete confirmation mentions the camera roll and skipped photos', (t) async {
       bool? result;
-      await t.pumpWidget(MaterialApp(
+      await t.pumpWidget(localizedApp(
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () async => result = await confirmDeletePhotos(context, count: 3, notAllowed: 1),
@@ -341,7 +344,7 @@ void main() {
     testWidgets('group delete needs the group name typed', (t) async {
       final g = Group.fromJson(groupJson(role: 'admin'));
       bool? result;
-      await t.pumpWidget(MaterialApp(
+      await t.pumpWidget(localizedApp(
         home: Builder(
           builder: (context) => TextButton(onPressed: () async => result = await confirmDeleteGroup(context, g), child: const Text('go')),
         ),

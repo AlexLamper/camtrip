@@ -102,7 +102,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/pro', pageBuilder: (_, s) => modalPage(s, const PaywallScreen())),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       // Instellingen > Beheer (app admins only; the screen and the API both check).
-      GoRoute(path: '/admin', builder: (_, _) => const AdminScreen()),
+      // ?tab=reports opens Meldingen (from a "Nieuwe melding" push).
+      GoRoute(
+        path: '/admin',
+        builder: (_, s) => AdminScreen(initialTab: s.uri.queryParameters['tab'] == 'reports' ? AdminScreen.reportsTab : 0),
+      ),
       GoRoute(path: '/admin/user/:id', builder: (_, s) => AdminUserScreen(userId: s.pathParameters['id']!)),
       GoRoute(path: '/queue', builder: (_, _) => const QueueScreen()),
       GoRoute(path: '/group/:id', builder: (_, s) => GalleryScreen(groupId: s.pathParameters['id']!)),

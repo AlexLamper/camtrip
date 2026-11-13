@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/api.dart';
+import '../../l10n/l10n.dart';
 import '../../main.dart';
 import '../auth/auth_controller.dart';
 
@@ -335,7 +336,7 @@ class UploadQueue extends Notifier<List<UploadItem>> {
       i.uploads = null;
       i.photoId = null;
       i.status = i.error == 'retry' ? UploadStatus.failed : UploadStatus.waiting;
-      i.error = i.status == UploadStatus.failed ? 'Upload mislukt' : 'retry';
+      i.error = i.status == UploadStatus.failed ? L10n.current.uploadFailed : 'retry';
       _touch(i);
       await _save();
       return i.status == UploadStatus.waiting ? _Result.retry : _Result.failed;
@@ -346,8 +347,8 @@ class UploadQueue extends Notifier<List<UploadItem>> {
       } else {
         i.status = UploadStatus.failed;
         i.error = switch (e.code) {
-          'pro_required' => 'Deze stijl hoort bij CamTrip Pro',
-          'archived' => 'Deze groep is afgesloten',
+          'pro_required' => L10n.current.apiProRequired,
+          'archived' => L10n.current.apiGroupClosed,
           _ => e.message,
         };
       }
@@ -356,7 +357,7 @@ class UploadQueue extends Notifier<List<UploadItem>> {
       return offline ? _Result.offline : _Result.failed;
     } catch (e) {
       i.status = UploadStatus.failed;
-      i.error = 'Upload mislukt';
+      i.error = L10n.current.uploadFailed;
       _touch(i);
       await _save();
       return _Result.failed;

@@ -1,5 +1,7 @@
 import 'dart:ui';
 
+import '../l10n/l10n.dart';
+
 DateTime? _date(dynamic v) => v == null ? null : DateTime.tryParse(v.toString());
 
 Color parseColor(String? hex, [Color fallback = const Color(0xFFD9472B)]) {
@@ -97,7 +99,7 @@ class Member {
 
   factory Member.fromJson(Map<String, dynamic> j) => Member(
         id: j['id'] as String,
-        name: (j['name'] as String?) ?? 'Vriend',
+        name: (j['name'] as String?) ?? L10n.current.memberFallbackName,
         avatarColor: (j['avatarColor'] as String?) ?? '#d9472b',
         role: (j['role'] as String?) ?? 'member',
       );
@@ -105,12 +107,15 @@ class Member {
 
 /// Why a photo is reported ("Foto rapporteren"). Ids match the API.
 enum ReportReason {
-  ongepast('Ongepast of aanstootgevend'),
-  spam('Spam'),
-  anders('Iets anders');
+  ongepast,
+  spam,
+  anders;
 
-  const ReportReason(this.label);
-  final String label;
+  String get label => switch (this) {
+        ongepast => L10n.current.reportReasonInappropriate,
+        spam => L10n.current.reportReasonSpam,
+        anders => L10n.current.reportReasonOther,
+      };
 }
 
 enum GroupType { vacation, event, permanent }

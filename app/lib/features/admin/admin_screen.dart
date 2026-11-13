@@ -8,13 +8,20 @@ import '../../core/api.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 import '../auth/auth_controller.dart';
 import 'admin_api.dart';
 
 /// Instellingen > Beheer. Only for app admins (the server checks too).
 class AdminScreen extends ConsumerWidget {
-  const AdminScreen({super.key});
+  const AdminScreen({super.key, this.initialTab = 0});
+
+  /// Index of the Meldingen tab.
+  static const reportsTab = 2;
+
+  /// 0 Overzicht, 1 Gebruikers, 2 Meldingen.
+  final int initialTab;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,20 +29,21 @@ class AdminScreen extends ConsumerWidget {
     if (!isAdmin) {
       return Scaffold(
         appBar: AppBar(),
-        body: const EmptyState(title: 'Geen toegang', message: 'Beheer is alleen voor het CamTrip-team.'),
+        body: EmptyState(title: context.l10n.noAccess, message: context.l10n.adminOnlyTeam),
       );
     }
     return DefaultTabController(
       length: 3,
+      initialIndex: initialTab.clamp(0, 2),
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Beheer', style: CT.title(20)),
+          title: Text(context.l10n.manage, style: CT.title(20)),
           bottom: TabBar(
             labelColor: CT.ink,
             unselectedLabelColor: CT.muted,
             indicatorColor: CT.accent,
             labelStyle: CT.text(14, weight: FontWeight.w600),
-            tabs: const [Tab(text: 'Overzicht'), Tab(text: 'Gebruikers'), Tab(text: 'Meldingen')],
+            tabs: [Tab(text: context.l10n.adminOverview), Tab(text: context.l10n.adminUsers), Tab(text: context.l10n.adminReports)],
           ),
         ),
         body: const TabBarView(children: [_StatsTab(), _UsersTab(), _ReportsTab()]),
@@ -79,6 +87,7 @@ class _StatsTabState extends ConsumerState<_StatsTab> {
   Widget build(BuildContext context) {
     final s = _stats;
     if (s == null) return _LoadingOrError(error: _error, onRetry: _load);
+    final l = context.l10n;
     Widget tile(String label, int value, {String? sub}) => Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(color: CT.paper, borderRadius: BorderRadius.circular(14), boxShadow: CT.cardShadow),
@@ -99,14 +108,14 @@ class _StatsTabState extends ConsumerState<_StatsTab> {
         crossAxisSpacing: 12,
         childAspectRatio: 1.45,
         children: [
-          tile('Gebruikers', s.usersTotal, sub: '${s.admins} beheerder${s.admins == 1 ? '' : 's'}'),
-          tile('Nieuw deze week', s.newThisWeek),
-          tile('Groepen', s.groups),
-          tile('Foto\'s', s.photos, sub: Fmt.count(s.videos, 'video', 'video\'s')),
-          tile('Pro via abonnement', s.proSubscription),
-          tile('Pro als cadeau', s.proGift, sub: '${s.proGiftOnly} zonder abonnement'),
-          tile('Open meldingen', s.openReports),
-          tile('Geblokkeerd', s.banned),
+          tile(l.adminUsers, s.usersTotal, sub: l.adminsCount(s.admins)),
+          tile(l.adminNewThisWeek, s.newThisWeek),
+          tile(l.adminGroups, s.groups),
+          tile(l.photos, s.photos, sub: l.videosCount(s.videos)),
+          tile(l.adminProSubscription, s.proSubscription),
+          tile(l.adminProGift, s.proGift, sub: l.adminWithoutSubscription(s.proGiftOnly)),
+          tile(l.adminOpenReports, s.openReports),
+          tile(l.blockedTitle, s.banned),
         ],
       ),
     );
@@ -183,7 +192,7 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
           onChanged: _onSearch,
           textInputAction: TextInputAction.search,
           decoration: InputDecoration(
-            hintText: 'Zoek op naam of e-mail',
+            hintText: context.l10n.adminSearchHint,
             prefixIcon: const Icon(Icons.search),
             filled: true,
             fillColor: CT.paper,
@@ -206,12 +215,12 @@ class _UsersTabState extends ConsumerState<_UsersTab> {
                   return const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator(color: CT.ink)));
                 }
                 if (_users.isEmpty) {
-                  return Padding(padding: const EdgeInsets.all(24), child: Center(child: Text('Niemand gevonden', style: CT.text(15, color: CT.muted))));
+                  return Padding(padding: const EdgeInsets.all(24), child: Center(child: Text(context.l10n.nobodyFound, style: CT.text(15, color: CT.muted))));
                 }
                 return _hasMore
                     ? Padding(
                         padding: const EdgeInsets.only(top: 8),
-                        child: CTButton('Meer laden', kind: CTButtonKind.ghost, compact: true, onTap: _load),
+                        child: CTButton(context.l10n.loadMore, kind: CTButtonKind.ghost, compact: true, onTap: _load),
                       )
                     : const SizedBox(height: 8);
               }
@@ -248,10 +257,10 @@ class _UserRow extends StatelessWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Flexible(child: Text(u.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(15, weight: FontWeight.w600))),
-                if (u.isAdmin) ...[const SizedBox(width: 6), const _Tag('Beheerder')],
-                if (u.banned) ...[const SizedBox(width: 6), const _Tag('Geblokkeerd', danger: true)],
+                if (u.isAdmin) ...[const SizedBox(width: 6), _Tag(context.l10n.proSourceAdmin)],
+                if (u.banned) ...[const SizedBox(width: 6), _Tag(context.l10n.blockedTitle, danger: true)],
               ]),
-              Text(u.email.isEmpty ? 'Geen e-mail' : u.email, maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(12, color: CT.muted)),
+              Text(u.email.isEmpty ? context.l10n.noEmail : u.email, maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(12, color: CT.muted)),
             ]),
           ),
           if (u.isPro) _Tag(proSourceLabel(u.proSource), pro: true),
@@ -308,10 +317,11 @@ class _ReportsTabState extends ConsumerState<_ReportsTab> {
   }
 
   Future<void> _act(AdminReport r, String action) async {
+    final l = context.l10n;
     final (title, message, ok) = switch (action) {
-      'delete_photo' => ('Foto verwijderen?', 'De foto verdwijnt voor iedereen in "${r.groupName}". Alle meldingen op deze foto worden afgehandeld.', 'Verwijder'),
-      'ban_user' => ('${r.photoUser.name} blokkeren?', 'Dit account kan niet meer inloggen en de app niet meer gebruiken. Je kunt dit later terugdraaien.', 'Blokkeer'),
-      _ => ('Melding negeren?', 'De foto blijft staan. De melding wordt als afgehandeld gemarkeerd.', 'Negeer'),
+      'delete_photo' => (l.deletePhotosTitle(1), l.adminDeletePhotoMessage(r.groupName), l.remove),
+      'ban_user' => (l.blockTitle(r.photoUser.name), l.adminBanMessage, l.block),
+      _ => (l.adminDismissTitle, l.adminDismissMessage, l.adminDismiss),
     };
     if (!await confirm(context, title: title, message: message, ok: ok, danger: action != 'dismiss')) return;
     setState(() => _busy.add(r.id));
@@ -325,7 +335,7 @@ class _ReportsTabState extends ConsumerState<_ReportsTab> {
           _reports.removeWhere((x) => x.id == r.id);
         }
       });
-      showMessage(context, switch (action) { 'delete_photo' => 'Foto verwijderd', 'ban_user' => 'Account geblokkeerd', _ => 'Melding genegeerd' });
+      showMessage(context, switch (action) { 'delete_photo' => l.photoDeleted, 'ban_user' => l.adminAccountBlocked, _ => l.adminReportDismissed });
     } catch (e) {
       if (mounted) showMessage(context, ApiException.from(e).message);
     } finally {
@@ -340,9 +350,9 @@ class _ReportsTabState extends ConsumerState<_ReportsTab> {
       color: CT.ink,
       onRefresh: () => _load(reset: true),
       child: _reports.isEmpty
-          ? ListView(children: const [
-              SizedBox(height: 60),
-              EmptyState(title: 'Geen open meldingen', message: 'Gerapporteerde foto\'s verschijnen hier.'),
+          ? ListView(children: [
+              const SizedBox(height: 60),
+              EmptyState(title: context.l10n.adminNoReports, message: context.l10n.adminNoReportsMessage),
             ])
           : ListView.separated(
               padding: const EdgeInsets.fromLTRB(18, 16, 18, 30),
@@ -350,7 +360,7 @@ class _ReportsTabState extends ConsumerState<_ReportsTab> {
               separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, i) {
                 if (i == _reports.length) {
-                  return _hasMore ? CTButton('Meer laden', kind: CTButtonKind.ghost, compact: true, loading: _loading, onTap: _load) : const SizedBox();
+                  return _hasMore ? CTButton(context.l10n.loadMore, kind: CTButtonKind.ghost, compact: true, loading: _loading, onTap: _load) : const SizedBox();
                 }
                 final r = _reports[i];
                 return _ReportCard(r, busy: _busy.contains(r.id), onAction: (a) => _act(r, a));
@@ -379,7 +389,7 @@ class _ReportCard extends StatelessWidget {
               width: 84,
               height: 84,
               child: r.thumbUrl == null
-                  ? Container(color: CT.cream, alignment: Alignment.center, child: Text('Verwijderd', style: CT.text(11, color: CT.muted)))
+                  ? Container(color: CT.cream, alignment: Alignment.center, child: Text(context.l10n.deletedTag, style: CT.text(11, color: CT.muted)))
                   : Stack(fit: StackFit.expand, children: [
                       NetPhoto(r.thumbUrl!),
                       if (r.isVideo) const Center(child: Icon(Icons.play_circle_fill, color: Colors.white, size: 28)),
@@ -392,10 +402,10 @@ class _ReportCard extends StatelessWidget {
               Text(r.reasonLabel, style: CT.text(15, weight: FontWeight.w600)),
               if (r.note.isNotEmpty) Text('"${r.note}"', style: CT.text(13)),
               const SizedBox(height: 4),
-              Text('Door ${r.reporter.name}${r.reporter.email.isNotEmpty ? ' (${r.reporter.email})' : ''}', style: CT.text(12, color: CT.muted)),
-              Text('Foto van ${r.photoUser.name}${r.photoUser.banned ? ' (geblokkeerd)' : ''}', style: CT.text(12, color: CT.muted)),
+              Text(context.l10n.adminReportedBy('${r.reporter.name}${r.reporter.email.isNotEmpty ? ' (${r.reporter.email})' : ''}'), style: CT.text(12, color: CT.muted)),
+              Text(context.l10n.adminPhotoBy('${r.photoUser.name}${r.photoUser.banned ? ' (${context.l10n.blockedTag})' : ''}'), style: CT.text(12, color: CT.muted)),
               Text(
-                [r.groupName, if (r.createdAt != null) Fmt.shortYear(r.createdAt!), if (r.openOnPhoto > 1) '${r.openOnPhoto} meldingen'].join(' · '),
+                [r.groupName, if (r.createdAt != null) Fmt.shortYear(r.createdAt!), if (r.openOnPhoto > 1) context.l10n.reportsCount(r.openOnPhoto)].join(' · '),
                 style: CT.text(12, color: CT.muted),
               ),
             ]),
@@ -406,9 +416,9 @@ class _ReportCard extends StatelessWidget {
           const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(color: CT.ink)))
         else
           Wrap(spacing: 8, runSpacing: 8, children: [
-            if (!r.photoGone) _SmallButton('Verwijder foto', dark: true, onTap: () => onAction('delete_photo')),
-            _SmallButton('Negeer', onTap: () => onAction('dismiss')),
-            if (!r.photoUser.banned && r.photoUser.id.isNotEmpty) _SmallButton('Blokkeer maker', danger: true, onTap: () => onAction('ban_user')),
+            if (!r.photoGone) _SmallButton(context.l10n.adminDeletePhoto, dark: true, onTap: () => onAction('delete_photo')),
+            _SmallButton(context.l10n.adminDismiss, onTap: () => onAction('dismiss')),
+            if (!r.photoUser.banned && r.photoUser.id.isNotEmpty) _SmallButton(context.l10n.adminBlockCreator, danger: true, onTap: () => onAction('ban_user')),
           ]),
       ]),
     );
@@ -474,9 +484,9 @@ class _LoadingOrError extends StatelessWidget {
   Widget build(BuildContext context) {
     if (error == null) return const Center(child: CircularProgressIndicator(color: CT.ink));
     return EmptyState(
-      title: 'Laden lukte niet',
+      title: context.l10n.loadFailed,
       message: error!,
-      action: SizedBox(width: 200, child: CTButton('Opnieuw', compact: true, onTap: onRetry)),
+      action: SizedBox(width: 200, child: CTButton(context.l10n.retry, compact: true, onTap: onRetry)),
     );
   }
 }

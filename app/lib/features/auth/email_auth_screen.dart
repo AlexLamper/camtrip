@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import 'auth_controller.dart';
 import 'auth_validators.dart';
 
@@ -58,18 +59,19 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
     _form.currentState?.reset();
   }
 
-  (String, String) get _copy => switch (_mode) {
-        EmailAuthMode.register => ('Account aanmaken', 'Zo zien je vrienden wie de foto\'s maakt.'),
-        EmailAuthMode.login => ('Inloggen', 'Welkom terug.'),
-        EmailAuthMode.forgot => ('Wachtwoord vergeten', 'We mailen je een code van 6 cijfers om een nieuw wachtwoord in te stellen.'),
-        EmailAuthMode.reset => ('Nieuw wachtwoord', 'Vul de code uit de mail in die we naar ${_email.text.trim()} stuurden. Zie je niets? Kijk ook in je spam.'),
+  (String, String) _copy(AppLocalizations l) => switch (_mode) {
+        EmailAuthMode.register => (l.createAccount, l.registerSubtitle),
+        EmailAuthMode.login => (l.signIn, l.loginSubtitle),
+        EmailAuthMode.forgot => (l.forgotPasswordTitle, l.forgotPasswordPushSubtitle),
+        // Neutral on purpose: never says whether the account exists. No e-mail is sent.
+        EmailAuthMode.reset => (l.newPassword, l.resetPushInfo),
       };
 
-  String get _submitLabel => switch (_mode) {
-        EmailAuthMode.register => 'Account aanmaken',
-        EmailAuthMode.login => 'Inloggen',
-        EmailAuthMode.forgot => 'Stuur code',
-        EmailAuthMode.reset => 'Wachtwoord opslaan',
+  String _submitLabel(AppLocalizations l) => switch (_mode) {
+        EmailAuthMode.register => l.createAccount,
+        EmailAuthMode.login => l.signIn,
+        EmailAuthMode.forgot => l.sendCode,
+        EmailAuthMode.reset => l.savePassword,
       };
 
   Future<void> _submit() async {
@@ -91,10 +93,8 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
           TextInput.finishAutofillContext();
         case EmailAuthMode.forgot:
           await auth.requestPasswordReset(_email.text);
-          if (mounted) {
-            _switch(EmailAuthMode.reset);
-            showMessage(context, 'Als er een account bij dit adres hoort, staat de code in je mail.');
-          }
+          // The code (if any) arrives as a push on a device where they are still signed in.
+          if (mounted) _switch(EmailAuthMode.reset);
         case EmailAuthMode.reset:
           await auth.resetPassword(email: _email.text, code: _code.text, password: _password.text);
           TextInput.finishAutofillContext();
@@ -103,7 +103,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       if (mounted) showMessage(context, e.message);
     } catch (e) {
       debugPrint('email auth failed: $e');
-      if (mounted) showMessage(context, 'Er ging iets mis. Probeer het opnieuw.');
+      if (mounted) showMessage(context, context.l10n.errorTryAgain);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -111,7 +111,8 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final (title, subtitle) = _copy;
+    final l = context.l10n;
+    final (title, subtitle) = _copy(l);
     final needsName = _mode == EmailAuthMode.register;
     final needsPassword = _mode != EmailAuthMode.forgot;
     final newPassword = _mode == EmailAuthMode.register || _mode == EmailAuthMode.reset;
@@ -120,7 +121,7 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
-          tooltip: 'Terug',
+          tooltip: l.back,
           onPressed: () {
             // Within the password-reset steps "back" goes to sign-in first.
             if (_mode == EmailAuthMode.forgot || _mode == EmailAuthMode.reset) {
@@ -151,9 +152,9 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                   if (needsName) ...[
                     _Field(
                       key: const ValueKey('name'),
-                      label: 'Naam',
+                      label: l.name,
                       controller: _name,
-                      validator: AuthValidators.name,
+                      validator: (v) => AuthValidators.name(v, l),
                       autofillHints: const [AutofillHints.name],
                       textCapitalization: TextCapitalization.words,
                       maxLength: 40,
@@ -162,9 +163,9 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                   ],
                   _Field(
                     key: const ValueKey('email'),
-                    label: 'E-mailadres',
+                    label: l.email,
                     controller: _email,
-                    validator: AuthValidators.email,
+                    validator: (v) => AuthValidators.email(v, l),
                     keyboardType: TextInputType.emailAddress,
                     autofillHints: const [AutofillHints.email, AutofillHints.username],
                     enabled: _mode != EmailAuthMode.reset,
@@ -175,9 +176,9 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                     const SizedBox(height: 14),
                     _Field(
                       key: const ValueKey('code'),
-                      label: 'Code uit de mail',
+                      label: l.codeFromPush,
                       controller: _code,
-                      validator: AuthValidators.code,
+                      validator: (v) => AuthValidators.code(v, l),
                       keyboardType: TextInputType.number,
                       autofillHints: const [AutofillHints.oneTimeCode],
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(6)],
@@ -188,16 +189,16 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                     const SizedBox(height: 14),
                     _Field(
                       key: ValueKey(newPassword ? 'new-password' : 'password'),
-                      label: _mode == EmailAuthMode.reset ? 'Nieuw wachtwoord' : 'Wachtwoord',
-                      helper: newPassword ? 'Minstens ${AuthValidators.passwordMin} tekens' : null,
+                      label: _mode == EmailAuthMode.reset ? l.newPassword : l.password,
+                      helper: newPassword ? l.validationMinChars(AuthValidators.passwordMin) : null,
                       controller: _password,
-                      validator: newPassword ? AuthValidators.newPassword : AuthValidators.password,
+                      validator: newPassword ? (v) => AuthValidators.newPassword(v, l) : (v) => AuthValidators.password(v, l),
                       obscure: !_showPassword,
                       autofillHints: [newPassword ? AutofillHints.newPassword : AutofillHints.password],
                       action: TextInputAction.done,
                       onSubmitted: (_) => _submit(),
                       suffix: IconButton(
-                        tooltip: _showPassword ? 'Verberg wachtwoord' : 'Toon wachtwoord',
+                        tooltip: _showPassword ? l.hidePassword : l.showPassword,
                         icon: Icon(_showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined, color: CT.muted),
                         onPressed: () => setState(() => _showPassword = !_showPassword),
                       ),
@@ -209,12 +210,12 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
                       child: TextButton(
                         onPressed: _busy ? null : () => _switch(EmailAuthMode.forgot),
                         style: TextButton.styleFrom(foregroundColor: CT.ink),
-                        child: Text('Wachtwoord vergeten?', style: CT.text(14, weight: FontWeight.w600)),
+                        child: Text(l.forgotPasswordLink, style: CT.text(14, weight: FontWeight.w600)),
                       ),
                     )
                   else
                     const SizedBox(height: 22),
-                  CTButton(_submitLabel, loading: _busy, onTap: _submit),
+                  CTButton(_submitLabel(l), loading: _busy, onTap: _submit),
                   const SizedBox(height: 14),
                   _footer(),
                 ]),
@@ -227,7 +228,11 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
   }
 
   Widget _footer() {
-    Widget link(String text, String action, VoidCallback onTap) => Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+    final l = context.l10n;
+    Widget link(String text, String action, VoidCallback onTap) => Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
           Text(text, style: CT.text(14, color: CT.muted)),
           TextButton(
             onPressed: _busy ? null : onTap,
@@ -236,10 +241,10 @@ class _EmailAuthScreenState extends ConsumerState<EmailAuthScreen> {
           ),
         ]);
     return switch (_mode) {
-      EmailAuthMode.register => link('Heb je al een account?', 'Inloggen', () => _switch(EmailAuthMode.login)),
-      EmailAuthMode.login => link('Nieuw bij CamTrip?', 'Account aanmaken', () => _switch(EmailAuthMode.register)),
-      EmailAuthMode.forgot => link('Weet je het weer?', 'Inloggen', () => _switch(EmailAuthMode.login)),
-      EmailAuthMode.reset => link('Geen code gekregen?', 'Opnieuw sturen', () => _switch(EmailAuthMode.forgot)),
+      EmailAuthMode.register => link(l.haveAccount, l.signIn, () => _switch(EmailAuthMode.login)),
+      EmailAuthMode.login => link(l.newToCamTrip, l.createAccount, () => _switch(EmailAuthMode.register)),
+      EmailAuthMode.forgot => link(l.rememberedIt, l.signIn, () => _switch(EmailAuthMode.login)),
+      EmailAuthMode.reset => link(l.noCodeReceived, l.resendCode, () => _switch(EmailAuthMode.forgot)),
     };
   }
 }

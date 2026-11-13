@@ -2,6 +2,7 @@ import { connectDB } from '@/lib/db';
 import { Group, type GroupDoc } from '@/lib/models';
 import { handler, json } from '@/lib/http';
 import { pushToUsers } from '@/lib/push';
+import { recapNotice } from '@/lib/push-i18n';
 
 /**
  * Daily: when a trip or event has ended, tell everyone their recap is ready.
@@ -21,7 +22,7 @@ export const GET = handler(async (req) => {
     await Group.updateOne({ _id: g._id }, { recapNotifiedAt: new Date() });
     await pushToUsers(
       g.members.map((m) => m.userId),
-      { title: `Je recap van ${g.name} is klaar 🎞️`, body: `${g.photoCount} foto's, klaar om te bekijken en te delen.`, data: { type: 'recap', groupId: String(g._id) } },
+      (locale) => recapNotice(locale, g.name, g.photoCount, String(g._id)),
       'notifyRecap',
     );
   }

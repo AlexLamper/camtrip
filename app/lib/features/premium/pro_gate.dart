@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 import '../groups/groups_controller.dart';
 import 'premium_controller.dart';
@@ -32,7 +33,7 @@ class ProGate {
   String? get viaLabel {
     if (!viaGroup) return null;
     final name = group?.proByName?.trim();
-    return name == null || name.isEmpty ? 'Pro via de groep' : 'Pro via $name';
+    return name == null || name.isEmpty ? L10n.current.proViaGroup : L10n.current.proViaName(name);
   }
 
   /// Short hint shown under the camera styles when a Pro style is unlocked by the group.
@@ -41,8 +42,8 @@ class ProGate {
     if (via == null) return null;
     final name = group?.proByName?.trim();
     return name == null || name.isEmpty
-        ? 'Pro-stijlen in deze groep zijn gratis voor jou dankzij een Pro-lid'
-        : 'Pro-stijlen in deze groep: gratis voor jou dankzij $name';
+        ? L10n.current.proStylesFreeViaMember
+        : L10n.current.proStylesFreeViaName(name);
   }
 }
 

@@ -7,6 +7,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../core/api.dart';
 import '../../core/config.dart';
+import '../../l10n/l10n.dart';
 import '../auth/auth_controller.dart';
 
 class PremiumState {
@@ -101,7 +102,7 @@ class PremiumController extends Notifier<PremiumState> {
 
   /// Returns true when Pro is active afterwards. Cancelling returns false quietly.
   Future<bool> purchase(Package package) async {
-    if (!state.configured) throw ApiException('Abonnementen zijn nu niet beschikbaar. Probeer het later.');
+    if (!state.configured) throw ApiException(L10n.current.subscriptionsUnavailable);
     state = state.copyWith(busy: true);
     try {
       final result = await Purchases.purchase(PurchaseParams.package(package));
@@ -111,16 +112,16 @@ class PremiumController extends Notifier<PremiumState> {
     } on PlatformException catch (e) {
       final code = PurchasesErrorHelper.getErrorCode(e);
       if (code == PurchasesErrorCode.purchaseCancelledError) return false;
-      if (code == PurchasesErrorCode.paymentPendingError) throw ApiException('Je betaling wordt nog verwerkt. Pro gaat aan zodra die rond is.');
+      if (code == PurchasesErrorCode.paymentPendingError) throw ApiException(L10n.current.paymentPending);
       debugPrint('purchase failed: ${e.message}');
-      throw ApiException('Aankoop lukte niet. Probeer het later nog eens.');
+      throw ApiException(L10n.current.purchaseFailed);
     } finally {
       state = state.copyWith(busy: false);
     }
   }
 
   Future<bool> restore() async {
-    if (!state.configured) throw ApiException('Aankopen herstellen kan nu niet. Probeer het later.');
+    if (!state.configured) throw ApiException(L10n.current.restoreUnavailable);
     state = state.copyWith(busy: true);
     try {
       final info = await Purchases.restorePurchases();
@@ -129,7 +130,7 @@ class PremiumController extends Notifier<PremiumState> {
       return state.isPro;
     } on PlatformException catch (e) {
       debugPrint('restore failed: ${e.message}');
-      throw ApiException('Herstellen lukte niet. Probeer het later nog eens.');
+      throw ApiException(L10n.current.restoreFailed);
     } finally {
       state = state.copyWith(busy: false);
     }

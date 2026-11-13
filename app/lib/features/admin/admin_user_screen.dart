@@ -5,6 +5,7 @@ import '../../core/api.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 import '../auth/auth_controller.dart';
 import 'admin_api.dart';
@@ -61,6 +62,7 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
   }
 
   Future<void> _grant(GrantDuration d) async {
+    final l = context.l10n;
     DateTime? until;
     if (d == GrantDuration.custom) {
       final now = DateTime.now();
@@ -69,7 +71,6 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
         initialDate: now.add(const Duration(days: 30)),
         firstDate: now.add(const Duration(days: 1)),
         lastDate: DateTime(now.year + 10),
-        locale: const Locale('nl'),
       );
       if (picked == null || !mounted) return;
       // Pro runs to the end of the chosen day.
@@ -79,34 +80,35 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
     if (reason == null) return;
     await _run(
       () => _api.grantPro(widget.userId, duration: d, until: until, reason: reason),
-      d == GrantDuration.lifetime ? 'Levenslang Pro gegeven' : 'Pro gegeven',
+      d == GrantDuration.lifetime ? l.adminLifetimeProGiven : l.adminProGiven,
     );
   }
 
   Future<String?> _askReason(GrantDuration d, DateTime? until) {
     final c = TextEditingController();
-    final what = switch (d) {
-      GrantDuration.custom => 'tot ${Fmt.shortYear(until!)}',
-      GrantDuration.lifetime => 'levenslang',
-      _ => 'voor ${d.label}',
+    final l = context.l10n;
+    final title = switch (d) {
+      GrantDuration.custom => l.adminGiveProUntil(Fmt.shortYear(until!)),
+      GrantDuration.lifetime => l.adminGiveProLifetime,
+      _ => l.adminGiveProFor(d.label),
     };
     return showDialog<String>(
       context: context,
       builder: (dialog) => StatefulBuilder(
         builder: (dialog, setLocal) => AlertDialog(
-          title: Text('Pro geven $what', style: CT.title(20)),
+          title: Text(title, style: CT.title(20)),
           content: TextField(
             controller: c,
             autofocus: true,
             maxLength: 200,
             onChanged: (_) => setLocal(() {}),
-            decoration: const InputDecoration(hintText: 'Reden, bijv. vriend, tester, influencer'),
+            decoration: InputDecoration(hintText: l.adminReasonHint),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialog), child: Text('Annuleer', style: CT.text(15, color: CT.muted))),
+            TextButton(onPressed: () => Navigator.pop(dialog), child: Text(l.cancel, style: CT.text(15, color: CT.muted))),
             TextButton(
               onPressed: c.text.trim().isEmpty ? null : () => Navigator.pop(dialog, c.text.trim()),
-              child: Text('Geef Pro', style: CT.text(15, weight: FontWeight.w600)),
+              child: Text(l.adminGivePro, style: CT.text(15, weight: FontWeight.w600)),
             ),
           ],
         ),
@@ -115,41 +117,44 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
   }
 
   Future<void> _revoke() async {
+    final l = context.l10n;
     if (!await confirm(context,
-        title: 'Cadeau intrekken?',
-        message: 'Het gegeven Pro stopt meteen. Een eigen abonnement blijft gewoon lopen.',
-        ok: 'Intrekken',
+        title: l.adminRevokeTitle,
+        message: l.adminRevokeMessage,
+        ok: l.adminRevoke,
         danger: true)) {
       return;
     }
-    await _run(() => _api.revokePro(widget.userId), 'Cadeau ingetrokken');
+    await _run(() => _api.revokePro(widget.userId), l.adminGiftRevoked);
   }
 
   Future<void> _toggleBan(AdminUser u) async {
     if (u.banned) {
-      if (!await confirm(context, title: 'Blokkade opheffen?', message: '${u.name} kan weer inloggen.', ok: 'Opheffen')) return;
-      await _run(() => _api.setBanned(widget.userId, banned: false), 'Blokkade opgeheven');
+      if (!await confirm(context, title: context.l10n.adminUnbanTitle, message: context.l10n.adminUnbanMessage(u.name), ok: context.l10n.unblockShort)) return;
+      if (!mounted) return;
+      await _run(() => _api.setBanned(widget.userId, banned: false), context.l10n.adminUnbanned);
       return;
     }
     if (!await confirm(context,
-        title: '${u.name} blokkeren?',
-        message: 'Dit account kan niet meer inloggen en de app niet meer gebruiken. Foto\'s blijven staan.',
-        ok: 'Blokkeer',
+        title: context.l10n.blockTitle(u.name),
+        message: context.l10n.adminBanUserMessage,
+        ok: context.l10n.block,
         danger: true)) {
       return;
     }
-    await _run(() => _api.setBanned(widget.userId, banned: true, reason: 'Via Beheer'), 'Account geblokkeerd');
+    if (!mounted) return;
+    await _run(() => _api.setBanned(widget.userId, banned: true, reason: 'Via Beheer'), context.l10n.adminAccountBlocked);
   }
 
   @override
   Widget build(BuildContext context) {
     final u = _user;
     return Scaffold(
-      appBar: AppBar(title: Text('Gebruiker', style: CT.title(20))),
+      appBar: AppBar(title: Text(context.l10n.adminUser, style: CT.title(20))),
       body: u == null
           ? (_error == null
               ? const Center(child: CircularProgressIndicator(color: CT.ink))
-              : EmptyState(title: 'Laden lukte niet', message: _error!))
+              : EmptyState(title: context.l10n.loadFailed, message: _error!))
           : RefreshIndicator(color: CT.ink, onRefresh: _load, child: _body(u)),
     );
   }
@@ -159,6 +164,7 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
     final isMe = me?.id == u.id;
     final initial = u.name.isEmpty ? '?' : String.fromCharCode(u.name.runes.first).toUpperCase();
     Widget fact(String label, String value) => SettingRow(title: value, subtitle: label);
+    final l = context.l10n;
 
     return ListView(padding: const EdgeInsets.fromLTRB(22, 8, 22, 40), children: [
       Row(children: [
@@ -167,7 +173,7 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(u.name, style: CT.title(24)),
-            Text(u.email.isEmpty ? 'Geen e-mail' : '${u.email}${u.emailVerified ? '' : ' (niet bevestigd)'}',
+            Text(u.email.isEmpty ? l.noEmail : '${u.email}${u.emailVerified ? '' : ' (${l.adminNotVerified})'}',
                 style: CT.text(13, color: CT.muted)),
           ]),
         ),
@@ -177,29 +183,29 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
           margin: const EdgeInsets.only(top: 14),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(color: CT.warnBg, borderRadius: BorderRadius.circular(12), border: Border.all(color: CT.accent)),
-          child: Text('Geblokkeerd${u.bannedReason.isNotEmpty ? ': ${u.bannedReason}' : ''}', style: CT.text(14, color: CT.accent, weight: FontWeight.w600)),
+          child: Text('${l.blockedTitle}${u.bannedReason.isNotEmpty ? ': ${u.bannedReason}' : ''}', style: CT.text(14, color: CT.accent, weight: FontWeight.w600)),
         ),
-      const SectionLabel('Account'),
-      fact('Rol', u.isAdmin ? 'Beheerder' : 'Gebruiker'),
-      fact('Aangemaakt', u.createdAt == null ? 'Onbekend' : Fmt.shortYear(u.createdAt!)),
-      fact('Inloggen met', u.signIns.isEmpty ? 'Onbekend' : u.signIns.map((s) => switch (s) { 'apple' => 'Apple', 'google' => 'Google', _ => 'E-mail' }).join(', ')),
-      fact('Groepen', '${u.groupsCount}'),
-      fact('Foto\'s en video\'s', '${u.photosCount}'),
+      SectionLabel(l.account),
+      fact(l.adminRole, u.isAdmin ? l.proSourceAdmin : l.adminUser),
+      fact(l.adminCreated, u.createdAt == null ? l.unknown : Fmt.shortYear(u.createdAt!)),
+      fact(l.adminSignInWith, u.signIns.isEmpty ? l.unknown : u.signIns.map((s) => switch (s) { 'apple' => 'Apple', 'google' => 'Google', _ => l.adminEmailMethod }).join(', ')),
+      fact(l.adminGroups, '${u.groupsCount}'),
+      fact(l.adminPhotosAndVideos, '${u.photosCount}'),
       const SectionLabel('Pro'),
-      fact('Status', u.proText),
+      fact(l.adminStatus, u.proText),
       if (u.subscriptionActive)
-        fact('Abonnement', u.subscriptionExpiresAt == null ? 'Actief' : 'Actief tot ${Fmt.shortYear(u.subscriptionExpiresAt!)}'),
+        fact(l.proSourceSubscription, u.subscriptionExpiresAt == null ? l.adminActive : l.adminActiveUntil(Fmt.shortYear(u.subscriptionExpiresAt!))),
       if (u.hasGrant)
         fact(
-          'Cadeau${u.grantedByName != null ? ' van ${u.grantedByName}' : ''}${u.grantReason.isNotEmpty ? ': ${u.grantReason}' : ''}',
+          '${u.grantedByName != null ? l.adminGiftFrom(u.grantedByName!) : l.proSourceGift}${u.grantReason.isNotEmpty ? ': ${u.grantReason}' : ''}',
           !u.grantActive
-              ? 'Verlopen${u.grantUntil != null ? ' op ${Fmt.shortYear(u.grantUntil!)}' : ''}'
-              : (u.grantUntil == null ? 'Levenslang' : 'Tot ${Fmt.shortYear(u.grantUntil!)}'),
+              ? (u.grantUntil != null ? l.adminExpiredOn(Fmt.shortYear(u.grantUntil!)) : l.adminExpired)
+              : (u.grantUntil == null ? l.lifetime : l.adminUntil(Fmt.shortYear(u.grantUntil!))),
         ),
       const SizedBox(height: 14),
-      Text('Pro geven', style: CT.text(14, weight: FontWeight.w600)),
+      Text(l.adminGiveProTitle, style: CT.text(14, weight: FontWeight.w600)),
       const SizedBox(height: 4),
-      Text('Werkt ook voor de groepen van deze persoon: één Pro in de groep = Pro voor iedereen in die groep.',
+      Text(l.adminGiveProNote,
           style: CT.text(12, color: CT.muted)),
       const SizedBox(height: 10),
       Wrap(spacing: 8, runSpacing: 8, children: [
@@ -208,14 +214,14 @@ class _AdminUserScreenState extends ConsumerState<AdminUserScreen> {
       ]),
       if (u.hasGrant) ...[
         const SizedBox(height: 14),
-        CTButton('Cadeau intrekken', kind: CTButtonKind.outline, compact: true, loading: _busy, onTap: _revoke),
+        CTButton(l.adminRevokeGift, kind: CTButtonKind.outline, compact: true, loading: _busy, onTap: _revoke),
       ],
-      const SectionLabel('Moderatie'),
+      SectionLabel(l.adminModeration),
       if (isMe || (u.isAdmin && !u.banned))
-        Text(isMe ? 'Je kunt jezelf niet blokkeren.' : 'Een beheerder kan niet geblokkeerd worden.', style: CT.text(13, color: CT.muted))
+        Text(isMe ? l.adminCannotBanSelf : l.adminCannotBanAdmin, style: CT.text(13, color: CT.muted))
       else
         CTButton(
-          u.banned ? 'Blokkade opheffen' : 'Account blokkeren',
+          u.banned ? l.adminUnban : l.adminBanAccount,
           kind: u.banned ? CTButtonKind.dark : CTButtonKind.primary,
           compact: true,
           loading: _busy,

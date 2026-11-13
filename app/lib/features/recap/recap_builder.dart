@@ -10,16 +10,17 @@ import 'package:path_provider/path_provider.dart';
 
 import '../../core/api.dart';
 import '../../core/format.dart';
+import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 
 enum RecapTemplate { goldenHour, snel, filmrol, polaroid }
 
 extension RecapTemplateInfo on RecapTemplate {
   String get label => switch (this) {
-        RecapTemplate.goldenHour => 'Golden Hour',
-        RecapTemplate.snel => 'Snel',
-        RecapTemplate.filmrol => 'Filmrol',
-        RecapTemplate.polaroid => 'Polaroid',
+        RecapTemplate.goldenHour => L10n.current.recapTemplateGoldenHour,
+        RecapTemplate.snel => L10n.current.recapTemplateFast,
+        RecapTemplate.filmrol => L10n.current.recapTemplateFilmRoll,
+        RecapTemplate.polaroid => L10n.current.recapTemplatePolaroid,
       };
 
   /// Seconds per photo.
@@ -32,15 +33,28 @@ extension RecapTemplateInfo on RecapTemplate {
 }
 
 class RecapTrack {
-  const RecapTrack(this.asset, this.title, this.mood);
+  const RecapTrack(this.asset, this.id);
   final String asset;
-  final String title;
-  final String mood;
+  final String id;
+
+  /// Track name in the app's language.
+  String get title => switch (id) {
+        'zomeravond' => L10n.current.trackSummerEvening,
+        'golden_hour' => L10n.current.trackGoldenHour,
+        _ => L10n.current.trackRoadtrip,
+      };
+
+  /// Mood in the app's language.
+  String get mood => switch (id) {
+        'zomeravond' => 'lo-fi',
+        'golden_hour' => L10n.current.moodWarm,
+        _ => L10n.current.moodCheerful,
+      };
 
   static const all = [
-    RecapTrack('music/zomeravond.m4a', 'Zomeravond', 'lo-fi'),
-    RecapTrack('music/golden_hour.m4a', 'Golden Hour', 'warm'),
-    RecapTrack('music/roadtrip.m4a', 'Roadtrip', 'vrolijk'),
+    RecapTrack('music/zomeravond.m4a', 'zomeravond'),
+    RecapTrack('music/golden_hour.m4a', 'golden_hour'),
+    RecapTrack('music/roadtrip.m4a', 'roadtrip'),
   ];
 }
 
@@ -191,7 +205,7 @@ class RecapBuilder {
     final full = Rect.fromLTWH(0, 0, recapW.toDouble(), recapH.toDouble());
     final subtitle = [
       if (group.startDate != null) Fmt.range(group.startDate, group.endDate),
-      '${group.members.length} vrienden',
+      L10n.current.friendsCount(group.members.length),
     ].join(' · ');
     if (t == RecapTemplate.polaroid || cover == null) {
       c.drawRect(full, Paint()..color = _cream);
@@ -244,11 +258,11 @@ class RecapBuilder {
         c.drawRRect(RRect.fromRectAndRadius(printRect.shift(const Offset(0, 16)), const Radius.circular(8)), Paint()..color = Colors.black.withValues(alpha: 0.12)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 24));
         c.drawRRect(RRect.fromRectAndRadius(printRect, const Radius.circular(6)), Paint()..color = Colors.white);
         _cover(c, img, Rect.fromLTWH(-pw / 2 + 40, -ph / 2 + 40, pw - 80, pw - 80));
-        _text(c, Fmt.day(p.takenAt).toLowerCase(), Offset(-pw / 2 + 50, ph / 2 - 120), 44, const Color(0xFF555550), family: 'Inter', w: FontWeight.w500);
+        _text(c, Fmt.dayInline(p.takenAt), Offset(-pw / 2 + 50, ph / 2 - 120), 44, const Color(0xFF555550), family: 'Inter', w: FontWeight.w500);
         c.restore();
     }
     if (watermark) {
-      _text(c, 'Gemaakt met CamTrip', const Offset(540, 1830), 34, Colors.white.withValues(alpha: 0.85),
+      _text(c, L10n.current.madeWithCamTrip, const Offset(540, 1830), 34, Colors.white.withValues(alpha: 0.85),
           family: 'Inter', w: FontWeight.w600, align: TextAlign.center, shadows: const [Shadow(color: Colors.black45, blurRadius: 10)]);
     }
     return rec.endRecording();
@@ -271,7 +285,7 @@ class RecapBuilder {
       textDirection: TextDirection.ltr,
     )..layout();
     tp.paint(c, Offset(540 - tp.width / 2, 980));
-    _text(c, 'Eén rolletje voor de hele groep', const Offset(540, 1140), 40, _ink.withValues(alpha: 0.6), family: 'Inter', w: FontWeight.w500, align: TextAlign.center);
+    _text(c, L10n.current.tagline, const Offset(540, 1140), 40, _ink.withValues(alpha: 0.6), family: 'Inter', w: FontWeight.w500, align: TextAlign.center);
     _text(c, 'camtrip.app', const Offset(540, 1220), 40, _accent, family: 'Inter', w: FontWeight.w600, align: TextAlign.center);
     return rec.endRecording();
   }
@@ -314,6 +328,6 @@ class RecapBuilder {
       }
       if (ReturnCode.isSuccess(await session.getReturnCode()) && out.existsSync() && out.lengthSync() > 0) return out;
     }
-    throw Exception('Video maken lukte niet op dit toestel');
+    throw Exception(L10n.current.videoUnsupportedDevice);
   }
 }

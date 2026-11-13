@@ -6,6 +6,7 @@ import 'package:gal/gal.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../../core/api.dart';
+import '../../l10n/l10n.dart';
 import '../../main.dart';
 import '../../models/models.dart';
 import '../auth/auth_controller.dart';
@@ -351,7 +352,7 @@ class Downloader {
     final items = ((res['items'] as List?) ?? const []).cast<Map<String, dynamic>>();
     if (items.isEmpty) return 0;
     if (!await Gal.hasAccess(toAlbum: true) && !await Gal.requestAccess(toAlbum: true)) {
-      throw ApiException('Geef CamTrip toegang tot je foto\'s in Instellingen om op te slaan');
+      throw ApiException(L10n.current.photoAccessToSave);
     }
     final tmp = await getTemporaryDirectory();
     var done = 0;
@@ -365,7 +366,7 @@ class Downloader {
           await Gal.putImage(path, album: 'CamTrip - ${group.name}');
         }
       } on GalException catch (e) {
-        throw ApiException(e.type == GalExceptionType.notEnoughSpace ? 'Je telefoon is vol' : 'Opslaan in je album lukte niet');
+        throw ApiException(e.type == GalExceptionType.notEnoughSpace ? L10n.current.phoneFull : L10n.current.albumSaveFailedShort);
       }
       try {
         await File(path).delete();

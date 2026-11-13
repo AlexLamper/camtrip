@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/l10n.dart';
 import 'support/real_fonts.dart';
 
 class _SignedOut extends AuthController {
@@ -33,7 +34,7 @@ void main() {
 
         await tester.pumpWidget(ProviderScope(
           overrides: [authProvider.overrideWith(_SignedOut.new)],
-          child: MaterialApp(
+          child: localizedApp(
             builder: (context, child) => MediaQuery(
               data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
               child: child!,

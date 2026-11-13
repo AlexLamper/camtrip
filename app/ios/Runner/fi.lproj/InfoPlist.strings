@@ -1,0 +1,5 @@
+/* Permission texts shown by iOS. Keep in sync with Info.plist (English) and lib/l10n/GLOSSARY.md. */
+"NSCameraUsageDescription" = "CamTrip käyttää kameraasi kuvien ja videoiden ottamiseen ryhmällesi.";
+"NSMicrophoneUsageDescription" = "CamTrip käyttää mikrofoniasi äänen tallentamiseen videoihin.";
+"NSPhotoLibraryAddUsageDescription" = "CamTrip tallentaa kuvasi kuvakirjastoon albumiin, jonka nimi on ryhmäsi nimi.";
+"NSPhotoLibraryUsageDescription" = "Valitse kuvia kirjastostasi jakaaksesi ne ryhmällesi.";

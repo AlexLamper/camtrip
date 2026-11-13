@@ -61,24 +61,59 @@ function sendOne(session: ClientHttp2Session, deviceToken: string, jwt: string, 
   });
 }
 
+/** True when the APNs key is configured, so a push can actually be sent. */
+export function pushReady(): boolean {
+  try {
+    return apnsJwt() !== null;
+  } catch {
+    return false;
+  }
+}
+
+/** True when this user has at least one device a push can reach. */
+export function hasPushDevice(user: { pushTokens?: { platform: string }[] | null }): boolean {
+  return (user.pushTokens ?? []).some((t) => t.platform === 'ios');
+}
+
 export type PushMessage = { title: string; body: string; data?: Record<string, string> };
 
-/** Sends to every iOS device of the given users. Dead tokens are removed. */
-export async function pushToUsers(userIds: Types.ObjectId[], msg: PushMessage, setting?: 'notifyNewPhotos' | 'notifyRecap') {
+/**
+ * Sends to every iOS device of the given users. Dead tokens are removed.
+ * [msg] can be a function of the device's app language (see lib/push-i18n.ts):
+ * it is called once per language, with the token's locale, else the user's,
+ * else '' (English).
+ */
+export async function pushToUsers(
+  userIds: Types.ObjectId[],
+  msg: PushMessage | ((locale: string) => PushMessage),
+  setting?: 'notifyNewPhotos' | 'notifyRecap',
+) {
   const jwt = apnsJwt();
   if (!jwt || !userIds.length) return;
   const filter: Record<string, unknown> = { _id: { $in: userIds } };
   if (setting) filter[`settings.${setting}`] = { $ne: false };
-  const users = await User.find(filter, { pushTokens: 1 }).lean();
-  const tokens = users.flatMap((u) => (u.pushTokens ?? []).filter((t) => t.platform === 'ios').map((t) => t.token));
-  if (!tokens.length) return;
+  const users = await User.find(filter, { pushTokens: 1, locale: 1 }).lean();
+  const targets = users.flatMap((u) =>
+    (u.pushTokens ?? []).filter((t) => t.platform === 'ios').map((t) => ({ token: t.token, locale: t.locale || u.locale || '' })),
+  );
+  if (!targets.length) return;
+  const tokens = targets.map((t) => t.token);
+  const byLocale = new Map<string, object>();
+  const payloadFor = (locale: string) => {
+    let p = byLocale.get(locale);
+    if (!p) {
+      const m = typeof msg === 'function' ? msg(locale) : msg;
+      p = { aps: { alert: { title: m.title, body: m.body }, sound: 'default' }, ...m.data };
+      byLocale.set(locale, p);
+    }
+    return p;
+  };
 
   const host = process.env.APNS_SANDBOX === '1' ? 'https://api.sandbox.push.apple.com' : 'https://api.push.apple.com';
   const session = connect(host);
   session.on('error', () => {});
-  const payload = { aps: { alert: { title: msg.title, body: msg.body }, sound: 'default' }, ...msg.data };
   try {
-    const results = await Promise.all(tokens.map((t) => sendOne(session, t, jwt, payload)));
+    const results = await Promise.all(targets.map((t) => sendOne(session, t.token, jwt, payloadFor(t.locale))));
     const dead = tokens.filter((_, i) => results[i].status === 410 || results[i].reason === 'BadDeviceToken' || results[i].reason === 'Unregistered');
     if (dead.length) {
       await User.updateMany({ _id: { $in: userIds } }, { $pull: { pushTokens: { token: { $in: dead } } } });

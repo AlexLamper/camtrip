@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../l10n/l10n.dart';
+
 /// Build-time configuration. Everything can be overridden with
 /// `--dart-define=KEY=value` (CI does this), so no secrets live in git.
 class AppConfig {
@@ -21,8 +23,8 @@ class AppConfig {
   // --dart-define, which wins). While a value is empty the Google button is
   // hidden on that platform, so App Review never sees a button that fails.
   // CI also reads googleIosClientIdDefault to write ios/Flutter/Secrets.xcconfig.
-  static const String googleIosClientIdDefault = '';
-  static const String googleServerClientIdDefault = '';
+  static const String googleIosClientIdDefault = '909430140528-36qjf2kkq9jcbcr8t500qaipl0151l1v.apps.googleusercontent.com';
+  static const String googleServerClientIdDefault = '909430140528-lbeca6o02o7jmf8dacbkct19qt6bd73c.apps.googleusercontent.com';
 
   /// Google OAuth "web" client id: needed as serverClientId on Android so the
   /// id token is issued for our backend.
@@ -44,11 +46,11 @@ class AppConfig {
   static String inviteUrl(String code) => '$siteUrl/j/${code.toUpperCase()}';
 
   static String inviteMessage(String groupName, String code) => [
-        'Doe je mee met "$groupName" op CamTrip? Dan zien we elkaars foto\'s meteen.',
+        L10n.current.inviteMessageIntro(groupName),
         '',
         inviteUrl(code),
         '',
-        'Of vul de code in: ${code.toUpperCase()}',
+        L10n.current.inviteMessageCode(code.toUpperCase()),
       ].join('\n');
 
   static bool get isDebug => kDebugMode;

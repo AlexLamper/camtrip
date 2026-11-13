@@ -49,7 +49,10 @@ Uint8List placeholderJpeg({int width = 480, int height = 640}) {
 ProcessedPhoto _process(_Job job) {
   var image = img.decodeImage(job.bytes);
   if (image == null) throw Exception('Kon de foto niet lezen');
-  image = img.bakeOrientation(image);
+  // Turn the picture upright in the pixels, then drop every bit of metadata:
+  // package:image keeps EXIF (GPS location, camera, date ...) through
+  // bakeOrientation/copyResize and writes it back in encodeJpg.
+  image = stripMetadata(img.bakeOrientation(image));
   if (job.mirror) image = img.flipHorizontal(image);
 
   // Cap the working size: 12-50 MP sensors would take seconds per effect,
@@ -67,17 +70,29 @@ ProcessedPhoto _process(_Job job) {
     if (style.frame == FrameKind.instant) image = _instantFrame(image);
   }
 
+  stripMetadata(image);
   final original = Uint8List.fromList(img.encodeJpg(image, quality: 92));
   final display = _resized(image, 2048, 85);
   final thumb = _resized(image, 480, 78);
   return ProcessedPhoto(original: original, display: display, thumb: thumb, width: image.width, height: image.height);
 }
 
+/// Removes EXIF (incl. GPS), XMP-style text chunks and anything else that
+/// could identify where or with what a picture was taken. The colour profile
+/// stays. Call after [img.bakeOrientation], so the orientation tag is no
+/// longer needed.
+@visibleForTesting
+img.Image stripMetadata(img.Image image) {
+  image.exif = img.ExifData();
+  image.textData = null;
+  return image;
+}
+
 Uint8List _resized(img.Image src, int maxSide, int quality) {
   final scaled = math.max(src.width, src.height) <= maxSide
       ? src
       : (src.width >= src.height ? img.copyResize(src, width: maxSide) : img.copyResize(src, height: maxSide));
-  return Uint8List.fromList(img.encodeJpg(scaled, quality: quality));
+  return Uint8List.fromList(img.encodeJpg(stripMetadata(scaled), quality: quality));
 }
 
 void _applyMatrixVignetteGrainLeak(img.Image image, CameraStyle style) {

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
+import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 import '../auth/auth_controller.dart';
 import '../upload/upload_queue.dart';
@@ -38,6 +39,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
     final active = [...mine.where((g) => !g.isClosed), ...mine.where((g) => g.isClosed)];
     final archived = list.where((g) => g.archived).toList();
     final canShoot = mine.any((g) => !g.isClosed);
+    final l = context.l10n;
 
     return Scaffold(
       body: RefreshIndicator(
@@ -52,9 +54,10 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(22, 14, 16, 0),
                   child: Row(children: [
-                    Expanded(child: Text('Je albums', style: CT.title(30))),
+                    Expanded(child: Text(l.yourAlbums, style: CT.title(30))),
                     if (pending > 0)
                       IconButton(
+                        tooltip: l.uploadQueue,
                         onPressed: () => context.push('/queue'),
                         icon: Badge(label: Text('$pending'), backgroundColor: CT.accent, child: const Icon(Icons.cloud_upload_outlined)),
                       ),
@@ -74,21 +77,21 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: EmptyState(
-                  title: 'Geen verbinding',
-                  message: 'Je albums laden zodra je weer internet hebt. De camera werkt gewoon.',
-                  action: SizedBox(width: 200, child: CTButton('Opnieuw', onTap: () => ref.read(groupsProvider.notifier).reload())),
+                  title: l.noConnection,
+                  message: l.albumsOfflineMessage,
+                  action: SizedBox(width: 200, child: CTButton(l.retry, onTap: () => ref.read(groupsProvider.notifier).reload())),
                 ),
               )
             else if (list.isEmpty)
               SliverFillRemaining(
                 hasScrollBody: false,
                 child: EmptyState(
-                  title: 'Nog geen albums',
-                  message: 'Maak een groep voor je volgende trip, of join die van een vriend met de code.',
+                  title: l.noAlbumsTitle,
+                  message: l.noAlbumsMessage,
                   action: Column(children: [
-                    SizedBox(width: 240, child: CTButton('Nieuwe groep', kind: CTButtonKind.primary, onTap: () => context.push('/new'))),
+                    SizedBox(width: 240, child: CTButton(l.newGroup, kind: CTButtonKind.primary, onTap: () => context.push('/new'))),
                     const SizedBox(height: 10),
-                    SizedBox(width: 240, child: CTButton('Ik heb een code', kind: CTButtonKind.outline, onTap: () => showJoinSheet(context))),
+                    SizedBox(width: 240, child: CTButton(l.haveCode, kind: CTButtonKind.outline, onTap: () => showJoinSheet(context))),
                   ]),
                 ),
               )
@@ -119,7 +122,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
                       child: Row(children: [
                         const Icon(Icons.qr_code_scanner),
                         const SizedBox(width: 12),
-                        Expanded(child: Text('Join met een code of QR-code', style: CT.text(15, weight: FontWeight.w600))),
+                        Expanded(child: Text(l.joinWithCode, style: CT.text(15, weight: FontWeight.w600))),
                         const Icon(Icons.chevron_right),
                       ]),
                     ),
@@ -136,7 +139,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
           ? null
           : Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22),
-              child: CTButton('Camera', kind: CTButtonKind.primary, icon: Icons.photo_camera, onTap: () => context.push('/camera')),
+              child: CTButton(l.camera, kind: CTButtonKind.primary, icon: Icons.photo_camera, onTap: () => context.push('/camera')),
             ),
     );
   }
@@ -152,7 +155,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
             child: Row(children: [
               const Icon(Icons.archive_outlined, size: 18, color: CT.muted),
               const SizedBox(width: 8),
-              Expanded(child: Text('GEARCHIVEERD ($count)', style: CT.label)),
+              Expanded(child: Text('${context.l10n.archivedSection.toUpperCase()} ($count)', style: CT.label)),
               AnimatedRotation(
                 turns: _showArchived ? 0.5 : 0,
                 duration: const Duration(milliseconds: 180),
@@ -175,7 +178,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             const Icon(Icons.unarchive_outlined, color: Colors.white, size: 20),
             const SizedBox(width: 8),
-            Text('Terugzetten', style: CT.text(14, color: Colors.white, weight: FontWeight.w600)),
+            Text(context.l10n.restore, style: CT.text(14, color: Colors.white, weight: FontWeight.w600)),
           ]),
         ),
         onDismissed: (_) => GroupActions.setArchived(context, ref, g, false),
@@ -202,13 +205,13 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(g.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(15, weight: FontWeight.w600)),
                   Text(
-                    [if (g.startDate != null) Fmt.range(g.startDate, g.endDate), Fmt.count(g.totalCount, 'foto', 'foto\'s')].join(' · '),
+                    [if (g.startDate != null) Fmt.range(g.startDate, g.endDate), context.l10n.photosCount(g.totalCount)].join(' · '),
                     style: CT.text(12, color: CT.muted),
                   ),
                 ]),
               ),
               IconButton(
-                tooltip: 'Meer',
+                tooltip: context.l10n.more,
                 onPressed: () => GroupActions.showMenu(context, ref, g),
                 icon: const Icon(Icons.more_horiz, color: CT.muted),
               ),
@@ -236,7 +239,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
                 border: Border.all(color: const Color(0xFFD5D2CB), width: 2),
               ),
               alignment: Alignment.center,
-              child: Text('+ Nieuw', style: CT.text(15, color: CT.muted, weight: FontWeight.w600)),
+              child: Text('+ ${context.l10n.newAlbum}', style: CT.text(15, color: CT.muted, weight: FontWeight.w600)),
             ),
           );
         }
@@ -259,8 +262,8 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
                   ]),
                   Text(
                     g.isArchived
-                        ? 'afgesloten · ${g.totalCount}'
-                        : [if (isActive) 'actief', if (g.startDate != null) Fmt.range(g.startDate, g.endDate), '${g.totalCount}'].join(' · '),
+                        ? '${context.l10n.closedTag} · ${g.totalCount}'
+                        : [if (isActive) context.l10n.activeTag, if (g.startDate != null) Fmt.range(g.startDate, g.endDate), '${g.totalCount}'].join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: CT.text(10.5, color: CT.muted),
