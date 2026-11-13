@@ -46,6 +46,7 @@ class _AllPhotosViewState extends ConsumerState<AllPhotosView> {
   final _precached = <String>{};
   String? _opening;
   DownloadProgress? _download;
+  DownloadProgress? _sharing;
 
   PhotoSelection get _sel => widget.selection;
   AllPhotosController get _ctrl => ref.read(allPhotosProvider.notifier);
@@ -294,14 +295,14 @@ class _AllPhotosViewState extends ConsumerState<AllPhotosView> {
 
   Widget _selectionBar(List<Photo> photos) {
     final me = ref.watch(authProvider).value?.id;
-    final d = _download;
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 10, 16, 12 + MediaQuery.paddingOf(context).bottom),
       child: SelectionActionBar(
         count: _sel.count,
-        busyLabel: d == null ? null : context.l10n.savingProgress(d.done, d.total),
+        busyLabel: busyLabel(context, saving: _download, sharing: _sharing),
         favoriteOn: _sel.favoriteTarget(photos),
         onSave: () => _save(photos),
+        onShare: () => _share(photos),
         onFavorite: () => _favorite(photos),
         onHide: () => _hide(photos),
         onDelete: _deletable(photos, me).isEmpty ? null : () => _delete(photos, me),
@@ -347,6 +348,25 @@ class _AllPhotosViewState extends ConsumerState<AllPhotosView> {
       if (mounted) showMessage(context, ApiException.from(e).message);
     } finally {
       if (mounted) setState(() => _download = null);
+    }
+  }
+
+  /// Opens the share sheet with the picked photos/videos (any albums mixed).
+  Future<void> _share(List<Photo> photos) async {
+    final picked = _sel.picked(photos);
+    if (picked.isEmpty || _sharing != null) return;
+    setState(() => _sharing = DownloadProgress(0, picked.length));
+    try {
+      await ref.read(photoShareProvider).share(
+            picked,
+            origin: shareOrigin(context),
+            onProgress: (d) => mounted ? setState(() => _sharing = d) : null,
+          );
+      if (mounted) _change(_sel.exit);
+    } catch (e) {
+      if (mounted) showMessage(context, context.l10n.shareFailed);
+    } finally {
+      if (mounted) setState(() => _sharing = null);
     }
   }
 

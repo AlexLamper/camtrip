@@ -1340,6 +1340,14 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get sharePreparing => 'Hazırlanıyor...';
+
+  @override
+  String sharingProgress(int done, int total) {
+    return 'Hazırlanıyor... $done/$total';
+  }
+
+  @override
   String get choosePhotos => 'Fotoğraf seç';
 
   @override

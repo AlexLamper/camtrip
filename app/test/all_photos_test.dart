@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:camtrip/core/api.dart';
 import 'package:camtrip/core/router.dart';
 import 'package:camtrip/core/storage.dart';
@@ -6,6 +8,8 @@ import 'package:camtrip/core/widgets.dart';
 import 'package:camtrip/features/auth/auth_controller.dart';
 import 'package:camtrip/features/gallery/all_photos_controller.dart';
 import 'package:camtrip/features/gallery/all_photos_screen.dart';
+import 'package:camtrip/features/gallery/gallery_controller.dart' show DownloadProgress;
+import 'package:camtrip/features/gallery/photo_actions.dart';
 import 'package:camtrip/features/groups/albums_screen.dart';
 import 'package:camtrip/features/upload/upload_queue.dart';
 import 'package:camtrip/l10n/l10n.dart';
@@ -48,6 +52,20 @@ class PagedApi extends Api {
   }
 }
 
+/// Records what would be shared instead of downloading and opening the sheet.
+class FakeShare extends PhotoShare {
+  FakeShare() : super(PagedApi(const []));
+  final calls = <List<String>>[];
+  Completer<void>? gate;
+
+  @override
+  Future<void> share(List<Photo> photos, {void Function(DownloadProgress)? onProgress, Rect? origin}) async {
+    calls.add(photos.map((p) => p.id).toList());
+    onProgress?.call(DownloadProgress(1, photos.length));
+    if (gate != null) await gate!.future;
+  }
+}
+
 /// No upload queue on disk in tests.
 class NoQueue extends UploadQueue {
   @override
@@ -85,7 +103,7 @@ void phone(WidgetTester tester) {
 Widget colorThumb(Photo p) => ColoredBox(key: Key('thumb-${p.id}'), color: Colors.primaries[p.id.hashCode % 18]);
 
 /// The home screen, on the "Alle foto's" tab unless [tab] says otherwise.
-Future<PagedApi> pumpHome(WidgetTester tester, List<Map<String, dynamic>> pages, {HomeTab tab = HomeTab.photos}) async {
+Future<PagedApi> pumpHome(WidgetTester tester, List<Map<String, dynamic>> pages, {HomeTab tab = HomeTab.photos, PhotoShare? share}) async {
   phone(tester);
   SharedPreferences.setMockInitialValues({});
   final prefs = Prefs(await SharedPreferences.getInstance());
@@ -96,6 +114,7 @@ Future<PagedApi> pumpHome(WidgetTester tester, List<Map<String, dynamic>> pages,
       apiProvider.overrideWithValue(api),
       authProvider.overrideWith(Me.new),
       uploadQueueProvider.overrideWith(NoQueue.new),
+      if (share != null) photoShareProvider.overrideWithValue(share),
     ],
     child: localizedApp(theme: CT.theme(), home: AlbumsScreen(initialTab: tab, photoThumbBuilder: colorThumb)),
   ));
@@ -190,7 +209,7 @@ void main() {
     expect(find.byKey(const Key('sel-close')), findsOneWidget);
     expect(find.byKey(const Key('sel-all')), findsOneWidget);
     // ... and the camera button for the gallery's action bar.
-    for (final k in ['sel-save', 'sel-favorite', 'sel-hide', 'sel-delete']) {
+    for (final k in ['sel-save', 'sel-share', 'sel-favorite', 'sel-hide', 'sel-delete']) {
       expect(find.byKey(Key(k)), findsOneWidget, reason: k);
     }
     expect(find.widgetWithText(CTButton, 'Camera'), findsNothing);
@@ -315,4 +334,98 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Je albums'), findsOneWidget);
   });
+
+  testWidgets('"Selecteer" in the header toggles selection mode on the photos tab', (tester) async {
+    await pumpHome(tester, [
+      {'photos': photosJson(6), 'nextCursor': null},
+    ]);
+    await tester.pumpAndSettle();
+    final chip = find.byKey(const Key('home-select'));
+    expect(chip, findsOneWidget);
+    // The label, or (icon-only chip when the title needs the room) its tooltip.
+    bool says(String label) =>
+        find.descendant(of: chip, matching: find.text(label)).evaluate().isNotEmpty ||
+        find.ancestor(of: chip, matching: find.byWidgetPredicate((w) => w is Tooltip && w.message == label)).evaluate().isNotEmpty;
+    expect(says('Selecteer'), isTrue);
+    // Right of the title, left of the avatar, on the title row.
+    final title = tester.getRect(find.text("Alle foto's").first);
+    expect(tester.getRect(chip).left, greaterThan(title.left));
+    expect(tester.getRect(chip).center.dy, closeTo(title.center.dy, 8));
+
+    await tester.tap(chip);
+    await tester.pumpAndSettle();
+    expect(find.text('Kies foto\'s'), findsOneWidget);
+    expect(find.byKey(const Key('sel-save')), findsOneWidget);
+    expect(says('Klaar'), isTrue);
+    expect(find.byKey(const Key('sel-mark-p0000')), findsOneWidget);
+    // In selection mode a tap picks instead of opening.
+    await tester.tap(find.byKey(const ValueKey('p0001')));
+    await tester.pump();
+    expect(find.text('1 geselecteerd'), findsOneWidget);
+
+    await tester.tap(chip);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('sel-save')), findsNothing);
+    expect(find.byKey(const Key('sel-mark-p0000')), findsNothing);
+    expect(find.byType(CTSegmented<HomeTab>), findsOneWidget);
+
+    // Long-press still works, and the chip follows it.
+    await tester.longPress(find.byKey(const ValueKey('p0002')));
+    await tester.pumpAndSettle();
+    expect(find.text('1 geselecteerd'), findsOneWidget);
+    expect(says('Klaar'), isTrue);
+
+    // Not on the albums tab.
+    await tester.tap(chip);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('home-tab-albums')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('home-select')), findsNothing);
+  });
+
+  testWidgets('"Delen" shares the picked photos through the share helper', (tester) async {
+    final share = FakeShare()..gate = Completer<void>();
+    await pumpHome(tester, [
+      {'photos': photosJson(6), 'nextCursor': null},
+    ], share: share);
+    await tester.pumpAndSettle();
+    await tester.longPress(find.byKey(const ValueKey('p0001')));
+    await tester.tap(find.byKey(const ValueKey('p0003')));
+    await tester.tap(find.byKey(const ValueKey('p0004')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('sel-share')));
+    await tester.pump();
+    expect(share.calls, [
+      ['p0001', 'p0003', 'p0004'],
+    ]);
+    // Progress while the files are prepared.
+    expect(find.text('Voorbereiden... 1/3'), findsOneWidget);
+    share.gate!.complete();
+    await tester.pumpAndSettle();
+    // Done: selection mode ends.
+    expect(find.byKey(const Key('sel-save')), findsNothing);
+    expect(find.byType(CTSegmented<HomeTab>), findsOneWidget);
+  });
+
+  testWidgets('"Delen" failing shows a message and keeps the selection', (tester) async {
+    await pumpHome(tester, [
+      {'photos': photosJson(3), 'nextCursor': null},
+    ], share: _FailingShare());
+    await tester.pumpAndSettle();
+    await tester.longPress(find.byKey(const ValueKey('p0001')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('sel-share')));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Delen lukte niet'), findsOneWidget);
+    expect(find.text('1 geselecteerd'), findsOneWidget);
+    expect(find.byKey(const Key('sel-share')), findsOneWidget);
+  });
+}
+
+class _FailingShare extends FakeShare {
+  @override
+  Future<void> share(List<Photo> photos, {void Function(DownloadProgress)? onProgress, Rect? origin}) async {
+    throw ApiException('kapot');
+  }
 }

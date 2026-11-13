@@ -353,6 +353,8 @@
   "noPhotosMessage": "Vyfoť první fotku. Celá skupina ji hned uvidí.",
   "openCamera": "Otevřít fotoaparát",
   "savingProgress": "Ukládání... {done}/{total}",
+  "sharePreparing": "Příprava...",
+  "sharingProgress": "Příprava... {done}/{total}",
   "choosePhotos": "Vybrat fotky",
   "selectedCount": "Vybráno: {count}",
   "selectNone": "Zrušit výběr",

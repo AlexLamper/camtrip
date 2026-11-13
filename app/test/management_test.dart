@@ -303,6 +303,7 @@ void main() {
               body: SelectionActionBar(
                 count: 2,
                 onSave: () => saved++,
+                onShare: () {},
                 onFavorite: () {},
                 onHide: () {},
                 onDelete: canDelete ? () => deleted++ : null,

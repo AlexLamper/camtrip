@@ -1338,6 +1338,14 @@ class AppLocalizationsFi extends AppLocalizations {
   }
 
   @override
+  String get sharePreparing => 'Valmistellaan...';
+
+  @override
+  String sharingProgress(int done, int total) {
+    return 'Valmistellaan... $done/$total';
+  }
+
+  @override
   String get choosePhotos => 'Valitse kuvia';
 
   @override

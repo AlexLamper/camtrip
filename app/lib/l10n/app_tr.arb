@@ -353,6 +353,8 @@
   "noPhotosMessage": "İlk fotoğrafı çek. Gruptaki herkes hemen görür.",
   "openCamera": "Kamerayı aç",
   "savingProgress": "Kaydediliyor... {done}/{total}",
+  "sharePreparing": "Hazırlanıyor...",
+  "sharingProgress": "Hazırlanıyor... {done}/{total}",
   "choosePhotos": "Fotoğraf seç",
   "selectedCount": "{count} seçildi",
   "selectNone": "Hiçbirini seçme",

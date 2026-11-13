@@ -353,6 +353,8 @@
   "noPhotosMessage": "Maak de eerste foto. Iedereen in de groep ziet hem meteen.",
   "openCamera": "Open de camera",
   "savingProgress": "Opslaan... {done}/{total}",
+  "sharePreparing": "Voorbereiden...",
+  "sharingProgress": "Voorbereiden... {done}/{total}",
   "choosePhotos": "Kies foto's",
   "selectedCount": "{count} geselecteerd",
   "selectNone": "Niets selecteren",

@@ -1338,6 +1338,14 @@ class AppLocalizationsDa extends AppLocalizations {
   }
 
   @override
+  String get sharePreparing => 'Forbereder...';
+
+  @override
+  String sharingProgress(int done, int total) {
+    return 'Forbereder... $done/$total';
+  }
+
+  @override
   String get choosePhotos => 'Vælg billeder';
 
   @override

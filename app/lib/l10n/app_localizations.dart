@@ -2253,6 +2253,18 @@ abstract class AppLocalizations {
   /// **'Saving... {done}/{total}'**
   String savingProgress(int done, int total);
 
+  /// No description provided for @sharePreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing...'**
+  String get sharePreparing;
+
+  /// No description provided for @sharingProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing... {done}/{total}'**
+  String sharingProgress(int done, int total);
+
   /// No description provided for @choosePhotos.
   ///
   /// In en, this message translates to:

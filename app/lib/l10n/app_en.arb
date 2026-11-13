@@ -801,6 +801,18 @@
       }
     }
   },
+  "sharePreparing": "Preparing...",
+  "sharingProgress": "Preparing... {done}/{total}",
+  "@sharingProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "choosePhotos": "Choose photos",
   "selectedCount": "{count} selected",
   "@selectedCount": {

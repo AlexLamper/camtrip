@@ -31,6 +31,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   final _sel = PhotoSelection();
   bool get _selecting => _sel.active;
   DownloadProgress? _download;
+  DownloadProgress? _sharing;
   String? _groupError;
 
   @override
@@ -112,6 +113,25 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       });
     } catch (e) {
       if (mounted) showMessage(context, ApiException.from(e).message);
+    }
+  }
+
+  /// Opens the share sheet with the picked photos/videos.
+  Future<void> _shareSelected() async {
+    final picked = _sel.picked(_photos);
+    if (picked.isEmpty || _sharing != null) return;
+    setState(() => _sharing = DownloadProgress(0, picked.length));
+    try {
+      await ref.read(photoShareProvider).share(
+            picked,
+            origin: shareOrigin(context),
+            onProgress: (d) => mounted ? setState(() => _sharing = d) : null,
+          );
+      if (mounted) setState(_sel.exit);
+    } catch (e) {
+      if (mounted) showMessage(context, context.l10n.shareFailed);
+    } finally {
+      if (mounted) setState(() => _sharing = null);
     }
   }
 
@@ -275,14 +295,14 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   Widget _selectionBar(Group group) {
     final me = ref.watch(authProvider).value?.id;
     final photos = ref.watch(galleryProvider(widget.groupId)).photos;
-    final d = _download;
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 10, 16, 12 + MediaQuery.of(context).padding.bottom),
       child: SelectionActionBar(
         count: _sel.count,
-        busyLabel: d == null ? null : context.l10n.savingProgress(d.done, d.total),
+        busyLabel: busyLabel(context, saving: _download, sharing: _sharing),
         favoriteOn: _sel.favoriteTarget(photos),
         onSave: () => _saveAll(group),
+        onShare: _shareSelected,
         onFavorite: _favoriteSelected,
         onHide: _hideSelected,
         onDelete: _sel.deletable(photos, me, group).isEmpty ? null : () => _deleteSelected(group),

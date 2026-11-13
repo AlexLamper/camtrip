@@ -353,6 +353,8 @@
   "noPhotosMessage": "最初の1枚を撮りましょう。グループのみんながすぐに見られます。",
   "openCamera": "カメラを開く",
   "savingProgress": "保存中... {done}/{total}",
+  "sharePreparing": "準備中...",
+  "sharingProgress": "準備中... {done}/{total}",
   "choosePhotos": "写真を選択",
   "selectedCount": "{count}件選択中",
   "selectNone": "選択を解除",

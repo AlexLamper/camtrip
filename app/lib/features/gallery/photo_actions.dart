@@ -1,8 +1,15 @@
-import 'package:flutter/material.dart';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
+
+import '../../core/api.dart';
 import '../../core/theme.dart';
 import '../../l10n/l10n.dart';
 import '../../models/models.dart';
+import 'gallery_controller.dart';
 
 /// Which photos are picked in the gallery's selection mode. Plain Dart so it
 /// is easy to test; the screen calls setState around it.
@@ -92,12 +99,16 @@ class SelectionHeader extends StatelessWidget {
   }
 }
 
-/// Bottom bar in selection mode: Opslaan / Favoriet / Verbergen / Verwijderen.
+/// Bottom bar in selection mode: Opslaan / Delen / Favoriet / Verbergen /
+/// Verwijderen. Icons with small labels in one shared size; a long label
+/// ("Geen favoriet") wraps to two lines, and only when a single word does
+/// not fit (long words, large text) do all labels get smaller.
 class SelectionActionBar extends StatelessWidget {
   const SelectionActionBar({
     super.key,
     required this.count,
     required this.onSave,
+    required this.onShare,
     required this.onFavorite,
     required this.onHide,
     required this.onDelete,
@@ -107,6 +118,7 @@ class SelectionActionBar extends StatelessWidget {
 
   final int count;
   final VoidCallback? onSave;
+  final VoidCallback? onShare;
   final VoidCallback? onFavorite;
   final VoidCallback? onHide;
 
@@ -119,50 +131,170 @@ class SelectionActionBar extends StatelessWidget {
   /// e.g. "Opslaan... 3/8" while a download runs.
   final String? busyLabel;
 
+  static const height = 58.0;
+
+  static const _labelSize = 11.5;
+  static const _slotPadding = 4.0; // horizontal, both sides together
+
+  /// One font size for all labels: the largest (at most [_labelSize], with
+  /// the user's text scale) at which every label fits its slot in at most two
+  /// lines, without breaking a word.
+  static double labelSize(BuildContext context, List<String> labels, double slotWidth) {
+    final scaler = MediaQuery.textScalerOf(context);
+    final base = DefaultTextStyle.of(context).style; // what Text merges in
+    final room = slotWidth - _slotPadding;
+    bool fits(double size) {
+      final style = base.merge(CT.text(size, weight: FontWeight.w600, height: 1.2));
+      TextPainter painter(String text, int lines, double width) =>
+          TextPainter(text: TextSpan(text: text, style: style), textDirection: TextDirection.ltr, textScaler: scaler, maxLines: lines)
+            ..layout(maxWidth: width);
+      for (final label in labels) {
+        // Every word on one line ...
+        for (final word in label.split(' ')) {
+          final tp = painter(word, 1, double.infinity);
+          final ok = tp.width <= room;
+          tp.dispose();
+          if (!ok) return false;
+        }
+        // ... and the whole label in two lines at most.
+        final tp = painter(label, 2, room);
+        final ok = !tp.didExceedMaxLines;
+        tp.dispose();
+        if (!ok) return false;
+      }
+      return true;
+    }
+
+    var size = _labelSize;
+    while (size > 7 && !fits(size)) {
+      size -= 0.25;
+    }
+    return size;
+  }
+
   @override
   Widget build(BuildContext context) {
     final enabled = count > 0 && busyLabel == null;
     final l = context.l10n;
-    Widget action(Key key, IconData icon, String label, VoidCallback? onTap, {Color? color}) {
-      final on = enabled && onTap != null;
-      return Expanded(
-        child: Opacity(
-          opacity: on ? 1 : 0.35,
-          child: InkWell(
-            key: key,
-            borderRadius: BorderRadius.circular(12),
-            onTap: on ? onTap : null,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(icon, color: color ?? Colors.white, size: 22),
-                const SizedBox(height: 4),
-                Text(label,
-                    maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(12, color: color ?? Colors.white, weight: FontWeight.w600)),
-              ]),
+    final favoriteLabel = favoriteOn ? l.favorite : l.unfavorite;
+    final labels = [l.save, l.share, favoriteLabel, l.hide, l.delete];
+
+    Widget bar(double size) {
+      Widget action(Key key, IconData icon, String label, VoidCallback? onTap, {Color? color}) {
+        final on = enabled && onTap != null;
+        return Expanded(
+          child: Opacity(
+            opacity: on ? 1 : 0.35,
+            child: InkWell(
+              key: key,
+              borderRadius: BorderRadius.circular(12),
+              onTap: on ? onTap : null,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: _slotPadding / 2, vertical: 8),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(icon, color: color ?? Colors.white, size: 22),
+                  const SizedBox(height: 4),
+                  Text(label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: CT.text(size, color: color ?? Colors.white, weight: FontWeight.w600, height: 1.2)),
+                ]),
+              ),
             ),
           ),
-        ),
-      );
+        );
+      }
+
+      return Row(children: [
+        action(const Key('sel-save'), Icons.download_rounded, l.save, onSave),
+        action(const Key('sel-share'), Icons.ios_share, l.share, onShare),
+        action(const Key('sel-favorite'), favoriteOn ? Icons.star_outline_rounded : Icons.star_rounded, favoriteLabel, onFavorite),
+        action(const Key('sel-hide'), Icons.visibility_off_outlined, l.hide, onHide),
+        action(const Key('sel-delete'), Icons.delete_outline, l.delete, onDelete, color: const Color(0xFFFF8A73)),
+      ]);
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(color: CT.ink, borderRadius: BorderRadius.circular(18), boxShadow: CT.printShadow),
       child: busyLabel != null
           ? SizedBox(
-              height: 58,
-              child: Center(child: Text(busyLabel!, style: CT.text(14, color: Colors.white, weight: FontWeight.w600))),
+              key: const Key('sel-busy'),
+              height: height,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                      const SizedBox(width: 10),
+                      Text(busyLabel!, maxLines: 1, style: CT.text(14, color: Colors.white, weight: FontWeight.w600)),
+                    ]),
+                  ),
+                ),
+              ),
             )
-          : Row(children: [
-              action(const Key('sel-save'), Icons.download_rounded, l.save, onSave),
-              action(const Key('sel-favorite'), favoriteOn ? Icons.star_outline_rounded : Icons.star_rounded, favoriteOn ? l.favorite : l.unfavorite,
-                  onFavorite),
-              action(const Key('sel-hide'), Icons.visibility_off_outlined, l.hide, onHide),
-              action(const Key('sel-delete'), Icons.delete_outline, l.delete, onDelete, color: const Color(0xFFFF8A73)),
-            ]),
+          : LayoutBuilder(builder: (context, c) => bar(labelSize(context, labels, c.maxWidth / labels.length))),
     );
   }
+}
+
+/// Text for the busy action bar: "Opslaan... 3/8", "Voorbereiden... 2/5"
+/// (one item: "Voorbereiden..."), or null when nothing runs.
+String? busyLabel(BuildContext context, {DownloadProgress? saving, DownloadProgress? sharing}) {
+  final l = context.l10n;
+  if (saving != null) return l.savingProgress(saving.done, saving.total);
+  if (sharing != null) return sharing.total > 1 ? l.sharingProgress(sharing.done, sharing.total) : l.sharePreparing;
+  return null;
+}
+
+/// Shares picked photos/videos through the system share sheet. Override the
+/// provider in tests.
+final photoShareProvider = Provider<PhotoShare>((ref) => PhotoShare(ref.read(apiProvider)));
+
+class PhotoShare {
+  PhotoShare(this.api);
+  final Api api;
+
+  /// Downloads [photos] (any albums mixed; display or original quality like
+  /// "Opslaan") to temp files and opens the share sheet. Photos that fail
+  /// are left out; throws only when nothing could be prepared.
+  /// [origin] anchors the sheet on iPad.
+  Future<void> share(List<Photo> photos, {void Function(DownloadProgress)? onProgress, Rect? origin}) async {
+    if (photos.isEmpty) return;
+    final dir = Directory('${(await getTemporaryDirectory()).path}/share');
+    try {
+      if (dir.existsSync()) await dir.delete(recursive: true); // files of the previous share
+    } catch (_) {}
+    await dir.create(recursive: true);
+
+    final byGroup = <String, List<String>>{};
+    for (final p in photos) {
+      byGroup.putIfAbsent(p.groupId, () => []).add(p.id);
+    }
+    final files = <XFile>[];
+    var done = 0;
+    Object? error;
+    for (final e in byGroup.entries) {
+      try {
+        final got = await Downloader.toFiles(api, e.key, e.value, dir, onFile: () => onProgress?.call(DownloadProgress(++done, photos.length)));
+        files.addAll(got.map((f) => XFile(f.path, mimeType: f.mime)));
+      } catch (err) {
+        error = err;
+      }
+    }
+    if (files.isEmpty) throw error ?? ApiException(L10n.current.shareFailed);
+    await SharePlus.instance.share(ShareParams(files: files, sharePositionOrigin: origin));
+  }
+}
+
+/// Where the share sheet points from on iPad: the middle of the action bar.
+Rect shareOrigin(BuildContext context) {
+  final size = MediaQuery.sizeOf(context);
+  final bottom = MediaQuery.paddingOf(context).bottom;
+  return Rect.fromLTWH(size.width / 2 - 1, size.height - bottom - 12 - SelectionActionBar.height, 2, 2);
 }
 
 /// Confirmation before deleting photos for the whole group.

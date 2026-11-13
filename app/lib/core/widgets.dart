@@ -59,8 +59,29 @@ class CTButton extends StatelessWidget {
 enum CTButtonKind { primary, dark, outline, ghost }
 
 /// Selectable pill, e.g. the camera style picker and gallery filters.
+/// Filter/action chip. An empty [label] with an [icon] gives an icon-only chip.
 class CTChip extends StatelessWidget {
   const CTChip(this.label, {super.key, this.selected = false, this.onTap, this.dashed = false, this.icon});
+
+  /// The chip's width for [label] (with the context's text scale), for layouts
+  /// that pick between a full and an icon-only chip.
+  static double widthOf(BuildContext context, String label, {bool icon = false}) {
+    var w = 13.0 * 2 + 1.5 * 2;
+    if (icon) w += 15;
+    if (icon && label.isNotEmpty) w += 5;
+    if (label.isNotEmpty) {
+      final tp = TextPainter(
+        text: TextSpan(text: label, style: DefaultTextStyle.of(context).style.merge(CT.text(13, weight: FontWeight.w600))),
+        textDirection: TextDirection.ltr,
+        textScaler: MediaQuery.textScalerOf(context),
+        maxLines: 1,
+      )..layout();
+      w += tp.width;
+      tp.dispose();
+    }
+    return w.ceilToDouble();
+  }
+
   final String label;
   final bool selected;
   final bool dashed;
@@ -80,8 +101,9 @@ class CTChip extends StatelessWidget {
           border: Border.all(color: selected ? CT.ink : (dashed ? const Color(0xFFD5D2CB) : CT.line), width: 1.5),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          if (icon != null) ...[Icon(icon, size: 15, color: selected ? Colors.white : (dashed ? CT.muted : CT.ink)), const SizedBox(width: 5)],
-          Text(label, style: CT.text(13, color: selected ? Colors.white : (dashed ? CT.muted : CT.ink), weight: FontWeight.w600)),
+          if (icon != null) Icon(icon, size: 15, color: selected ? Colors.white : (dashed ? CT.muted : CT.ink)),
+          if (icon != null && label.isNotEmpty) const SizedBox(width: 5),
+          if (label.isNotEmpty) Text(label, style: CT.text(13, color: selected ? Colors.white : (dashed ? CT.muted : CT.ink), weight: FontWeight.w600)),
         ]),
       ),
     );

@@ -1276,6 +1276,14 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
+  String get sharePreparing => '正在准备...';
+
+  @override
+  String sharingProgress(int done, int total) {
+    return '正在准备... $done/$total';
+  }
+
+  @override
   String get choosePhotos => '选择照片';
 
   @override

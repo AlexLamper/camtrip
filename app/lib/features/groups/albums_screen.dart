@@ -123,35 +123,69 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
     );
   }
 
-  /// Title (follows the tab), upload queue and the avatar that opens Instellingen.
+  /// Title (follows the tab), on the photos tab the "Selecteer" chip, upload
+  /// queue and the avatar that opens Instellingen.
+  ///
+  /// Long titles ("Toutes les photos") first get a bit smaller (down to 80%);
+  /// if that is not enough, the chip shows only its icon.
   Widget _titleRow() {
     final user = ref.watch(authProvider).value;
+    final selecting = _sel.active && _tab == HomeTab.photos;
     final pending = ref.watch(uploadQueueProvider).length;
     final l = context.l10n;
+    final title = _tab == HomeTab.albums ? l.yourAlbums : l.allPhotosTitle;
+    final chipLabel = selecting ? l.done : l.select;
+    const titleSize = 30.0, minScale = 0.8, chipGap = 8.0, chipEnd = 10.0;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(22, 14, 16, 0),
-      child: Row(children: [
-        Expanded(
-          child: Text(
-            _tab == HomeTab.albums ? l.yourAlbums : l.allPhotosTitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: CT.title(30),
+      child: LayoutBuilder(builder: (context, c) {
+        final scaler = MediaQuery.textScalerOf(context);
+        final tp = TextPainter(text: TextSpan(text: title, style: CT.title(titleSize)), textDirection: TextDirection.ltr, textScaler: scaler, maxLines: 1)
+          ..layout();
+        final natural = tp.width;
+        tp.dispose();
+        final fixed = 36.0 + (pending > 0 ? 48 : 0); // avatar, queue button
+        var room = c.maxWidth - fixed;
+        var compactChip = false;
+        if (_tab == HomeTab.photos) {
+          final full = room - chipGap - chipEnd - CTChip.widthOf(context, chipLabel, icon: true);
+          compactChip = natural * minScale > full;
+          room = compactChip ? room - chipGap - chipEnd - CTChip.widthOf(context, '', icon: true) : full;
+        }
+        final scale = natural <= room ? 1.0 : (room / natural).clamp(minScale, 1.0);
+
+        final chip = CTChip(
+          compactChip ? '' : chipLabel,
+          key: const Key('home-select'),
+          icon: Icons.check_circle_outline,
+          selected: selecting,
+          onTap: () => setState(() => selecting ? _sel.exit() : _sel.active = true),
+        );
+        return Row(children: [
+          Expanded(
+            child: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.title((titleSize * scale).floorToDouble())),
           ),
-        ),
-        if (pending > 0)
-          IconButton(
-            tooltip: l.uploadQueue,
-            onPressed: () => context.push('/queue'),
-            icon: Badge(label: Text('$pending'), backgroundColor: CT.accent, child: const Icon(Icons.cloud_upload_outlined)),
+          if (_tab == HomeTab.photos) ...[
+            const SizedBox(width: chipGap),
+            // Same chip as "Selecteer" in an album; long-press on a photo works too.
+            compactChip ? Tooltip(message: chipLabel, child: Semantics(button: true, label: chipLabel, child: chip)) : chip,
+            const SizedBox(width: chipEnd),
+          ],
+          if (pending > 0)
+            IconButton(
+              tooltip: l.uploadQueue,
+              onPressed: () => context.push('/queue'),
+              icon: Badge(label: Text('$pending'), backgroundColor: CT.accent, child: const Icon(Icons.cloud_upload_outlined)),
+            ),
+          GestureDetector(
+            onTap: () => context.push('/settings'),
+            child: user == null || user.name.isEmpty
+                ? const CircleAvatar(radius: 17, backgroundColor: CT.cream, child: Icon(Icons.person, size: 18, color: CT.muted))
+                : Avatar(initial: user.initial, color: user.color, size: 36),
           ),
-        GestureDetector(
-          onTap: () => context.push('/settings'),
-          child: user == null || user.name.isEmpty
-              ? const CircleAvatar(radius: 17, backgroundColor: CT.cream, child: Icon(Icons.person, size: 18, color: CT.muted))
-              : Avatar(initial: user.initial, color: user.color, size: 36),
-        ),
-      ]),
+        ]);
+      }),
     );
   }
 

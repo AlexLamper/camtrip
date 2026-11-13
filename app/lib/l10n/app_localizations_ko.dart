@@ -1283,6 +1283,14 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get sharePreparing => '준비 중...';
+
+  @override
+  String sharingProgress(int done, int total) {
+    return '준비 중... $done/$total';
+  }
+
+  @override
   String get choosePhotos => '사진 선택';
 
   @override

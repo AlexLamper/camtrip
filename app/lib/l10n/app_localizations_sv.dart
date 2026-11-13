@@ -1338,6 +1338,14 @@ class AppLocalizationsSv extends AppLocalizations {
   }
 
   @override
+  String get sharePreparing => 'Förbereder...';
+
+  @override
+  String sharingProgress(int done, int total) {
+    return 'Förbereder... $done/$total';
+  }
+
+  @override
   String get choosePhotos => 'Välj bilder';
 
   @override

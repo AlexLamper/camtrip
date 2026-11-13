@@ -1352,6 +1352,14 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
+  String get sharePreparing => 'A preparar...';
+
+  @override
+  String sharingProgress(int done, int total) {
+    return 'A preparar... $done/$total';
+  }
+
+  @override
   String get choosePhotos => 'Escolher fotos';
 
   @override
@@ -3496,6 +3504,14 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String savingProgress(int done, int total) {
     return 'Salvando... $done/$total';
+  }
+
+  @override
+  String get sharePreparing => 'Preparando...';
+
+  @override
+  String sharingProgress(int done, int total) {
+    return 'Preparando... $done/$total';
   }
 
   @override

@@ -348,8 +348,7 @@ class Downloader {
   /// Saves photos/videos of a group into the phone's album "CamTrip - groepsnaam".
   /// [ids] empty = everything. Pro gets originals (decided server-side).
   static Future<int> save(Api api, Group group, List<String> ids, {void Function(DownloadProgress)? onProgress}) async {
-    final res = await api.get('/groups/${group.id}/download', query: ids.isEmpty ? null : {'ids': ids.join(',')});
-    final items = ((res['items'] as List?) ?? const []).cast<Map<String, dynamic>>();
+    final items = await list(api, group.id, ids);
     if (items.isEmpty) return 0;
     if (!await Gal.hasAccess(toAlbum: true) && !await Gal.requestAccess(toAlbum: true)) {
       throw ApiException(L10n.current.photoAccessToSave);
@@ -375,5 +374,45 @@ class Downloader {
       onProgress?.call(DownloadProgress(done, items.length));
     }
     return done;
+  }
+
+  static String mimeFor(String ext, {required bool video}) => switch (ext.toLowerCase()) {
+        'jpg' || 'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'heic' => 'image/heic',
+        'webp' => 'image/webp',
+        'mov' => 'video/quicktime',
+        'mp4' || 'm4v' => 'video/mp4',
+        _ => video ? 'video/mp4' : 'image/jpeg',
+      };
+
+  /// The download list of a group: signed URLs with id, kind and ext. Pro
+  /// gets originals, free the display version (decided server-side).
+  /// [ids] empty = everything.
+  static Future<List<Map<String, dynamic>>> list(Api api, String groupId, List<String> ids) async {
+    final res = await api.get('/groups/$groupId/download', query: ids.isEmpty ? null : {'ids': ids.join(',')});
+    return ((res['items'] as List?) ?? const []).cast<Map<String, dynamic>>();
+  }
+
+  /// Downloads photos/videos of one group into [dir] (for the share sheet),
+  /// same quality as [save]. Items that fail are skipped; throws only when
+  /// nothing could be downloaded. [onFile] runs after every finished item.
+  static Future<List<({String path, String mime})>> toFiles(Api api, String groupId, List<String> ids, Directory dir,
+      {void Function()? onFile}) async {
+    final items = await list(api, groupId, ids);
+    final out = <({String path, String mime})>[];
+    Object? error;
+    for (final item in items) {
+      final path = '${dir.path}/camtrip_${item['id']}.${item['ext']}';
+      try {
+        await Api.download(item['url'] as String, path);
+        out.add((path: path, mime: mimeFor(item['ext'] as String? ?? '', video: item['kind'] == 'video')));
+      } catch (e) {
+        error = e;
+      }
+      onFile?.call();
+    }
+    if (out.isEmpty && error != null) throw ApiException.from(error);
+    return out;
   }
 }

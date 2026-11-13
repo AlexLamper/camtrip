@@ -353,6 +353,8 @@
   "noPhotosMessage": "Prends la première photo. Tout le groupe la voit aussitôt.",
   "openCamera": "Ouvrir l'appareil photo",
   "savingProgress": "Enregistrement... {done}/{total}",
+  "sharePreparing": "Préparation...",
+  "sharingProgress": "Préparation... {done}/{total}",
   "choosePhotos": "Choisir des photos",
   "selectedCount": "{count} sélectionnée(s)",
   "selectNone": "Tout désélectionner",

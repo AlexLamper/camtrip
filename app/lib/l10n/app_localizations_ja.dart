@@ -1279,6 +1279,14 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get sharePreparing => '準備中...';
+
+  @override
+  String sharingProgress(int done, int total) {
+    return '準備中... $done/$total';
+  }
+
+  @override
   String get choosePhotos => '写真を選択';
 
   @override

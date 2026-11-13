@@ -353,6 +353,8 @@
   "noPhotosMessage": "Ta det første bildet. Alle i gruppen ser det med en gang.",
   "openCamera": "Åpne kameraet",
   "savingProgress": "Lagrer... {done}/{total}",
+  "sharePreparing": "Forbereder...",
+  "sharingProgress": "Forbereder... {done}/{total}",
   "choosePhotos": "Velg bilder",
   "selectedCount": "{count} valgt",
   "selectNone": "Velg ingen",

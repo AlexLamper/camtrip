@@ -353,6 +353,8 @@
   "noPhotosMessage": "Ota ensimmäinen kuva. Koko ryhmä näkee sen heti.",
   "openCamera": "Avaa kamera",
   "savingProgress": "Tallennetaan... {done}/{total}",
+  "sharePreparing": "Valmistellaan...",
+  "sharingProgress": "Valmistellaan... {done}/{total}",
   "choosePhotos": "Valitse kuvia",
   "selectedCount": "{count} valittu",
   "selectNone": "Poista valinnat",

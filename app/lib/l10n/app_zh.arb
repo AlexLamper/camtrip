@@ -353,6 +353,8 @@
   "noPhotosMessage": "拍下第一张照片吧，群组里的每个人都能马上看到。",
   "openCamera": "打开相机",
   "savingProgress": "正在保存... {done}/{total}",
+  "sharePreparing": "正在准备...",
+  "sharingProgress": "正在准备... {done}/{total}",
   "choosePhotos": "选择照片",
   "selectedCount": "已选 {count} 项",
   "selectNone": "取消全选",

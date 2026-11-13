@@ -1356,6 +1356,14 @@ class AppLocalizationsCs extends AppLocalizations {
   }
 
   @override
+  String get sharePreparing => 'Příprava...';
+
+  @override
+  String sharingProgress(int done, int total) {
+    return 'Příprava... $done/$total';
+  }
+
+  @override
   String get choosePhotos => 'Vybrat fotky';
 
   @override

@@ -353,6 +353,8 @@
   "noPhotosMessage": "Tira a primeira foto. O grupo todo vê-a logo.",
   "openCamera": "Abrir a câmara",
   "savingProgress": "A guardar... {done}/{total}",
+  "sharePreparing": "A preparar...",
+  "sharingProgress": "A preparar... {done}/{total}",
   "choosePhotos": "Escolher fotos",
   "selectedCount": "{count} selecionadas",
   "selectNone": "Desmarcar tudo",

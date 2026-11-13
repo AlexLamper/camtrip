@@ -91,6 +91,20 @@ void main() {
     await shoot(tester, key, 'preview_v2_select');
   }, skip: out == null);
 
+  testWidgets('photos tab, "Selecteer" and the 5-action bar', (tester) async {
+    final key = GlobalKey();
+    await pumpHome(tester, key, HomeTab.photos);
+    await shoot(tester, key, 'preview_v3');
+
+    await tester.tap(find.byKey(const Key('home-select')));
+    await tester.pumpAndSettle();
+    for (final id in ['p0001', 'p0004', 'p0005']) {
+      await tester.tap(find.byKey(ValueKey(id)));
+    }
+    await tester.pumpAndSettle();
+    await shoot(tester, key, 'preview_v3_select');
+  }, skip: out == null);
+
   testWidgets('albums tab', (tester) async {
     final key = GlobalKey();
     await pumpHome(tester, key, HomeTab.albums);

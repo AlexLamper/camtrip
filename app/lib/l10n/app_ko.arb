@@ -353,6 +353,8 @@
   "noPhotosMessage": "첫 사진을 찍어 보세요. 그룹의 모두가 바로 볼 수 있어요.",
   "openCamera": "카메라 열기",
   "savingProgress": "저장 중... {done}/{total}",
+  "sharePreparing": "준비 중...",
+  "sharingProgress": "준비 중... {done}/{total}",
   "choosePhotos": "사진 선택",
   "selectedCount": "{count}개 선택됨",
   "selectNone": "선택 해제",
