@@ -7,6 +7,7 @@ import 'dart:ui' as ui;
 import 'package:camtrip/core/theme.dart';
 import 'package:camtrip/features/camera/camera_layout.dart';
 import 'package:camtrip/features/camera/camera_picker_sheet.dart';
+import 'package:camtrip/features/camera/camera_settings.dart';
 import 'package:camtrip/features/camera/flash_control.dart';
 import 'package:camtrip/features/camera/shutter_button.dart';
 import 'package:camtrip/features/camera/styles.dart';
@@ -28,6 +29,7 @@ void main() {
   setUpAll(loadRealFonts);
 
   final cases = <(String, Size, double, double, FlashSetting, CameraStyle, String)>[
+    ('preview_v2', const Size(440, 956), 62, 34, FlashSetting.auto, CameraStyle.defaultStyle, 'Zomer in Zeeland · 6'),
     ('preview', const Size(440, 956), 62, 34, FlashSetting.auto, CameraStyle.defaultStyle, 'Zomer in Zeeland · 6'),
     ('preview_small', const Size(375, 667), 20, 0, FlashSetting.on, CameraStyle.defaultStyle, 'Kampeerweekend Ardennen met de hele vriendengroep · 12'),
     ('preview_instant', const Size(390, 844), 47, 34, FlashSetting.off, CameraStyle.instant, 'Texel · 4'),
@@ -71,8 +73,10 @@ void main() {
                     flip: CameraFlipButton(front: false, onPressed: () {}),
                   ),
                   modeSwitch: CameraModeSwitch(videoMode: false, onChanged: (_) {}),
-                  lastShot: const LastShotThumb(thumb: null, pending: 2),
+                  // v2: the last shot shows a real photo and the quick timer is on 3 s
+                  lastShot: LastShotThumb(image: name == 'preview_v2' ? const AssetImage(_photo) : null, pending: 2),
                   shutter: const ShutterButton(videoMode: false, recording: false, busy: false),
+                  timer: CameraTimerButton(timer: name == 'preview_v2' ? ShutterTimer.three : ShutterTimer.off, onPressed: () {}),
                 ),
               ),
             );

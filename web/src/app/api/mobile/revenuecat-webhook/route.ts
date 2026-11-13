@@ -2,8 +2,10 @@ import { connectDB } from '@/lib/db';
 import { WebhookEvent } from '@/lib/models';
 import { handler, json } from '@/lib/http';
 import { syncProFromRevenueCat } from '@/lib/revenuecat';
+import { tripPassWebhookAction, type RcWebhookEvent } from '@/lib/trip-pass';
+import { handleTripPassWebhook, TRIP_PASS_PRODUCT } from '@/lib/trip-pass-db';
 
-type Event = { id?: string; type?: string; app_user_id?: string; transferred_to?: string[] };
+type Event = RcWebhookEvent;
 
 export const POST = handler(async (req) => {
   const expected = process.env.REVENUECAT_WEBHOOK_AUTHORIZATION;
@@ -23,7 +25,12 @@ export const POST = handler(async (req) => {
   }
 
   const ids = new Set<string>([event.app_user_id ?? '', ...(event.transferred_to ?? [])]);
+  let tripPass: string | null = null;
   try {
+    // Trip Pass: apply a purchase to the group the app named before buying
+    // (safety net for a crash after paying), or remove a refunded pass.
+    const action = tripPassWebhookAction(event, TRIP_PASS_PRODUCT);
+    if (action) tripPass = await handleTripPassWebhook(action);
     for (const id of ids) {
       // Anonymous RevenueCat ids ($RCAnonymousID:...) are not accounts here.
       if (/^[a-f0-9]{24}$/i.test(id)) await syncProFromRevenueCat(id);
@@ -33,5 +40,5 @@ export const POST = handler(async (req) => {
     await WebhookEvent.deleteOne({ eventId: event.id });
     throw err;
   }
-  return json({ ok: true });
+  return json({ ok: true, ...(tripPass ? { tripPass } : {}) });
 });

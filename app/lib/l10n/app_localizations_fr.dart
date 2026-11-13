@@ -2175,4 +2175,306 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get styleFlashDescription =>
       'Flash direct sur pellicule chaude : teinte ambrée, grain, rouges intenses';
+
+  @override
+  String cameraTimerButton(String state) {
+    return 'Retardateur : $state';
+  }
+
+  @override
+  String get cameraTimerCycleHint => 'Touche pour passer de non à 3 s à 10 s';
+
+  @override
+  String get cameraLastShotOpen => 'Dernière photo, ouvre l\'album';
+
+  @override
+  String get cameraLastShotEmpty => 'Pas encore de photos, ouvre l\'album';
+
+  @override
+  String get deleteOnlyOwnOrAdmin =>
+      'Seule la personne qui l\'a pris ou un admin peut le supprimer';
+
+  @override
+  String get videoPlay => 'Lire';
+
+  @override
+  String get videoPause => 'Pause';
+
+  @override
+  String get language => 'Langue';
+
+  @override
+  String get languageSystem => 'Langue du système';
+
+  @override
+  String languageSystemCurrent(String language) {
+    return 'Système ($language)';
+  }
+
+  @override
+  String get languageSearchHint => 'Rechercher une langue';
+
+  @override
+  String get languageNoResults => 'Aucune langue trouvée';
+
+  @override
+  String get personalRollTitle => 'Ma pellicule';
+
+  @override
+  String get personalRollSubtitle => 'Rien que pour toi';
+
+  @override
+  String get personalRollPickerSubtitle => 'Photos en vrac, rien que pour toi';
+
+  @override
+  String get personalRollMove => 'Vers album';
+
+  @override
+  String get personalRollMoveTitle => 'Déplacer vers un album';
+
+  @override
+  String get personalRollMoveNoAlbums =>
+      'Crée d\'abord un album ou rejoins-en un avec un code.';
+
+  @override
+  String personalRollMoved(int count, String album) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count photos déplacées vers $album',
+      one: '1 photo déplacée vers $album',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get personalRollPrivateNote =>
+      'Toi seul vois ces photos. Déplace-les vers un album pour les partager.';
+
+  @override
+  String get paywallTripPassSub => 'Seulement ce voyage, pour tout le groupe';
+
+  @override
+  String get paywallOneTime => 'achat unique';
+
+  @override
+  String get paywallBestValue => 'Meilleure offre';
+
+  @override
+  String paywallRollFullTitle(int used, int limit) {
+    return 'Ta pellicule est pleine - $used/$limit photos';
+  }
+
+  @override
+  String get paywallRollFullSub => 'Continue avec un Trip Pass ou Pro.';
+
+  @override
+  String get paywallCameraTitle => 'Cet appareil fait partie de Pro';
+
+  @override
+  String paywallCameraSub(int count) {
+    return 'Débloque les $count appareils.';
+  }
+
+  @override
+  String get paywallWatermarkTitle => 'Recap sans filigrane';
+
+  @override
+  String get paywallWatermarkSub => 'Partage ton recap sans le logo CamTrip.';
+
+  @override
+  String get paywallDeletionTitle => 'Garde ton voyage';
+
+  @override
+  String paywallDeletionSub(String date) {
+    return 'Les voyages gratuits sont supprimés le $date. Avec un Trip Pass ou Pro, il reste pour toujours.';
+  }
+
+  @override
+  String paywallTripPassTerms(String price) {
+    return 'Achat unique de $price pour ce voyage. Pas d\'abonnement.';
+  }
+
+  @override
+  String get buyTripPass => 'Acheter le Trip Pass';
+
+  @override
+  String get tripPassActive =>
+      'Trip Pass actif : ce voyage est Pro pour tout le monde';
+
+  @override
+  String get tripPassActivating =>
+      'Paiement reçu. Ton Trip Pass sera actif dans un instant.';
+
+  @override
+  String proViaTripPass(String name) {
+    return 'Trip Pass de $name';
+  }
+
+  @override
+  String rollCounterSemantics(int used, int limit) {
+    return '$used sur $limit photos sur ta pellicule';
+  }
+
+  @override
+  String rollHeldTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count photos ne tiennent plus sur ta pellicule',
+      one: '1 photo ne tient plus sur ta pellicule',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get rollHeldBody => 'Garde-les avec Pro ou un Trip Pass';
+
+  @override
+  String deletionBannerTitle(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Garde ton voyage - encore $days jours',
+      one: 'Garde ton voyage - encore 1 jour',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletionBannerBody =>
+      'Les voyages gratuits sont supprimés 30 jours après la fin. Avec un Trip Pass ou Pro, il reste pour toujours.';
+
+  @override
+  String apiRollFull(int limit) {
+    return 'Ta pellicule est pleine ($limit photos). Prends un Trip Pass ou Pro pour continuer.';
+  }
+
+  @override
+  String get apiTripPassFailed =>
+      'Le Trip Pass n\'a pas pu être activé. Écris à support@camtrip.app.';
+
+  @override
+  String get apiTripPassExists => 'Ce voyage a déjà un Trip Pass.';
+
+  @override
+  String get tripPassUnavailable =>
+      'Le Trip Pass n\'est pas disponible pour le moment. Réessaie plus tard.';
+
+  @override
+  String get tripMapTitle => 'Carte du voyage';
+
+  @override
+  String get tripMapOpen => 'Carte et statistiques';
+
+  @override
+  String get tripMapLoadFailed => 'Impossible de charger la carte';
+
+  @override
+  String get tripMapStatDays => 'Jours';
+
+  @override
+  String get tripMapStatPhotos => 'Photos';
+
+  @override
+  String get tripMapStatVideos => 'Vidéos';
+
+  @override
+  String get tripMapStatMembers => 'Membres';
+
+  @override
+  String get tripMapStatDistance => 'km parcourus';
+
+  @override
+  String get tripMapStatCountries => 'Pays';
+
+  @override
+  String get tripMapStatPlaces => 'Lieux';
+
+  @override
+  String tripMapBusiestDay(String day, int count) {
+    return 'Le plus de photos le $day ($count)';
+  }
+
+  @override
+  String tripMapTopPhotographer(String name, int count) {
+    return 'Meilleur photographe : $name ($count)';
+  }
+
+  @override
+  String get tripMapOffTitle => 'La carte du voyage est désactivée';
+
+  @override
+  String get tripMapOffMessage =>
+      'Un admin peut activer la carte dans les réglages du groupe. Tu vois toujours les statistiques.';
+
+  @override
+  String get tripMapOffMessageAdmin =>
+      'Active la carte pour voir où vos photos ont été prises. Chacun choisit s’il participe.';
+
+  @override
+  String get tripMapEnable => 'Activer la carte';
+
+  @override
+  String get tripMapEmptyTitle => 'Aucun lieu sur la carte pour l’instant';
+
+  @override
+  String get tripMapEmptyMessage =>
+      'Les nouvelles photos des membres qui partagent leur position apparaissent ici, arrondies à environ 100 m.';
+
+  @override
+  String get tripMapConsentTitle => 'Carte du voyage';
+
+  @override
+  String get tripMapConsentQuestion =>
+      'Partager où tes photos ont été prises sur la carte de ce groupe ?';
+
+  @override
+  String get tripMapConsentDetail =>
+      'Seuls les membres du groupe le voient, arrondi à environ 100 m. La position n’est jamais enregistrée dans la photo, et tu peux désactiver cela à tout moment dans les réglages du groupe.';
+
+  @override
+  String get tripMapConsentYes => 'Oui, partager';
+
+  @override
+  String get tripMapConsentNo => 'Non';
+
+  @override
+  String get tripMapLocationDenied =>
+      'Pas d’accès à ta position. Tu peux l’autoriser dans les réglages de ton téléphone.';
+
+  @override
+  String get tripMapSettingSubtitle =>
+      'Montrer sur une carte où les photos ont été prises. Chaque membre choisit s’il partage.';
+
+  @override
+  String get tripMapDisableTitle => 'Désactiver la carte ?';
+
+  @override
+  String get tripMapDisableMessage =>
+      'Toutes les positions de ce groupe sont supprimées. Si tu réactives la carte plus tard, on redemande à tout le monde.';
+
+  @override
+  String get tripMapDisable => 'Désactiver';
+
+  @override
+  String get tripMapMySharing => 'Partager ma position';
+
+  @override
+  String get tripMapMySharingOn =>
+      'Tes nouvelles photos apparaissent sur la carte (arrondies à environ 100 m).';
+
+  @override
+  String get tripMapMySharingOff =>
+      'Désactivé. Tes photos n’apparaissent pas sur la carte.';
+
+  @override
+  String get tripMapStopSharingTitle => 'Arrêter de partager ta position ?';
+
+  @override
+  String get tripMapStopSharingMessage =>
+      'Les positions de toutes tes photos dans ce groupe sont supprimées.';
+
+  @override
+  String get tripMapStopSharing => 'Arrêter';
 }

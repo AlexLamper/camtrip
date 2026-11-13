@@ -2150,4 +2150,307 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get styleFlashDescription =>
       'Direct flash on warm film: amber glow, grain, rich reds';
+
+  @override
+  String cameraTimerButton(String state) {
+    return 'Self-timer: $state';
+  }
+
+  @override
+  String get cameraTimerCycleHint => 'Tap to switch between off, 3 s and 10 s';
+
+  @override
+  String get cameraLastShotOpen => 'Latest photo, opens the album';
+
+  @override
+  String get cameraLastShotEmpty => 'No photos yet, opens the album';
+
+  @override
+  String get deleteOnlyOwnOrAdmin =>
+      'Only the person who took it or an admin can delete this';
+
+  @override
+  String get videoPlay => 'Play';
+
+  @override
+  String get videoPause => 'Pause';
+
+  @override
+  String get language => 'Language';
+
+  @override
+  String get languageSystem => 'System language';
+
+  @override
+  String languageSystemCurrent(String language) {
+    return 'System ($language)';
+  }
+
+  @override
+  String get languageSearchHint => 'Search languages';
+
+  @override
+  String get languageNoResults => 'No language found';
+
+  @override
+  String get personalRollTitle => 'My roll';
+
+  @override
+  String get personalRollSubtitle => 'Just for you';
+
+  @override
+  String get personalRollPickerSubtitle => 'Loose photos, just for you';
+
+  @override
+  String get personalRollMove => 'To album';
+
+  @override
+  String get personalRollMoveTitle => 'Move to album';
+
+  @override
+  String get personalRollMoveNoAlbums =>
+      'Create an album or join one with a code first.';
+
+  @override
+  String personalRollMoved(int count, String album) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count photos moved to $album',
+      one: '1 photo moved to $album',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get personalRollPrivateNote =>
+      'Only you can see these photos. Move them to an album to share them.';
+
+  @override
+  String get paywallTripPassSub => 'Only this trip, for the whole group';
+
+  @override
+  String get paywallOneTime => 'one-time';
+
+  @override
+  String get paywallBestValue => 'Best value';
+
+  @override
+  String paywallRollFullTitle(int used, int limit) {
+    return 'Your roll is full - $used/$limit photos';
+  }
+
+  @override
+  String get paywallRollFullSub => 'Keep shooting with a Trip Pass or Pro.';
+
+  @override
+  String get paywallCameraTitle => 'This camera is part of Pro';
+
+  @override
+  String paywallCameraSub(int count) {
+    return 'Unlock all $count cameras.';
+  }
+
+  @override
+  String get paywallWatermarkTitle => 'Recap without watermark';
+
+  @override
+  String get paywallWatermarkSub =>
+      'Share your recap without the CamTrip logo.';
+
+  @override
+  String get paywallDeletionTitle => 'Keep your trip';
+
+  @override
+  String paywallDeletionSub(String date) {
+    return 'Free trips are deleted on $date. A Trip Pass or Pro keeps it forever.';
+  }
+
+  @override
+  String paywallTripPassTerms(String price) {
+    return 'One-time purchase of $price for this trip. Not a subscription.';
+  }
+
+  @override
+  String get buyTripPass => 'Get Trip Pass';
+
+  @override
+  String get tripPassActive =>
+      'Trip Pass active: this trip is Pro for everyone';
+
+  @override
+  String get tripPassActivating =>
+      'Payment received. Your Trip Pass will be active in a moment.';
+
+  @override
+  String proViaTripPass(String name) {
+    return 'Trip Pass from $name';
+  }
+
+  @override
+  String rollCounterSemantics(int used, int limit) {
+    return '$used of $limit shots on your roll';
+  }
+
+  @override
+  String rollHeldTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count photos don\'t fit on your roll',
+      one: '1 photo doesn\'t fit on your roll',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get rollHeldBody => 'Keep them with Pro or a Trip Pass';
+
+  @override
+  String deletionBannerTitle(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Keep your trip - $days days left',
+      one: 'Keep your trip - 1 day left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletionBannerBody =>
+      'Free trips are deleted 30 days after they end. A Trip Pass or Pro keeps it forever.';
+
+  @override
+  String apiRollFull(int limit) {
+    return 'Your roll is full ($limit shots). Get a Trip Pass or Pro to keep shooting.';
+  }
+
+  @override
+  String get apiTripPassFailed =>
+      'The Trip Pass could not be activated. Contact support@camtrip.app.';
+
+  @override
+  String get apiTripPassExists => 'This trip already has a Trip Pass.';
+
+  @override
+  String get tripPassUnavailable =>
+      'The Trip Pass is not available right now. Try again later.';
+
+  @override
+  String get tripMapTitle => 'Trip map';
+
+  @override
+  String get tripMapOpen => 'Trip map and stats';
+
+  @override
+  String get tripMapLoadFailed => 'Couldn\'t load the trip map';
+
+  @override
+  String get tripMapStatDays => 'Days';
+
+  @override
+  String get tripMapStatPhotos => 'Photos';
+
+  @override
+  String get tripMapStatVideos => 'Videos';
+
+  @override
+  String get tripMapStatMembers => 'Members';
+
+  @override
+  String get tripMapStatDistance => 'km travelled';
+
+  @override
+  String get tripMapStatCountries => 'Countries';
+
+  @override
+  String get tripMapStatPlaces => 'Places';
+
+  @override
+  String tripMapBusiestDay(String day, int count) {
+    return 'Most photos on $day ($count)';
+  }
+
+  @override
+  String tripMapTopPhotographer(String name, int count) {
+    return 'Top photographer: $name ($count)';
+  }
+
+  @override
+  String get tripMapOffTitle => 'The trip map is off';
+
+  @override
+  String get tripMapOffMessage =>
+      'A group admin can turn on the trip map in the group settings. You always see the stats.';
+
+  @override
+  String get tripMapOffMessageAdmin =>
+      'Turn on the trip map to see where your photos were taken. Everyone decides for themselves whether to join in.';
+
+  @override
+  String get tripMapEnable => 'Turn on trip map';
+
+  @override
+  String get tripMapEmptyTitle => 'No places on the map yet';
+
+  @override
+  String get tripMapEmptyMessage =>
+      'New photos from members who share their location appear here, rounded to about 100 m.';
+
+  @override
+  String get tripMapConsentTitle => 'Trip map';
+
+  @override
+  String get tripMapConsentQuestion =>
+      'Share where your photos were taken on this group\'s trip map?';
+
+  @override
+  String get tripMapConsentDetail =>
+      'Only group members see it, rounded to about 100 m. The location is never put in the photo itself, and you can turn this off at any time in the group settings.';
+
+  @override
+  String get tripMapConsentYes => 'Yes, share';
+
+  @override
+  String get tripMapConsentNo => 'No';
+
+  @override
+  String get tripMapLocationDenied =>
+      'No access to your location. You can allow it in your phone\'s settings.';
+
+  @override
+  String get tripMapSettingSubtitle =>
+      'Show on a map where photos were taken. Members decide for themselves whether to share.';
+
+  @override
+  String get tripMapDisableTitle => 'Turn off the trip map?';
+
+  @override
+  String get tripMapDisableMessage =>
+      'All locations in this group are deleted. If you turn the map on again later, everyone is asked again.';
+
+  @override
+  String get tripMapDisable => 'Turn off';
+
+  @override
+  String get tripMapMySharing => 'Share my location';
+
+  @override
+  String get tripMapMySharingOn =>
+      'Your new photos appear on the trip map (rounded to about 100 m).';
+
+  @override
+  String get tripMapMySharingOff =>
+      'Off. Your photos don\'t appear on the map.';
+
+  @override
+  String get tripMapStopSharingTitle => 'Stop sharing your location?';
+
+  @override
+  String get tripMapStopSharingMessage =>
+      'The locations of all your photos in this group are deleted.';
+
+  @override
+  String get tripMapStopSharing => 'Stop sharing';
 }

@@ -2149,4 +2149,306 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get styleFlashDescription =>
       'Sıcak filmde doğrudan flaş: kehribar ışıltı, gren, canlı kırmızılar';
+
+  @override
+  String cameraTimerButton(String state) {
+    return 'Zamanlayıcı: $state';
+  }
+
+  @override
+  String get cameraTimerCycleHint =>
+      'Kapalı, 3 sn ve 10 sn arasında geçmek için dokun';
+
+  @override
+  String get cameraLastShotOpen => 'Son fotoğraf, albümü açar';
+
+  @override
+  String get cameraLastShotEmpty => 'Henüz fotoğraf yok, albümü açar';
+
+  @override
+  String get deleteOnlyOwnOrAdmin =>
+      'Bunu yalnızca çeken kişi veya bir yönetici silebilir';
+
+  @override
+  String get videoPlay => 'Oynat';
+
+  @override
+  String get videoPause => 'Duraklat';
+
+  @override
+  String get language => 'Dil';
+
+  @override
+  String get languageSystem => 'Sistem dili';
+
+  @override
+  String languageSystemCurrent(String language) {
+    return 'Sistem ($language)';
+  }
+
+  @override
+  String get languageSearchHint => 'Dil ara';
+
+  @override
+  String get languageNoResults => 'Dil bulunamadı';
+
+  @override
+  String get personalRollTitle => 'Filmim';
+
+  @override
+  String get personalRollSubtitle => 'Sadece senin için';
+
+  @override
+  String get personalRollPickerSubtitle =>
+      'Tek tek fotoğraflar, sadece senin için';
+
+  @override
+  String get personalRollMove => 'Albüme';
+
+  @override
+  String get personalRollMoveTitle => 'Albüme taşı';
+
+  @override
+  String get personalRollMoveNoAlbums =>
+      'Önce bir albüm oluştur veya bir koda katıl.';
+
+  @override
+  String personalRollMoved(int count, String album) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count fotoğraf $album albümüne taşındı',
+      one: '1 fotoğraf $album albümüne taşındı',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get personalRollPrivateNote =>
+      'Bu fotoğrafları yalnızca sen görürsün. Paylaşmak için bir albüme taşı.';
+
+  @override
+  String get paywallTripPassSub => 'Sadece bu gezi, tüm grup için';
+
+  @override
+  String get paywallOneTime => 'tek seferlik';
+
+  @override
+  String get paywallBestValue => 'En iyi fiyat';
+
+  @override
+  String paywallRollFullTitle(int used, int limit) {
+    return 'Filmin doldu - $used/$limit fotoğraf';
+  }
+
+  @override
+  String get paywallRollFullSub => 'Trip Pass veya Pro ile çekmeye devam et.';
+
+  @override
+  String get paywallCameraTitle => 'Bu kamera Pro\'ya dahil';
+
+  @override
+  String paywallCameraSub(int count) {
+    return '$count kameranın hepsinin kilidini aç.';
+  }
+
+  @override
+  String get paywallWatermarkTitle => 'Filigransız recap';
+
+  @override
+  String get paywallWatermarkSub => 'Recap\'ini CamTrip logosu olmadan paylaş.';
+
+  @override
+  String get paywallDeletionTitle => 'Gezini sakla';
+
+  @override
+  String paywallDeletionSub(String date) {
+    return 'Ücretsiz geziler $date tarihinde silinir. Trip Pass veya Pro ile sonsuza kadar kalır.';
+  }
+
+  @override
+  String paywallTripPassTerms(String price) {
+    return 'Bu gezi için $price tek seferlik satın alma. Abonelik değil.';
+  }
+
+  @override
+  String get buyTripPass => 'Trip Pass al';
+
+  @override
+  String get tripPassActive => 'Trip Pass etkin: bu gezi herkes için Pro';
+
+  @override
+  String get tripPassActivating =>
+      'Ödeme alındı. Trip Pass birazdan etkin olacak.';
+
+  @override
+  String proViaTripPass(String name) {
+    return '$name tarafından Trip Pass';
+  }
+
+  @override
+  String rollCounterSemantics(int used, int limit) {
+    return 'Filminde $used/$limit kare';
+  }
+
+  @override
+  String rollHeldTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count fotoğraf artık filme sığmıyor',
+      one: '1 fotoğraf artık filme sığmıyor',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get rollHeldBody => 'Pro veya Trip Pass ile sakla';
+
+  @override
+  String deletionBannerTitle(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Gezini sakla - $days gün kaldı',
+      one: 'Gezini sakla - 1 gün kaldı',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletionBannerBody =>
+      'Ücretsiz geziler bittikten 30 gün sonra silinir. Trip Pass veya Pro ile sonsuza kadar kalır.';
+
+  @override
+  String apiRollFull(int limit) {
+    return 'Filmin doldu ($limit kare). Devam etmek için Trip Pass veya Pro al.';
+  }
+
+  @override
+  String get apiTripPassFailed =>
+      'Trip Pass etkinleştirilemedi. support@camtrip.app adresine yaz.';
+
+  @override
+  String get apiTripPassExists => 'Bu gezinin zaten bir Trip Pass\'i var.';
+
+  @override
+  String get tripPassUnavailable =>
+      'Trip Pass şu an kullanılamıyor. Daha sonra tekrar dene.';
+
+  @override
+  String get tripMapTitle => 'Gezi haritası';
+
+  @override
+  String get tripMapOpen => 'Harita ve istatistikler';
+
+  @override
+  String get tripMapLoadFailed => 'Harita yüklenemedi';
+
+  @override
+  String get tripMapStatDays => 'Gün';
+
+  @override
+  String get tripMapStatPhotos => 'Fotoğraf';
+
+  @override
+  String get tripMapStatVideos => 'Video';
+
+  @override
+  String get tripMapStatMembers => 'Üye';
+
+  @override
+  String get tripMapStatDistance => 'km yol';
+
+  @override
+  String get tripMapStatCountries => 'Ülke';
+
+  @override
+  String get tripMapStatPlaces => 'Yer';
+
+  @override
+  String tripMapBusiestDay(String day, int count) {
+    return 'En çok fotoğraf: $day ($count)';
+  }
+
+  @override
+  String tripMapTopPhotographer(String name, int count) {
+    return 'En çok çeken: $name ($count)';
+  }
+
+  @override
+  String get tripMapOffTitle => 'Gezi haritası kapalı';
+
+  @override
+  String get tripMapOffMessage =>
+      'Bir yönetici haritayı grup ayarlarından açabilir. İstatistikleri her zaman görürsün.';
+
+  @override
+  String get tripMapOffMessageAdmin =>
+      'Fotoğraflarınızın nerede çekildiğini görmek için haritayı aç. Herkes katılıp katılmayacağına kendisi karar verir.';
+
+  @override
+  String get tripMapEnable => 'Haritayı aç';
+
+  @override
+  String get tripMapEmptyTitle => 'Haritada henüz yer yok';
+
+  @override
+  String get tripMapEmptyMessage =>
+      'Konumunu paylaşan üyelerin yeni fotoğrafları yaklaşık 100 m hassasiyetle burada görünür.';
+
+  @override
+  String get tripMapConsentTitle => 'Gezi haritası';
+
+  @override
+  String get tripMapConsentQuestion =>
+      'Fotoğraflarını nerede çektiğin bu grubun haritasında paylaşılsın mı?';
+
+  @override
+  String get tripMapConsentDetail =>
+      'Bunu yalnızca grup üyeleri yaklaşık 100 m hassasiyetle görür. Konum asla fotoğrafın içine yazılmaz ve bunu grup ayarlarından istediğin zaman kapatabilirsin.';
+
+  @override
+  String get tripMapConsentYes => 'Evet, paylaş';
+
+  @override
+  String get tripMapConsentNo => 'Hayır';
+
+  @override
+  String get tripMapLocationDenied =>
+      'Konumuna erişim yok. Telefonunun ayarlarından izin verebilirsin.';
+
+  @override
+  String get tripMapSettingSubtitle =>
+      'Fotoğrafların nerede çekildiğini haritada göster. Üyeler paylaşıp paylaşmayacağına kendisi karar verir.';
+
+  @override
+  String get tripMapDisableTitle => 'Harita kapatılsın mı?';
+
+  @override
+  String get tripMapDisableMessage =>
+      'Bu gruptaki tüm konumlar silinir. Haritayı sonra tekrar açarsan herkese yeniden sorarız.';
+
+  @override
+  String get tripMapDisable => 'Kapat';
+
+  @override
+  String get tripMapMySharing => 'Konumumu paylaş';
+
+  @override
+  String get tripMapMySharingOn =>
+      'Yeni fotoğrafların haritada görünür (yaklaşık 100 m hassasiyetle).';
+
+  @override
+  String get tripMapMySharingOff => 'Kapalı. Fotoğrafların haritada görünmez.';
+
+  @override
+  String get tripMapStopSharingTitle => 'Konum paylaşımı durdurulsun mu?';
+
+  @override
+  String get tripMapStopSharingMessage =>
+      'Bu gruptaki tüm fotoğraflarının konumları silinir.';
+
+  @override
+  String get tripMapStopSharing => 'Paylaşmayı durdur';
 }

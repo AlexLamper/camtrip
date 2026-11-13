@@ -4,6 +4,8 @@
 <dict>
 	<key>NSCameraUsageDescription</key>
 	<string>CamTrip uses your camera to take photos and videos for your group.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>CamTrip uses your location only for a group's trip map, if you agree: rounded to about 100 m and visible only to that group.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>CamTrip uses your microphone to record sound with videos.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
@@ -60,6 +62,28 @@
 		<string>ja</string>
 		<string>ko</string>
 		<string>zh-Hans</string>
+		<string>uk</string>
+		<string>ru</string>
+		<string>ro</string>
+		<string>hu</string>
+		<string>el</string>
+		<string>bg</string>
+		<string>hr</string>
+		<string>sk</string>
+		<string>sl</string>
+		<string>lt</string>
+		<string>lv</string>
+		<string>et</string>
+		<string>ca</string>
+		<string>id</string>
+		<string>ms</string>
+		<string>vi</string>
+		<string>th</string>
+		<string>hi</string>
+		<string>zh-Hant</string>
+		<string>ar</string>
+		<string>he</string>
+		<string>fil</string>
 	</array>
 	<key>CFBundleDisplayName</key>
 	<string>CamTrip</string>

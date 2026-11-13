@@ -5,12 +5,14 @@ import { requireUser } from '@/lib/auth';
 import { FREE_MEMBER_LIMIT, memberRole, normalizeCode, serializeGroup } from '@/lib/groups';
 import { hasPro } from '@/lib/entitlements';
 import { groupIsPro, refreshGroupRetention } from '@/lib/pro';
+import { joinable } from '@/lib/personal-roll';
 
 export const POST = handler(async (req) => {
   const user = await requireUser(req);
   const { code } = await body(req, z.object({ code: z.string().min(4) }));
   const group = await Group.findOne({ code: normalizeCode(code) }).lean<GroupDoc>();
-  if (!group) throw new HttpError(404, 'Geen groep gevonden met deze code', 'not_found');
+  // A personal roll is never joinable (its code cannot even be typed; this is the second lock).
+  if (!group || !joinable(group)) throw new HttpError(404, 'Geen groep gevonden met deze code', 'not_found');
 
   if (!memberRole(group, user._id)) {
     if (group.status === 'archived') throw new HttpError(410, 'Deze groep is afgesloten', 'archived');

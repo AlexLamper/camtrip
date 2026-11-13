@@ -1,9 +1,11 @@
-// Push texts in the 18 app languages, with the same terms as the app
+// Push texts in the 40 app languages, with the same terms as the app
 // (app/lib/l10n/GLOSSARY.md and the ARB files). Fallback: English.
 // Pure (no runtime imports), so it also runs under `node --experimental-strip-types` in the tests.
 
 export const PUSH_LOCALES = [
   'nl', 'en', 'de', 'fr', 'es', 'it', 'pt', 'pt_BR', 'pl', 'sv', 'da', 'nb', 'fi', 'cs', 'tr', 'ja', 'ko', 'zh',
+  'zh_Hant', 'uk', 'ru', 'ro', 'hu', 'el', 'bg', 'hr', 'sk', 'sl', 'lt', 'lv', 'et', 'ca', 'id', 'ms', 'vi', 'th',
+  'hi', 'ar', 'he', 'fil',
 ] as const;
 export type PushLocale = (typeof PUSH_LOCALES)[number];
 export type ReportReason = 'ongepast' | 'spam' | 'anders';
@@ -218,19 +220,271 @@ const T: Record<PushLocale, Texts> = {
     reportTitle: '管理',
     reportBody: (r, g) => `新举报：「${g}」中的${r}`,
     reasons: { ongepast: '不当或冒犯性内容', spam: '垃圾信息', anders: '其他原因' },
+  },  uk: {
+    newPhotos: (n, g) => `${n} ділиться фото в ${g}`,
+    newVideos: (n, g) => `${n} ділиться відео в ${g}`,
+    someone: 'Хтось',
+    recapTitle: (g) => `Твій підсумок ${g} готовий 🎞️`,
+    recapBody: (c) => `Фото: ${c} - можна дивитися й ділитися.`,
+    resetCode: (c, m) => `Твій код CamTrip: ${c} - дійсний ${m} хв. Не запитував? Проігноруй це повідомлення.`,
+    reportTitle: 'Керування',
+    reportBody: (r, g) => `Нова скарга: ${r} у ${g}`,
+    reasons: { ongepast: 'Недоречне або образливе', spam: 'Спам', anders: 'Інше' },
+  },
+  ru: {
+    newPhotos: (n, g) => `${n} делится фото в ${g}`,
+    newVideos: (n, g) => `${n} делится видео в ${g}`,
+    someone: 'Кто-то',
+    recapTitle: (g) => `Твои итоги ${g} готовы 🎞️`,
+    recapBody: (c) => `Фото: ${c} - можно смотреть и делиться.`,
+    resetCode: (c, m) => `Твой код CamTrip: ${c} - действует ${m} мин. Не запрашивал? Просто проигнорируй это сообщение.`,
+    reportTitle: 'Управление',
+    reportBody: (r, g) => `Новая жалоба: ${r} в ${g}`,
+    reasons: { ongepast: 'Неуместное или оскорбительное', spam: 'Спам', anders: 'Другое' },
+  },
+  ro: {
+    newPhotos: (n, g) => `${n} distribuie poze în ${g}`,
+    newVideos: (n, g) => `${n} distribuie videoclipuri în ${g}`,
+    someone: 'Cineva',
+    recapTitle: (g) => `Recapul tău din ${g} e gata 🎞️`,
+    recapBody: (c) => `Poze: ${c} - gata de văzut și distribuit.`,
+    resetCode: (c, m) => `Codul tău CamTrip: ${c} - valabil ${m} minute. Nu l-ai cerut? Ignoră acest mesaj.`,
+    reportTitle: 'Administrare',
+    reportBody: (r, g) => `Raportare nouă: ${r} în ${g}`,
+    reasons: { ongepast: 'Nepotrivit sau ofensator', spam: 'Spam', anders: 'Altceva' },
+  },
+  hu: {
+    newPhotos: (n, g) => `${n} fotókat oszt meg itt: ${g}`,
+    newVideos: (n, g) => `${n} videókat oszt meg itt: ${g}`,
+    someone: 'Valaki',
+    recapTitle: (g) => `Kész az összefoglalód: ${g} 🎞️`,
+    recapBody: (c) => `${c} fotó, megnézheted és megoszthatod.`,
+    resetCode: (c, m) => `A CamTrip-kódod: ${c} - ${m} percig érvényes. Nem te kérted? Hagyd figyelmen kívül ezt az üzenetet.`,
+    reportTitle: 'Kezelés',
+    reportBody: (r, g) => `Új bejelentés: ${r} itt: ${g}`,
+    reasons: { ongepast: 'Nem helyénvaló vagy sértő', spam: 'Spam', anders: 'Valami más' },
+  },
+  el: {
+    newPhotos: (n, g) => `${n} μοιράζεται φωτογραφίες στο ${g}`,
+    newVideos: (n, g) => `${n} μοιράζεται βίντεο στο ${g}`,
+    someone: 'Κάποιος',
+    recapTitle: (g) => `Η ανασκόπηση του ${g} είναι έτοιμη 🎞️`,
+    recapBody: (c) => `Φωτογραφίες: ${c} - έτοιμες για προβολή και κοινοποίηση.`,
+    resetCode: (c, m) => `Ο κωδικός σου CamTrip: ${c} - ισχύει για ${m} λεπτά. Δεν τον ζήτησες; Αγνόησε αυτό το μήνυμα.`,
+    reportTitle: 'Διαχείριση',
+    reportBody: (r, g) => `Νέα αναφορά: ${r} στο ${g}`,
+    reasons: { ongepast: 'Ακατάλληλο ή προσβλητικό', spam: 'Spam', anders: 'Κάτι άλλο' },
+  },
+  bg: {
+    newPhotos: (n, g) => `${n} споделя снимки в ${g}`,
+    newVideos: (n, g) => `${n} споделя видеа в ${g}`,
+    someone: 'Някой',
+    recapTitle: (g) => `Обобщението ти от ${g} е готово 🎞️`,
+    recapBody: (c) => `Снимки: ${c} - готови за гледане и споделяне.`,
+    resetCode: (c, m) => `Твоят код за CamTrip: ${c} - валиден ${m} минути. Не си го искал? Игнорирай това съобщение.`,
+    reportTitle: 'Управление',
+    reportBody: (r, g) => `Нов сигнал: ${r} в ${g}`,
+    reasons: { ongepast: 'Неподходящо или обидно', spam: 'Спам', anders: 'Друго' },
+  },
+  hr: {
+    newPhotos: (n, g) => `${n} dijeli fotke u grupi ${g}`,
+    newVideos: (n, g) => `${n} dijeli videe u grupi ${g}`,
+    someone: 'Netko',
+    recapTitle: (g) => `Tvoj sažetak grupe ${g} je spreman 🎞️`,
+    recapBody: (c) => `Fotke: ${c} - spremne za gledanje i dijeljenje.`,
+    resetCode: (c, m) => `Tvoj CamTrip kôd: ${c} - vrijedi ${m} minuta. Nisi ga tražio? Zanemari ovu poruku.`,
+    reportTitle: 'Upravljanje',
+    reportBody: (r, g) => `Nova prijava: ${r} u grupi ${g}`,
+    reasons: { ongepast: 'Neprimjereno ili uvredljivo', spam: 'Neželjeni sadržaj', anders: 'Nešto drugo' },
+  },
+  sk: {
+    newPhotos: (n, g) => `${n} zdieľa fotky v skupine ${g}`,
+    newVideos: (n, g) => `${n} zdieľa videá v skupine ${g}`,
+    someone: 'Niekto',
+    recapTitle: (g) => `Tvoje zhrnutie skupiny ${g} je pripravené 🎞️`,
+    recapBody: (c) => `Fotky: ${c} - pripravené na pozeranie a zdieľanie.`,
+    resetCode: (c, m) => `Tvoj kód CamTrip: ${c} - platí ${m} minút. Nežiadal si oň? Ignoruj túto správu.`,
+    reportTitle: 'Správa',
+    reportBody: (r, g) => `Nové nahlásenie: ${r} v skupine ${g}`,
+    reasons: { ongepast: 'Nevhodné alebo urážlivé', spam: 'Spam', anders: 'Niečo iné' },
+  },
+  sl: {
+    newPhotos: (n, g) => `${n} deli fotke v skupini ${g}`,
+    newVideos: (n, g) => `${n} deli videe v skupini ${g}`,
+    someone: 'Nekdo',
+    recapTitle: (g) => `Tvoj povzetek skupine ${g} je pripravljen 🎞️`,
+    recapBody: (c) => `Fotke: ${c} - pripravljene za ogled in deljenje.`,
+    resetCode: (c, m) => `Tvoja koda CamTrip: ${c} - velja ${m} minut. Je nisi zahteval? Prezri to sporočilo.`,
+    reportTitle: 'Upravljanje',
+    reportBody: (r, g) => `Nova prijava: ${r} v skupini ${g}`,
+    reasons: { ongepast: 'Neprimerno ali žaljivo', spam: 'Neželeno', anders: 'Nekaj drugega' },
+  },
+  lt: {
+    newPhotos: (n, g) => `${n} dalijasi nuotraukomis grupėje ${g}`,
+    newVideos: (n, g) => `${n} dalijasi vaizdo įrašais grupėje ${g}`,
+    someone: 'Kažkas',
+    recapTitle: (g) => `Tavo grupės ${g} apžvalga paruošta 🎞️`,
+    recapBody: (c) => `Nuotraukos: ${c} - galima žiūrėti ir dalytis.`,
+    resetCode: (c, m) => `Tavo CamTrip kodas: ${c} - galioja ${m} min. Neprašei? Nekreipk dėmesio į šį pranešimą.`,
+    reportTitle: 'Valdymas',
+    reportBody: (r, g) => `Naujas pranešimas: ${r} grupėje ${g}`,
+    reasons: { ongepast: 'Netinkama arba įžeidu', spam: 'Šlamštas', anders: 'Kita' },
+  },
+  lv: {
+    newPhotos: (n, g) => `${n} kopīgo bildes grupā ${g}`,
+    newVideos: (n, g) => `${n} kopīgo video grupā ${g}`,
+    someone: 'Kāds',
+    recapTitle: (g) => `Tavs grupas ${g} kopsavilkums ir gatavs 🎞️`,
+    recapBody: (c) => `Bildes: ${c} - gatavas skatīšanai un kopīgošanai.`,
+    resetCode: (c, m) => `Tavs CamTrip kods: ${c} - derīgs ${m} minūtes. Neprasīji? Ignorē šo ziņu.`,
+    reportTitle: 'Pārvaldība',
+    reportBody: (r, g) => `Jauns ziņojums: ${r} grupā ${g}`,
+    reasons: { ongepast: 'Nepiemērots vai aizskarošs', spam: 'Mēstule', anders: 'Kas cits' },
+  },
+  et: {
+    newPhotos: (n, g) => `${n} jagab pilte grupis ${g}`,
+    newVideos: (n, g) => `${n} jagab videoid grupis ${g}`,
+    someone: 'Keegi',
+    recapTitle: (g) => `Sinu grupi ${g} kokkuvõte on valmis 🎞️`,
+    recapBody: (c) => `Pilte: ${c} - valmis vaatamiseks ja jagamiseks.`,
+    resetCode: (c, m) => `Sinu CamTripi kood: ${c} - kehtib ${m} minutit. Sa ei küsinud seda? Ignoreeri seda sõnumit.`,
+    reportTitle: 'Haldus',
+    reportBody: (r, g) => `Uus teade: ${r} grupis ${g}`,
+    reasons: { ongepast: 'Sobimatu või solvav', spam: 'Rämpspost', anders: 'Midagi muud' },
+  },
+  ca: {
+    newPhotos: (n, g) => `${n} comparteix fotos a ${g}`,
+    newVideos: (n, g) => `${n} comparteix vídeos a ${g}`,
+    someone: 'Algú',
+    recapTitle: (g) => `El teu resum de ${g} ja està a punt 🎞️`,
+    recapBody: (c) => `${c} fotos, a punt per mirar i compartir.`,
+    resetCode: (c, m) => `El teu codi de CamTrip: ${c} - vàlid durant ${m} minuts. No l'has demanat? Ignora aquest missatge.`,
+    reportTitle: 'Gestió',
+    reportBody: (r, g) => `Nova denúncia: ${r} a ${g}`,
+    reasons: { ongepast: 'Inadequat o ofensiu', spam: 'Correu brossa', anders: 'Una altra cosa' },
+  },
+  id: {
+    newPhotos: (n, g) => `${n} membagikan foto di ${g}`,
+    newVideos: (n, g) => `${n} membagikan video di ${g}`,
+    someone: 'Seseorang',
+    recapTitle: (g) => `Recap ${g} kamu sudah siap 🎞️`,
+    recapBody: (c) => `${c} foto, siap ditonton dan dibagikan.`,
+    resetCode: (c, m) => `Kode CamTrip kamu: ${c} - berlaku ${m} menit. Tidak memintanya? Abaikan pesan ini.`,
+    reportTitle: 'Kelola',
+    reportBody: (r, g) => `Laporan baru: ${r} di ${g}`,
+    reasons: { ongepast: 'Tidak pantas atau menyinggung', spam: 'Spam', anders: 'Lainnya' },
+  },
+  ms: {
+    newPhotos: (n, g) => `${n} sedang berkongsi foto dalam ${g}`,
+    newVideos: (n, g) => `${n} sedang berkongsi video dalam ${g}`,
+    someone: 'Seseorang',
+    recapTitle: (g) => `Recap ${g} anda sudah sedia 🎞️`,
+    recapBody: (c) => `${c} foto, sedia untuk ditonton dan dikongsi.`,
+    resetCode: (c, m) => `Kod CamTrip anda: ${c} - sah selama ${m} minit. Tidak memintanya? Abaikan mesej ini.`,
+    reportTitle: 'Urus',
+    reportBody: (r, g) => `Laporan baharu: ${r} dalam ${g}`,
+    reasons: { ongepast: 'Tidak sesuai atau menyinggung', spam: 'Spam', anders: 'Lain-lain' },
+  },
+  vi: {
+    newPhotos: (n, g) => `${n} đang chia sẻ ảnh trong ${g}`,
+    newVideos: (n, g) => `${n} đang chia sẻ video trong ${g}`,
+    someone: 'Ai đó',
+    recapTitle: (g) => `Video tổng kết ${g} của bạn đã xong 🎞️`,
+    recapBody: (c) => `${c} ảnh, sẵn sàng để xem và chia sẻ.`,
+    resetCode: (c, m) => `Mã CamTrip của bạn: ${c} - có hiệu lực trong ${m} phút. Không phải bạn yêu cầu? Hãy bỏ qua tin nhắn này.`,
+    reportTitle: 'Quản lý',
+    reportBody: (r, g) => `Báo cáo mới: ${r} trong ${g}`,
+    reasons: { ongepast: 'Không phù hợp hoặc xúc phạm', spam: 'Spam', anders: 'Lý do khác' },
+  },
+  th: {
+    newPhotos: (n, g) => `${n} กำลังแชร์รูปใน ${g}`,
+    newVideos: (n, g) => `${n} กำลังแชร์วิดีโอใน ${g}`,
+    someone: 'ใครบางคน',
+    recapTitle: (g) => `วิดีโอสรุป ${g} ของคุณพร้อมแล้ว 🎞️`,
+    recapBody: (c) => `${c} รูป พร้อมให้ดูและแชร์แล้ว`,
+    resetCode: (c, m) => `รหัส CamTrip ของคุณ: ${c} - ใช้ได้ ${m} นาที ไม่ได้ขอรหัสนี้? ไม่ต้องสนใจข้อความนี้`,
+    reportTitle: 'จัดการ',
+    reportBody: (r, g) => `รายงานใหม่: ${r} ใน ${g}`,
+    reasons: { ongepast: 'ไม่เหมาะสมหรือไม่สุภาพ', spam: 'สแปม', anders: 'อื่นๆ' },
+  },
+  hi: {
+    newPhotos: (n, g) => `${n} ${g} में फ़ोटो शेयर कर रहे हैं`,
+    newVideos: (n, g) => `${n} ${g} में वीडियो शेयर कर रहे हैं`,
+    someone: 'कोई',
+    recapTitle: (g) => `${g} का आपका रीकैप तैयार है 🎞️`,
+    recapBody: (c) => `${c} फ़ोटो, देखने और शेयर करने के लिए तैयार।`,
+    resetCode: (c, m) => `आपका CamTrip कोड: ${c} - ${m} मिनट तक मान्य। आपने नहीं माँगा? इस मैसेज को अनदेखा करें।`,
+    reportTitle: 'मैनेज करें',
+    reportBody: (r, g) => `नई रिपोर्ट: ${g} में ${r}`,
+    reasons: { ongepast: 'अनुचित या आपत्तिजनक', spam: 'स्पैम', anders: 'कुछ और' },
+  },
+  zh_Hant: {
+    newPhotos: (n, g) => `${n} 正在「${g}」中分享照片`,
+    newVideos: (n, g) => `${n} 正在「${g}」中分享影片`,
+    someone: '某人',
+    recapTitle: (g) => `你在「${g}」的回顧已完成 🎞️`,
+    recapBody: (c) => `${c} 張照片，可以觀看和分享了。`,
+    resetCode: (c, m) => `你的 CamTrip 驗證碼：${c} - ${m} 分鐘內有效。如果不是你本人申請，請忽略此訊息。`,
+    reportTitle: '管理',
+    reportBody: (r, g) => `新舉報：「${g}」中的${r}`,
+    reasons: { ongepast: '不當或冒犯性內容', spam: '垃圾訊息', anders: '其他原因' },
+  },
+  ar: {
+    newPhotos: (n, g) => `${n} يشارك صورًا في ${g}`,
+    newVideos: (n, g) => `${n} يشارك فيديوهات في ${g}`,
+    someone: 'شخص ما',
+    recapTitle: (g) => `ملخّص ${g} جاهز 🎞️`,
+    recapBody: (c) => `عدد الصور: ${c} - جاهزة للمشاهدة والمشاركة.`,
+    resetCode: (c, m) => `رمز CamTrip الخاص بك: ${c} - صالح لمدة ${m} دقيقة. لم تطلبه؟ تجاهل هذه الرسالة.`,
+    reportTitle: 'الإدارة',
+    reportBody: (r, g) => `بلاغ جديد: ${r} في ${g}`,
+    reasons: { ongepast: 'غير لائق أو مسيء', spam: 'رسائل مزعجة', anders: 'سبب آخر' },
+  },
+  he: {
+    newPhotos: (n, g) => `${n} משתף/ת תמונות ב-${g}`,
+    newVideos: (n, g) => `${n} משתף/ת סרטונים ב-${g}`,
+    someone: 'מישהו',
+    recapTitle: (g) => `הסיכום של ${g} מוכן 🎞️`,
+    recapBody: (c) => `תמונות: ${c} - מוכנות לצפייה ולשיתוף.`,
+    resetCode: (c, m) => `קוד CamTrip שלך: ${c} - בתוקף ל-${m} דקות. לא ביקשת? אפשר להתעלם מההודעה.`,
+    reportTitle: 'ניהול',
+    reportBody: (r, g) => `דיווח חדש: ${r} ב-${g}`,
+    reasons: { ongepast: 'לא הולם או פוגעני', spam: 'ספאם', anders: 'משהו אחר' },
+  },
+  fil: {
+    newPhotos: (n, g) => `Nagsha-share si ${n} ng mga litrato sa ${g}`,
+    newVideos: (n, g) => `Nagsha-share si ${n} ng mga video sa ${g}`,
+    someone: 'Isang tao',
+    recapTitle: (g) => `Handa na ang recap mo ng ${g} 🎞️`,
+    recapBody: (c) => `${c} na litrato, handa nang panoorin at i-share.`,
+    resetCode: (c, m) => `Ang CamTrip code mo: ${c} - valid sa loob ng ${m} minuto. Hindi mo ito hiningi? Huwag pansinin ang mensaheng ito.`,
+    reportTitle: 'Pamahalaan',
+    reportBody: (r, g) => `Bagong report: ${r} sa ${g}`,
+    reasons: { ongepast: 'Hindi angkop o nakakasakit', spam: 'Spam', anders: 'Iba pa' },
   },
 };
 
 /**
  * Maps a device / app locale ("nl", "pt-BR", "pt_BR", "nb-NO", "no",
- * "zh-Hans-CN", "en_US" ...) to one of the 18 app languages, else English.
+ * "zh-Hans-CN", "zh_Hant", "zh-TW", "en_US" ...) to one of the 40 app
+ * languages, else English. Chinese in Traditional script (Hant, or Taiwan /
+ * Hong Kong / Macau without a script) is zh_Hant; old codes iw / in / tl are
+ * he / id / fil.
  */
 export function pushLocale(raw: string | null | undefined): PushLocale {
   const parts = (raw ?? '').trim().replace(/-/g, '_').split('_').filter(Boolean);
   const lang = (parts[0] ?? '').toLowerCase();
-  if (lang === 'pt') return parts.slice(1).some((p) => p.toUpperCase() === 'BR') ? 'pt_BR' : 'pt';
+  const rest = parts.slice(1).map((p) => p.toUpperCase());
+  if (lang === 'pt') return rest.includes('BR') ? 'pt_BR' : 'pt';
   if (lang === 'no' || lang === 'nn' || lang === 'nb') return 'nb';
-  return (PUSH_LOCALES as readonly string[]).includes(lang) ? (lang as PushLocale) : 'en';
+  if (lang === 'zh') {
+    if (rest.includes('HANT')) return 'zh_Hant';
+    if (rest.includes('HANS')) return 'zh';
+    return rest.some((p) => p === 'TW' || p === 'HK' || p === 'MO') ? 'zh_Hant' : 'zh';
+  }
+  const alias: Record<string, string> = { iw: 'he', in: 'id', tl: 'fil' };
+  const code = alias[lang] ?? lang;
+  return (PUSH_LOCALES as readonly string[]).includes(code) ? (code as PushLocale) : 'en';
 }
 
 export function pushTexts(locale: string | null | undefined): Texts {

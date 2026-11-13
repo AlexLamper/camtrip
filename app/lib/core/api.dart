@@ -8,10 +8,16 @@ import 'storage.dart';
 
 /// A failed API call, with a message in the app's language ready for a snackbar.
 class ApiException implements Exception {
-  ApiException(this.message, {this.status, this.code});
+  ApiException(this.message, {this.status, this.code, this.data});
   final String message;
   final int? status;
   final String? code;
+
+  /// The error body's other fields (e.g. {limit, used} with roll_full).
+  final Map<String, dynamic>? data;
+
+  /// The free roll is full here (402 roll_full).
+  bool get isRollFull => code == 'roll_full';
 
   bool get isOffline => status == null;
   bool get isUnauthorized => status == 401;
@@ -30,7 +36,8 @@ class ApiException implements Exception {
       final status = e.response?.statusCode;
       if (data is Map && data['error'] is String) {
         final code = data['code'] as String?;
-        return ApiException(localizeServerError(code, data['error'] as String), status: status, code: code);
+        return ApiException(localizeServerError(code, data['error'] as String),
+            status: status, code: code, data: Map<String, dynamic>.from(data));
       }
       if (status == null) return ApiException(l.errorOffline);
       return ApiException(l.errorSomethingWrongStatus(status), status: status);
@@ -79,6 +86,14 @@ String localizeServerError(String? code, String serverMessage) {
       return l.apiAdminRequired;
     case 'upload_incomplete':
       return l.apiUploadIncomplete;
+    case 'roll_full':
+      return l.apiRollFull(int.tryParse(RegExp(r'/(\d+)\)').firstMatch(serverMessage)?.group(1) ?? '') ?? 24);
+    case 'trip_pass_exists':
+      return l.apiTripPassExists;
+    case 'trip_pass_used':
+    case 'trip_pass_refunded':
+    case 'trip_pass_not_found':
+      return l.apiTripPassFailed;
   }
   return switch (serverMessage) {
     'Er ging iets mis' => l.errorSomethingWrong,
@@ -143,6 +158,7 @@ class Api {
   Future<Map<String, dynamic>> get(String path, {Map<String, dynamic>? query}) => _wrap(() => dio.get(path, queryParameters: query));
   Future<Map<String, dynamic>> post(String path, [Object? data]) => _wrap(() => dio.post(path, data: data ?? {}));
   Future<Map<String, dynamic>> patch(String path, Object data) => _wrap(() => dio.patch(path, data: data));
+  Future<Map<String, dynamic>> put(String path, Object data) => _wrap(() => dio.put(path, data: data));
   Future<Map<String, dynamic>> delete(String path, [Object? data]) => _wrap(() => dio.delete(path, data: data));
 
   Future<Map<String, dynamic>> _wrap(Future<Response<dynamic>> Function() call) async {

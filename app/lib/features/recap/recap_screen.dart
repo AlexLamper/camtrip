@@ -16,6 +16,7 @@ import '../../models/models.dart';
 import '../camera/camera_screen.dart' show albumName;
 import '../groups/groups_controller.dart';
 import '../premium/pro_gate.dart';
+import '../premium/roll.dart' show PaywallReason, paywallLocation;
 import 'recap_builder.dart';
 
 class RecapScreen extends ConsumerStatefulWidget {
@@ -296,7 +297,7 @@ class _RecapScreenState extends ConsumerState<RecapScreen> {
                 Text('9:16 ✓', style: CT.text(12, color: CT.muted)),
                 const SizedBox(width: 14),
                 GestureDetector(
-                  onTap: isPro ? null : () => context.push('/pro'),
+                  onTap: isPro ? null : () => context.push(paywallLocation(reason: PaywallReason.watermark, groupId: widget.groupId)),
                   child: Text(isPro ? l.noWatermark : l.removeWatermarkPro, style: CT.text(12, color: isPro ? CT.muted : CT.accent, weight: FontWeight.w500)),
                 ),
               ]),

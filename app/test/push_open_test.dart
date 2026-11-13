@@ -27,5 +27,7 @@ void main() {
   test('locale tag sent with the push token', () {
     expect(pushLocaleTag(const Locale('nl')), 'nl');
     expect(pushLocaleTag(const Locale('pt', 'BR')), 'pt_BR');
+    expect(pushLocaleTag(const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant')), 'zh_Hant');
+    expect(pushLocaleTag(const Locale('fil')), 'fil');
   });
 }

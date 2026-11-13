@@ -2066,4 +2066,293 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get styleFlashDescription => '따뜻한 필름에 직광 플래시: 호박빛, 그레인, 진한 빨강';
+
+  @override
+  String cameraTimerButton(String state) {
+    return '타이머: $state';
+  }
+
+  @override
+  String get cameraTimerCycleHint => '탭하여 끔, 3초, 10초 전환';
+
+  @override
+  String get cameraLastShotOpen => '최근 사진, 앨범 열기';
+
+  @override
+  String get cameraLastShotEmpty => '아직 사진이 없습니다, 앨범 열기';
+
+  @override
+  String get deleteOnlyOwnOrAdmin => '찍은 사람이나 관리자만 삭제할 수 있습니다';
+
+  @override
+  String get videoPlay => '재생';
+
+  @override
+  String get videoPause => '일시정지';
+
+  @override
+  String get language => '언어';
+
+  @override
+  String get languageSystem => '시스템 언어';
+
+  @override
+  String languageSystemCurrent(String language) {
+    return '시스템 ($language)';
+  }
+
+  @override
+  String get languageSearchHint => '언어 검색';
+
+  @override
+  String get languageNoResults => '언어를 찾을 수 없어요';
+
+  @override
+  String get personalRollTitle => '내 필름';
+
+  @override
+  String get personalRollSubtitle => '나만 보기';
+
+  @override
+  String get personalRollPickerSubtitle => '앨범 없는 사진, 나만 보기';
+
+  @override
+  String get personalRollMove => '앨범으로';
+
+  @override
+  String get personalRollMoveTitle => '앨범으로 이동';
+
+  @override
+  String get personalRollMoveNoAlbums => '먼저 앨범을 만들거나 코드로 참여하세요.';
+
+  @override
+  String personalRollMoved(int count, String album) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '사진 $count장을 $album(으)로 이동했어요',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get personalRollPrivateNote => '이 사진은 나만 볼 수 있어요. 공유하려면 앨범으로 이동하세요.';
+
+  @override
+  String get paywallTripPassSub => '이 여행만, 그룹 전체에게';
+
+  @override
+  String get paywallOneTime => '1회 구매';
+
+  @override
+  String get paywallBestValue => '가장 좋은 가격';
+
+  @override
+  String paywallRollFullTitle(int used, int limit) {
+    return '필름이 다 찼어요 - $used/$limit장';
+  }
+
+  @override
+  String get paywallRollFullSub => 'Trip Pass나 Pro로 계속 찍을 수 있어요.';
+
+  @override
+  String get paywallCameraTitle => '이 카메라는 Pro 전용이에요';
+
+  @override
+  String paywallCameraSub(int count) {
+    return '카메라 $count종을 모두 열어 보세요.';
+  }
+
+  @override
+  String get paywallWatermarkTitle => '워터마크 없는 리캡';
+
+  @override
+  String get paywallWatermarkSub => 'CamTrip 로고 없이 리캡을 공유하세요.';
+
+  @override
+  String get paywallDeletionTitle => '여행 간직하기';
+
+  @override
+  String paywallDeletionSub(String date) {
+    return '무료 여행은 $date에 삭제돼요. Trip Pass나 Pro가 있으면 영원히 남아요.';
+  }
+
+  @override
+  String paywallTripPassTerms(String price) {
+    return '이 여행을 위한 $price 1회 구매예요. 구독이 아니에요.';
+  }
+
+  @override
+  String get buyTripPass => 'Trip Pass 구매';
+
+  @override
+  String get tripPassActive => 'Trip Pass 활성: 이 여행은 모두에게 Pro예요';
+
+  @override
+  String get tripPassActivating => '결제가 완료됐어요. 곧 Trip Pass가 활성화돼요.';
+
+  @override
+  String proViaTripPass(String name) {
+    return '$name님의 Trip Pass';
+  }
+
+  @override
+  String rollCounterSemantics(int used, int limit) {
+    return '필름 $used/$limit장';
+  }
+
+  @override
+  String rollHeldTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '사진 $count장이 필름에 들어가지 않아요',
+      one: '사진 1장이 필름에 들어가지 않아요',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get rollHeldBody => 'Pro나 Trip Pass로 간직하세요';
+
+  @override
+  String deletionBannerTitle(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '여행 간직하기 - $days일 남음',
+      one: '여행 간직하기 - 1일 남음',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletionBannerBody =>
+      '무료 여행은 끝난 지 30일 후에 삭제돼요. Trip Pass나 Pro가 있으면 영원히 남아요.';
+
+  @override
+  String apiRollFull(int limit) {
+    return '필름이 다 찼어요 ($limit장). Trip Pass나 Pro로 계속 찍으세요.';
+  }
+
+  @override
+  String get apiTripPassFailed =>
+      'Trip Pass를 활성화하지 못했어요. support@camtrip.app으로 문의하세요.';
+
+  @override
+  String get apiTripPassExists => '이 여행에는 이미 Trip Pass가 있어요.';
+
+  @override
+  String get tripPassUnavailable => '지금은 Trip Pass를 사용할 수 없어요. 나중에 다시 시도하세요.';
+
+  @override
+  String get tripMapTitle => '여행 지도';
+
+  @override
+  String get tripMapOpen => '지도와 통계';
+
+  @override
+  String get tripMapLoadFailed => '지도를 불러오지 못했어요';
+
+  @override
+  String get tripMapStatDays => '일';
+
+  @override
+  String get tripMapStatPhotos => '사진';
+
+  @override
+  String get tripMapStatVideos => '동영상';
+
+  @override
+  String get tripMapStatMembers => '멤버';
+
+  @override
+  String get tripMapStatDistance => '이동 거리(km)';
+
+  @override
+  String get tripMapStatCountries => '나라';
+
+  @override
+  String get tripMapStatPlaces => '장소';
+
+  @override
+  String tripMapBusiestDay(String day, int count) {
+    return '사진이 가장 많은 날: $day ($count)';
+  }
+
+  @override
+  String tripMapTopPhotographer(String name, int count) {
+    return '최고의 사진가: $name ($count)';
+  }
+
+  @override
+  String get tripMapOffTitle => '여행 지도가 꺼져 있어요';
+
+  @override
+  String get tripMapOffMessage =>
+      '관리자가 그룹 설정에서 여행 지도를 켤 수 있어요. 통계는 항상 볼 수 있어요.';
+
+  @override
+  String get tripMapOffMessageAdmin =>
+      '여행 지도를 켜면 사진을 찍은 곳을 볼 수 있어요. 참여 여부는 각자 정해요.';
+
+  @override
+  String get tripMapEnable => '여행 지도 켜기';
+
+  @override
+  String get tripMapEmptyTitle => '아직 지도에 장소가 없어요';
+
+  @override
+  String get tripMapEmptyMessage => '위치를 공유하는 멤버의 새 사진이 약 100m 단위로 여기에 표시돼요.';
+
+  @override
+  String get tripMapConsentTitle => '여행 지도';
+
+  @override
+  String get tripMapConsentQuestion => '사진을 찍은 장소를 이 그룹의 여행 지도에 공유할까요?';
+
+  @override
+  String get tripMapConsentDetail =>
+      '그룹 멤버만 약 100m 단위로 볼 수 있어요. 위치는 사진 파일에 절대 저장되지 않으며 그룹 설정에서 언제든지 끌 수 있어요.';
+
+  @override
+  String get tripMapConsentYes => '공유할게요';
+
+  @override
+  String get tripMapConsentNo => '공유 안 함';
+
+  @override
+  String get tripMapLocationDenied => '위치에 접근할 수 없어요. 휴대폰 설정에서 허용할 수 있어요.';
+
+  @override
+  String get tripMapSettingSubtitle =>
+      '사진을 찍은 곳을 지도에 보여 줘요. 공유 여부는 멤버가 각자 정해요.';
+
+  @override
+  String get tripMapDisableTitle => '여행 지도를 끌까요?';
+
+  @override
+  String get tripMapDisableMessage =>
+      '이 그룹의 위치 정보가 모두 삭제돼요. 나중에 다시 켜면 모두에게 다시 물어봐요.';
+
+  @override
+  String get tripMapDisable => '끄기';
+
+  @override
+  String get tripMapMySharing => '내 위치 공유';
+
+  @override
+  String get tripMapMySharingOn => '새 사진이 여행 지도에 표시돼요(약 100m 단위).';
+
+  @override
+  String get tripMapMySharingOff => '꺼짐. 사진이 지도에 표시되지 않아요.';
+
+  @override
+  String get tripMapStopSharingTitle => '위치 공유를 중단할까요?';
+
+  @override
+  String get tripMapStopSharingMessage => '이 그룹에 있는 내 사진의 위치 정보가 모두 삭제돼요.';
+
+  @override
+  String get tripMapStopSharing => '공유 중단';
 }

@@ -6,6 +6,8 @@ export class HttpError extends Error {
     public status: number,
     message: string,
     public code?: string,
+    /** Extra fields sent along in the JSON body (e.g. {limit, used} with roll_full). */
+    public extra?: Record<string, unknown>,
   ) {
     super(message);
   }
@@ -22,7 +24,7 @@ export function handler<Ctx>(fn: (req: Request, ctx: Ctx) => Promise<Response>) 
       return await fn(req, ctx);
     } catch (err) {
       if (err instanceof HttpError) {
-        return json({ error: err.message, code: err.code }, err.status);
+        return json({ ...(err.extra ?? {}), error: err.message, code: err.code }, err.status);
       }
       if (err instanceof ZodError) {
         return json({ error: 'Ongeldige invoer', issues: err.issues }, 400);

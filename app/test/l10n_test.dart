@@ -4,6 +4,9 @@ import 'dart:io';
 import 'package:camtrip/core/api.dart';
 import 'package:camtrip/core/format.dart';
 import 'package:camtrip/l10n/l10n.dart';
+import 'package:camtrip/l10n/languages.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -47,6 +50,13 @@ Set<String> _placeholdersIn(String message) {
   return found;
 }
 
+/// Every app language (ARB file suffix).
+const _languages = [
+  'nl', 'en', 'de', 'fr', 'es', 'it', 'pt', 'pt_BR', 'pl', 'sv', 'da', 'nb', 'fi', 'cs', 'tr', 'ja', 'ko', 'zh', //
+  'zh_Hant', 'uk', 'ru', 'ro', 'hu', 'el', 'bg', 'hr', 'sk', 'sl', 'lt', 'lv', 'et', 'ca', 'id', 'ms', 'vi', 'th', //
+  'hi', 'ar', 'he', 'fil',
+];
+
 void main() {
   final arbs = _arbs();
   final template = arbs['app_en.arb']!;
@@ -62,11 +72,23 @@ void main() {
   };
 
   group('ARB files', () {
-    test('all 18 languages are there', () {
-      expect(arbs.keys.toSet(), {
-        for (final l in ['nl', 'en', 'de', 'fr', 'es', 'it', 'pt', 'pt_BR', 'pl', 'sv', 'da', 'nb', 'fi', 'cs', 'tr', 'ja', 'ko', 'zh']) 'app_$l.arb',
-      });
-      expect(AppLocalizations.supportedLocales, hasLength(18));
+    test('all 40 languages are there, each in the language picker', () {
+      expect(arbs.keys.toSet(), {for (final l in _languages) 'app_$l.arb'});
+      expect(AppLocalizations.supportedLocales, hasLength(_languages.length));
+      expect(appLanguages.map((a) => a.tag).toSet(), _languages.toSet());
+      for (final a in appLanguages) {
+        expect(L10n.tagOf(a.locale), a.tag);
+        expect(lookupAppLocalizations(a.locale).localeName, isNotEmpty);
+      }
+    });
+
+    test('Flutter has Material, Cupertino and date formatting for every language', () async {
+      await initializeDateFormatting();
+      for (final l in AppLocalizations.supportedLocales) {
+        expect(GlobalMaterialLocalizations.delegate.isSupported(l), isTrue, reason: '$l material');
+        expect(GlobalCupertinoLocalizations.delegate.isSupported(l), isTrue, reason: '$l cupertino');
+        expect(DateFormat.MMMMEEEEd(L10n.intlLocaleFor(l)).format(DateTime(2027, 7, 13)), isNotEmpty, reason: '$l intl');
+      }
     });
 
     for (final entry in arbs.entries) {
@@ -113,9 +135,17 @@ void main() {
 
     test('Dutch devices get Dutch', () => expect(r([const Locale('nl', 'NL')]), const Locale('nl')));
     test('a supported language wins, regardless of region', () => expect(r([const Locale('fr', 'CA')]), const Locale('fr')));
-    test('unsupported languages fall back to English', () => expect(r([const Locale('ru', 'RU')]), const Locale('en')));
+    test('unsupported languages fall back to English', () => expect(r([const Locale('sw', 'KE')]), const Locale('en')));
     test('the first supported preferred language is used', () {
-      expect(r([const Locale('ru'), const Locale('de', 'AT'), const Locale('nl')]), const Locale('de'));
+      expect(r([const Locale('sw'), const Locale('de', 'AT'), const Locale('nl')]), const Locale('de'));
+      expect(r([const Locale('ru', 'RU')]), const Locale('ru'));
+      expect(r([const Locale('ar', 'EG')]), const Locale('ar'));
+      expect(r([const Locale('fil', 'PH')]), const Locale('fil'));
+    });
+    test('old language codes', () {
+      expect(r([const Locale('iw')]), const Locale('he'));
+      expect(r([const Locale('in')]), const Locale('id'));
+      expect(r([const Locale('tl')]), const Locale('fil'));
     });
     test('Brazilian Portuguese is separate from pt-PT', () {
       expect(r([const Locale('pt', 'BR')]), const Locale('pt', 'BR'));
@@ -126,8 +156,26 @@ void main() {
       expect(r([const Locale('no')]), const Locale('nb'));
       expect(r([const Locale('nn')]), const Locale('nb'));
     });
-    test('Chinese uses Simplified', () {
-      expect(r([const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant', countryCode: 'TW')]), const Locale('zh'));
+    test('Traditional Chinese for Hant, Taiwan, Hong Kong and Macau; else Simplified', () {
+      const hant = Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant');
+      expect(r([const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant', countryCode: 'TW')]), hant);
+      expect(r([const Locale('zh', 'TW')]), hant);
+      expect(r([const Locale('zh', 'HK')]), hant);
+      expect(r([const Locale('zh', 'MO')]), hant);
+      expect(r([hant]), hant);
+      expect(r([const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans', countryCode: 'HK')]), const Locale('zh'));
+      expect(r([const Locale('zh', 'CN')]), const Locale('zh'));
+      expect(r([const Locale('zh')]), const Locale('zh'));
+      expect(L10n.intlLocaleFor(hant), 'zh_TW');
+    });
+    test('stored language tags', () {
+      for (final l in L10n.supportedLocales) {
+        expect(L10n.parseTag(L10n.tagOf(l)), l);
+      }
+      expect(L10n.tagOf(L10n.traditionalChinese), 'zh_Hant');
+      expect(L10n.tagOf(const Locale('pt', 'BR')), 'pt_BR');
+      expect(L10n.parseTag('xx'), isNull);
+      expect(L10n.parseTag(null), isNull);
     });
     test('no languages at all gives English', () => expect(r(null), const Locale('en')));
   });
@@ -157,6 +205,16 @@ void main() {
       expect(Fmt.range(DateTime(2027, 7, 12), DateTime(2027, 7, 19)), '12-19 lipca');
     });
     test('plurals', () {
+      L10n.setLocale(const Locale('ru'));
+      expect([1, 2, 5, 21].map(L10n.current.periodDays), ['1 день', '2 дня', '5 дней', '21 день']);
+      L10n.setLocale(const Locale('uk'));
+      expect([1, 3, 11].map(L10n.current.membersCount), ['1 учасник', '3 учасники', '11 учасників']);
+      L10n.setLocale(const Locale('ar'));
+      expect([0, 1, 2, 3, 11, 100].map(L10n.current.photosCount), ['لا صور', 'صورة واحدة', 'صورتان', '3 صور', '11 صورة', '100 صورة']);
+      L10n.setLocale(const Locale('he'));
+      expect([1, 2, 5].map(L10n.current.periodDays), ['יום אחד', 'יומיים', '5 ימים']);
+      L10n.setLocale(const Locale('sl'));
+      expect([1, 2, 3, 5].map(L10n.current.photosCount), ['1 fotka', '2 fotki', '3 fotke', '5 fotk']);
       L10n.setLocale(const Locale('pl'));
       expect([1, 2, 5, 22].map(L10n.current.photosCount), ['1 zdjęcie', '2 zdjęcia', '5 zdjęć', '22 zdjęcia']);
       L10n.setLocale(const Locale('en'));

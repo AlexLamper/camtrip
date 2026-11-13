@@ -65,7 +65,7 @@ class _CameraSettingsSheetState extends State<CameraSettingsSheet> {
             decoration: BoxDecoration(color: CT.muted.withValues(alpha: 0.35), borderRadius: BorderRadius.circular(3)),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 8, 4),
+            padding: const EdgeInsetsDirectional.fromSTEB(20, 10, 8, 4),
             child: Row(children: [
               Expanded(child: Semantics(header: true, child: Text(l.cameraSettingsTitle, style: CT.title(20)))),
               IconButton(

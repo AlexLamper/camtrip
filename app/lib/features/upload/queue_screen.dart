@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../l10n/l10n.dart';
 import '../../main.dart';
+import '../premium/roll.dart';
 import 'upload_queue.dart';
 
 class QueueScreen extends ConsumerWidget {
@@ -20,6 +21,7 @@ class QueueScreen extends ConsumerWidget {
     final prefs = ref.watch(prefsProvider);
     final photos = items.where((i) => !i.isVideo).length;
     final videos = items.length - photos;
+    final held = items.where((i) => i.status == UploadStatus.held).toList();
     final l = context.l10n;
 
     return Scaffold(
@@ -29,6 +31,17 @@ class QueueScreen extends ConsumerWidget {
           _banner(l.queueNoSignal, l.queueNoSignalMessage)
         else if (!queue.onWifi && (prefs.wifiOnly || (videos > 0 && prefs.videosWifiOnly)))
           _banner(l.queueWaitingForWifi, prefs.wifiOnly ? l.queueWifiOnlyOn(l.wifiOnlyTitle) : l.queueVideosWifiOnly),
+        // Shots beyond the free roll: kept here until Pro or a Trip Pass.
+        if (held.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          PaywallNudge(
+            key: const ValueKey('queue-held-banner'),
+            icon: Icons.camera_roll_outlined,
+            title: l.rollHeldTitle(held.length),
+            body: l.rollHeldBody,
+            onTap: () => context.push(paywallLocation(reason: PaywallReason.rollFull, groupId: held.first.groupId)),
+          ),
+        ],
         const SizedBox(height: 16),
         Text(l.uploadQueue, style: CT.title(28)),
         const SizedBox(height: 4),
@@ -69,7 +82,13 @@ class QueueScreen extends ConsumerWidget {
                 ]),
               ),
               const SizedBox(width: 10),
-              if (i.status == UploadStatus.failed)
+              if (i.status == UploadStatus.held)
+                IconButton(
+                  tooltip: l.rollHeldBody,
+                  icon: const Icon(Icons.lock_outline_rounded, size: 20, color: CT.warn),
+                  onPressed: () => context.push(paywallLocation(reason: PaywallReason.rollFull, groupId: i.groupId)),
+                )
+              else if (i.status == UploadStatus.failed)
                 PopupMenuButton<String>(
                   onSelected: (v) => v == 'retry' ? queue.retry(i.id) : queue.remove(i.id),
                   itemBuilder: (_) => [

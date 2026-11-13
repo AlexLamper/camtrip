@@ -65,12 +65,24 @@ test('push locale mapping', () => {
   assert.equal(pushLocale('nb-NO'), 'nb');
   assert.equal(pushLocale('zh-Hans-CN'), 'zh');
   assert.equal(pushLocale('EN_us'), 'en');
-  assert.equal(pushLocale('ru'), 'en');
+  assert.equal(pushLocale('ru'), 'ru');
+  assert.equal(pushLocale('ru_RU'), 'ru');
+  assert.equal(pushLocale('zh_Hant'), 'zh_Hant');
+  assert.equal(pushLocale('zh-Hant-TW'), 'zh_Hant');
+  assert.equal(pushLocale('zh-TW'), 'zh_Hant');
+  assert.equal(pushLocale('zh-HK'), 'zh_Hant');
+  assert.equal(pushLocale('zh-Hans-HK'), 'zh');
+  assert.equal(pushLocale('iw'), 'he');
+  assert.equal(pushLocale('in_ID'), 'id');
+  assert.equal(pushLocale('tl'), 'fil');
+  assert.equal(pushLocale('fil_PH'), 'fil');
+  assert.equal(pushLocale('ar_EG'), 'ar');
+  assert.equal(pushLocale('sw'), 'en');
   assert.equal(pushLocale(null), 'en');
 });
 
 test('every language has every push text, with the values filled in and no long dashes', () => {
-  assert.equal(PUSH_LOCALES.length, 18);
+  assert.equal(PUSH_LOCALES.length, 40);
   for (const l of PUSH_LOCALES) {
     assert.equal(pushLocale(l), l);
     const t = pushTexts(l);

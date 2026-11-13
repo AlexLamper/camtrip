@@ -210,8 +210,8 @@ class _AllPhotosViewState extends ConsumerState<AllPhotosView> {
               ),
             ),
         if (p.isVideo)
-          Positioned(
-            right: 6,
+          PositionedDirectional(
+            end: 6,
             bottom: 5,
             child: Row(key: Key('video-badge-${p.id}'), mainAxisSize: MainAxisSize.min, children: [
               const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 16, shadows: [Shadow(color: Color(0x99000000), blurRadius: 4)]),
@@ -225,8 +225,8 @@ class _AllPhotosViewState extends ConsumerState<AllPhotosView> {
           ),
         if (selected) ColoredBox(color: Colors.white.withValues(alpha: 0.3)),
         if (_sel.active)
-          Positioned(
-            right: 6,
+          PositionedDirectional(
+            end: 6,
             top: 6,
             child: Container(
               decoration: const BoxDecoration(shape: BoxShape.circle, boxShadow: [BoxShadow(color: Color(0x40000000), blurRadius: 6)]),

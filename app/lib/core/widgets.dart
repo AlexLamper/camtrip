@@ -201,7 +201,7 @@ class InstantPrint extends StatelessWidget {
         decoration: BoxDecoration(color: CT.paper, borderRadius: BorderRadius.circular(3), boxShadow: CT.printShadow),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           AspectRatio(aspectRatio: aspectRatio, child: ClipRect(child: child)),
-          SizedBox(height: bottom, child: caption == null ? null : Align(alignment: Alignment.centerLeft, child: caption)),
+          SizedBox(height: bottom, child: caption == null ? null : Align(alignment: AlignmentDirectional.centerStart, child: caption)),
         ]),
       ),
     );
@@ -272,10 +272,10 @@ class AvatarStack extends StatelessWidget {
       height: size,
       width: count == 0 ? 0 : size + (count - 1) * (size - overlap),
       child: Stack(children: [
-        for (var i = 0; i < shown.length; i++) Positioned(left: i * (size - overlap), child: Avatar.member(shown[i], size: size, border: border)),
+        for (var i = 0; i < shown.length; i++) PositionedDirectional(start: i * (size - overlap), child: Avatar.member(shown[i], size: size, border: border)),
         if (extra > 0)
-          Positioned(
-            left: shown.length * (size - overlap),
+          PositionedDirectional(
+            start: shown.length * (size - overlap),
             child: Avatar(initial: '+$extra', color: CT.muted, size: size, border: border),
           ),
       ]),

@@ -13,6 +13,7 @@ import '../../core/config.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../l10n/l10n.dart';
+import '../settings/language_screen.dart';
 import 'auth_controller.dart';
 import 'onboarding_slides.dart';
 
@@ -63,6 +64,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     return Scaffold(
       body: SafeArea(
         child: Column(children: [
+          // Language first, so new people can switch before signing up.
+          Align(alignment: AlignmentDirectional.centerEnd, child: _LanguageButton(label: currentLanguageLabel(context, ref.watch(appLanguageProvider)))),
           // Each slide: its visual takes the free space, the text keeps its own height.
           Expanded(
             child: PageView.builder(
@@ -85,7 +88,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               for (var i = 0; i < _slideCount; i++)
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  margin: const EdgeInsets.only(right: 6),
+                  margin: const EdgeInsetsDirectional.only(end: 6),
                   width: i == _page ? 24 : 6,
                   height: 6,
                   decoration: BoxDecoration(color: i == _page ? CT.ink : const Color(0xFFDDDDDD), borderRadius: BorderRadius.circular(3)),
@@ -153,5 +156,39 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         if (google) googleButton(),
       ],
     ]);
+  }
+}
+
+/// Globe + current language, top right of the welcome screen.
+class _LanguageButton extends StatelessWidget {
+  const _LanguageButton({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(0, 4, 12, 0),
+      child: Semantics(
+        button: true,
+        label: '${context.l10n.language}: $label',
+        excludeSemantics: true,
+        child: InkWell(
+          key: const ValueKey('onboarding-language'),
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => openLanguagePicker(context),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 36, maxWidth: 240),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                const Icon(Icons.language_rounded, size: 18, color: CT.muted),
+                const SizedBox(width: 6),
+                Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(13, color: CT.muted, weight: FontWeight.w500))),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

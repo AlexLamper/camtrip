@@ -32,6 +32,8 @@ class ProGate {
   /// "Pro via Sanne" when the group's Pro comes from another member, else null.
   String? get viaLabel {
     if (!viaGroup) return null;
+    // "Trip Pass van Sanne": the group's Trip Pass, Pro here for good.
+    if (group?.isProViaTripPass ?? false) return L10n.current.proViaTripPass(group?.tripPassByName ?? L10n.current.memberFallbackName);
     final name = group?.proByName?.trim();
     return name == null || name.isEmpty ? L10n.current.proViaGroup : L10n.current.proViaName(name);
   }
@@ -40,6 +42,7 @@ class ProGate {
   String? get cameraHint {
     final via = viaLabel;
     if (via == null) return null;
+    if (group?.isProViaTripPass ?? false) return via;
     final name = group?.proByName?.trim();
     return name == null || name.isEmpty
         ? L10n.current.proStylesFreeViaMember

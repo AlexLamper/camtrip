@@ -7,6 +7,7 @@ import '../../core/storage.dart';
 import '../../main.dart';
 import '../../models/models.dart';
 import '../auth/auth_controller.dart';
+import '../upload/upload_queue.dart';
 
 final groupsProvider = AsyncNotifierProvider<GroupsController, List<Group>>(GroupsController.new);
 
@@ -67,6 +68,8 @@ class GroupsController extends AsyncNotifier<List<Group>> {
 
   void _ensureActive(List<Group> groups) {
     final prefs = ref.read(prefsProvider);
+    // The personal roll was picked on purpose: keep it.
+    if (prefs.activeGroupId == Group.personalRollId) return;
     final active = groups.where(_usable).toList();
     if (active.isEmpty) return;
     if (!active.any((g) => g.id == prefs.activeGroupId)) {
@@ -85,6 +88,8 @@ class GroupsController extends AsyncNotifier<List<Group>> {
   void applyServerGroup(Group g) => _upsert(g);
 
   void _upsert(Group g) {
+    // The personal roll is not in the albums list; it has its own provider.
+    if (g.isPersonal) return ref.read(personalRollProvider.notifier).apply(g);
     final list = [...(state.value ?? const <Group>[])];
     final i = list.indexWhere((x) => x.id == g.id);
     if (i >= 0) {
@@ -124,6 +129,7 @@ class GroupsController extends AsyncNotifier<List<Group>> {
   }
 
   Future<Group> refreshOne(String id) async {
+    if (id == Group.personalRollId) return ref.read(personalRollProvider.notifier).reload();
     final res = await _api.get('/groups/$id');
     final g = Group.fromJson(res['group'] as Map<String, dynamic>);
     _upsert(g);
@@ -226,6 +232,66 @@ class GroupsController extends AsyncNotifier<List<Group>> {
   }
 }
 
+/// My personal roll ("Mijn rolletje"): loose photos that are not for an
+/// album. Always available, also offline and before the server created it:
+/// it starts as the cached copy (or a placeholder with id
+/// [Group.personalRollId]) and is fetched from GET /me/roll, which creates it
+/// on first use. Uploads use the id "me", which the API resolves.
+final personalRollProvider = NotifierProvider<PersonalRollController, Group>(PersonalRollController.new);
+
+class PersonalRollController extends Notifier<Group> {
+  @override
+  Group build() {
+    final (userId, isPro) = ref.watch(authProvider.select((a) => (a.value?.id, a.value?.isPro ?? false)));
+    final placeholder = Group.personalPlaceholder(ownerId: userId ?? '', isPro: isPro);
+    if (userId == null) return placeholder;
+    final sub = ref.read(uploadedProvider).stream.where((g) => g == Group.personalRollId).listen((_) => _refreshQuietly());
+    ref.onDispose(sub.cancel);
+    Timer.run(_refreshQuietly);
+    return _cached(userId) ?? placeholder;
+  }
+
+  Group? _cached(String userId) {
+    final c = _prefs?.cachedPersonalRoll;
+    if (c == null || c['userId'] != userId) return null;
+    try {
+      return Group.fromJson((c['group'] as Map).cast<String, dynamic>());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Prefs? get _prefs {
+    try {
+      return ref.read(prefsProvider);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _refreshQuietly() async {
+    if (!ref.mounted) return;
+    try {
+      await reload();
+    } catch (_) {} // offline: keep what we have
+  }
+
+  Future<Group> reload() async {
+    final res = await ref.read(apiProvider).get('/me/roll');
+    final json = (res['group'] as Map).cast<String, dynamic>();
+    final g = Group.fromJson(json);
+    if (ref.mounted) {
+      final userId = ref.read(authProvider).value?.id;
+      if (userId != null) _prefs?.cachedPersonalRoll = {'userId': userId, 'group': json};
+      state = g;
+    }
+    return g;
+  }
+
+  /// Takes the roll as the server sent it back (e.g. after a delete or a new cover).
+  void apply(Group g) => state = g;
+}
+
 /// The group the camera shoots into.
 final activeGroupIdProvider = NotifierProvider<ActiveGroupId, String?>(ActiveGroupId.new);
 
@@ -239,16 +305,25 @@ class ActiveGroupId extends Notifier<String?> {
   }
 }
 
+/// The group the camera shoots into. My personal roll when I picked it, or
+/// when there is no usable album to shoot into (no groups, or the picked one
+/// is gone, closed or archived).
 final activeGroupProvider = Provider<Group?>((ref) {
   final id = ref.watch(activeGroupIdProvider);
-  final groups = ref.watch(groupsProvider).value ?? const [];
+  final roll = ref.watch(personalRollProvider);
+  if (id == null || roll.isId(id)) return roll;
+  final groups = ref.watch(groupsProvider).value;
+  if (groups == null) return null; // still loading: don't shoot into the wrong place
   for (final g in groups) {
-    if (g.id == id) return g;
+    if (g.id == id && !g.isClosed && !g.archived) return g;
   }
-  return null;
+  return roll;
 });
 
+/// A group by id: an album from the list, or my personal roll (by "me" or its server id).
 final groupProvider = Provider.family<Group?, String>((ref, id) {
+  final roll = ref.watch(personalRollProvider);
+  if (roll.isId(id)) return roll;
   final groups = ref.watch(groupsProvider).value ?? const [];
   for (final g in groups) {
     if (g.id == id) return g;

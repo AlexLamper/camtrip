@@ -20,4 +20,26 @@
     <locale android:name="ja"/>
     <locale android:name="ko"/>
     <locale android:name="zh-Hans"/>
+    <locale android:name="uk"/>
+    <locale android:name="ru"/>
+    <locale android:name="ro"/>
+    <locale android:name="hu"/>
+    <locale android:name="el"/>
+    <locale android:name="bg"/>
+    <locale android:name="hr"/>
+    <locale android:name="sk"/>
+    <locale android:name="sl"/>
+    <locale android:name="lt"/>
+    <locale android:name="lv"/>
+    <locale android:name="et"/>
+    <locale android:name="ca"/>
+    <locale android:name="id"/>
+    <locale android:name="ms"/>
+    <locale android:name="vi"/>
+    <locale android:name="th"/>
+    <locale android:name="hi"/>
+    <locale android:name="zh-Hant"/>
+    <locale android:name="ar"/>
+    <locale android:name="he"/>
+    <locale android:name="fil"/>
 </locale-config>

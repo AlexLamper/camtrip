@@ -1,9 +1,12 @@
 import { randomInt } from 'node:crypto';
 import { Types } from 'mongoose';
-import { Group, HiddenPhoto, Photo, Report, User, type GroupDoc, type UserDoc } from './models';
+import { DEFAULT_STYLE, Group, HiddenPhoto, Photo, Report, User, type GroupDoc, type UserDoc } from './models';
 import { HttpError } from './http';
-import { groupPro } from './entitlements';
+import { groupPro, groupProSource, tripPassActive } from './entitlements';
+import { rollForGroup } from './roll-db';
 import { deleteKeys, readUrl } from './storage';
+import { isPersonalRoll, newPersonalRoll, PERSONAL_ROLL_ALIAS, PERSONAL_TYPE } from './personal-roll';
+import { tripMapView } from './trip-map';
 
 export const FREE_MEMBER_LIMIT = 10;
 export const FREE_RETENTION_DAYS = 30;
@@ -28,7 +31,42 @@ export function memberRole(group: GroupDoc, userId: Types.ObjectId | string): 'a
   return m ? (m.role as 'admin' | 'member') : null;
 }
 
+/** The user's personal roll ("Mijn rolletje"), or null when it was never created. */
+export async function findPersonalRoll(userId: Types.ObjectId): Promise<GroupDoc | null> {
+  return Group.findOne({ ownerId: userId, type: PERSONAL_TYPE }).lean<GroupDoc>();
+}
+
+/**
+ * The user's personal roll, created on first use. Idempotent: the unique
+ * partial index (one personal roll per owner) turns a concurrent second
+ * create into a duplicate-key error, after which the existing roll is read.
+ */
+export async function ensurePersonalRoll(userId: Types.ObjectId): Promise<GroupDoc> {
+  const existing = await findPersonalRoll(userId);
+  if (existing) return existing;
+  try {
+    const created = await Group.create(newPersonalRoll(userId, DEFAULT_STYLE));
+    return created.toObject() as GroupDoc;
+  } catch (e) {
+    if ((e as { code?: number }).code !== 11000) throw e;
+    const again = await findPersonalRoll(userId);
+    if (!again) throw e;
+    return again;
+  }
+}
+
+/** Refuses actions that only make sense for shared albums (leave, members, archive, delete). */
+export function refuseForPersonalRoll(group: Pick<GroupDoc, 'type'>): void {
+  if (isPersonalRoll(group)) throw new HttpError(400, 'Dit kan niet met je eigen rolletje', 'personal_roll');
+}
+
+/**
+ * The group, if the user is a member. The id "me" means the user's personal
+ * roll (created on first use), so the app can use one stable id for it, also
+ * for photos taken offline before it knew the roll's real id.
+ */
 export async function requireMember(groupId: string, userId: Types.ObjectId): Promise<GroupDoc> {
+  if (groupId === PERSONAL_ROLL_ALIAS) return ensurePersonalRoll(userId);
   if (!Types.ObjectId.isValid(groupId)) throw new HttpError(404, 'Groep niet gevonden');
   const group = await Group.findById(groupId).lean<GroupDoc>();
   if (!group || !memberRole(group, userId)) throw new HttpError(404, 'Groep niet gevonden');
@@ -45,7 +83,8 @@ export async function requireAdmin(groupId: string, userId: Types.ObjectId): Pro
 // (groupIsPro / groupProFor / refreshGroupRetention) and ./entitlements.
 
 export function computeDeleteAfter(type: string, endDate: Date | null, pro: boolean): Date | null {
-  if (pro || type === 'permanent') return null;
+  // A personal roll ("Mijn rolletje") is kept as long as the account exists.
+  if (pro || type === 'permanent' || type === PERSONAL_TYPE) return null;
   const base = endDate ?? new Date();
   return new Date(base.getTime() + FREE_RETENTION_DAYS * 86_400_000);
 }
@@ -60,9 +99,20 @@ export async function serializeGroup(group: GroupDoc, viewerId: Types.ObjectId |
   // One Pro member = Pro for everyone in the group (see lib/entitlements.ts).
   const gp = groupPro(
     group.members.map((m) => byId.get(String(m.userId))).filter((u): u is UserDoc => Boolean(u)),
-    { viewerId, ownerId: group.ownerId },
+    { viewerId, ownerId: group.ownerId, tripPass: group.tripPass ?? null },
   );
   const pro = gp.isPro;
+
+  // Trip Pass: who bought it (may have left the group since).
+  let tripPass: { purchasedByName: string; purchasedAt: Date | null } | null = null;
+  if (tripPassActive(group.tripPass)) {
+    const buyerId = String(group.tripPass!.purchasedBy ?? '');
+    const buyer = byId.get(buyerId) ?? (Types.ObjectId.isValid(buyerId) ? await User.findById(buyerId, { name: 1 }).lean<UserDoc>() : null);
+    tripPass = { purchasedByName: buyer?.name || 'Vriend', purchasedAt: group.tripPass!.purchasedAt ?? null };
+  }
+  // The viewer's free roll here ("18/24"); null = no limit (Pro, Pro group or Trip Pass).
+  // (The viewer is a member, so their own Pro already makes [pro] true.)
+  const roll = await rollForGroup({ _id: new Types.ObjectId(String(viewerId)) }, group, pro);
 
   const hiddenCount = await HiddenPhoto.countDocuments({ userId: viewerId, groupId: group._id });
 
@@ -72,31 +122,39 @@ export async function serializeGroup(group: GroupDoc, viewerId: Types.ObjectId |
     if (cover) coverUrl = await readUrl(cover.thumbKey);
   }
 
+  const personal = isPersonalRoll(group);
   return {
     id: String(group._id),
     name: group.name,
     type: group.type,
+    // "Mijn rolletje": private, never joinable, no invite code, never auto-deleted.
+    isPersonal: personal,
     startDate: group.startDate ?? null,
     endDate: group.endDate ?? null,
     defaultStyle: group.defaultStyle,
-    code: group.code,
+    code: personal ? '' : group.code,
     status: group.status,
     photoCount: group.photoCount ?? 0,
     videoCount: group.videoCount ?? 0,
     coverUrl,
-    deleteAfter: group.deleteAfter ?? null,
+    deleteAfter: personal ? null : (group.deleteAfter ?? null),
     isProGroup: pro,
-    // Group Pro: 'self' = the viewer's own Pro, 'group' = another member's ("Pro via Sanne").
+    // Group Pro: 'self' = the viewer's own Pro, 'tripPass' = the group's Trip Pass,
+    // 'group' = another member's ("Pro via Sanne").
     isPro: pro,
-    proSource: !pro ? null : gp.proBy?.id === String(viewerId) ? 'self' : 'group',
+    proSource: groupProSource(gp, viewerId),
+    tripPass,
+    roll,
     proBy: gp.proBy ? { id: gp.proBy.id, name: gp.proBy.name } : null,
-    memberLimit: pro ? null : FREE_MEMBER_LIMIT,
+    memberLimit: pro || personal ? null : FREE_MEMBER_LIMIT,
     myRole: memberRole(group, viewerId),
     ownerId: String(group.ownerId),
     // Personal: only this viewer archived it ("Gearchiveerd" in their albums list).
     archived: (group.archivedBy ?? []).some((id) => String(id) === String(viewerId)),
     // Photos this viewer hid for themselves ("Verborgen foto's").
     hiddenCount,
+    // Reiskaart: on for the group? Does this viewer share locations (null = not asked yet)?
+    tripMap: tripMapView(group, viewerId),
     members: group.members.map((m) => {
       const u = byId.get(String(m.userId));
       return {

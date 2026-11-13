@@ -5,22 +5,43 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_ar.dart';
+import 'app_localizations_bg.dart';
+import 'app_localizations_ca.dart';
 import 'app_localizations_cs.dart';
 import 'app_localizations_da.dart';
 import 'app_localizations_de.dart';
+import 'app_localizations_el.dart';
 import 'app_localizations_en.dart';
 import 'app_localizations_es.dart';
+import 'app_localizations_et.dart';
 import 'app_localizations_fi.dart';
+import 'app_localizations_fil.dart';
 import 'app_localizations_fr.dart';
+import 'app_localizations_he.dart';
+import 'app_localizations_hi.dart';
+import 'app_localizations_hr.dart';
+import 'app_localizations_hu.dart';
+import 'app_localizations_id.dart';
 import 'app_localizations_it.dart';
 import 'app_localizations_ja.dart';
 import 'app_localizations_ko.dart';
+import 'app_localizations_lt.dart';
+import 'app_localizations_lv.dart';
+import 'app_localizations_ms.dart';
 import 'app_localizations_nb.dart';
 import 'app_localizations_nl.dart';
 import 'app_localizations_pl.dart';
 import 'app_localizations_pt.dart';
+import 'app_localizations_ro.dart';
+import 'app_localizations_ru.dart';
+import 'app_localizations_sk.dart';
+import 'app_localizations_sl.dart';
 import 'app_localizations_sv.dart';
+import 'app_localizations_th.dart';
 import 'app_localizations_tr.dart';
+import 'app_localizations_uk.dart';
+import 'app_localizations_vi.dart';
 import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
@@ -110,23 +131,45 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
+    Locale('ar'),
+    Locale('bg'),
+    Locale('ca'),
     Locale('cs'),
     Locale('da'),
     Locale('de'),
+    Locale('el'),
     Locale('es'),
+    Locale('et'),
     Locale('fi'),
+    Locale('fil'),
     Locale('fr'),
+    Locale('he'),
+    Locale('hi'),
+    Locale('hr'),
+    Locale('hu'),
+    Locale('id'),
     Locale('it'),
     Locale('ja'),
     Locale('ko'),
+    Locale('lt'),
+    Locale('lv'),
+    Locale('ms'),
     Locale('nb'),
     Locale('nl'),
     Locale('pl'),
     Locale('pt'),
     Locale('pt', 'BR'),
+    Locale('ro'),
+    Locale('ru'),
+    Locale('sk'),
+    Locale('sl'),
     Locale('sv'),
+    Locale('th'),
     Locale('tr'),
+    Locale('uk'),
+    Locale('vi'),
     Locale('zh'),
+    Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant'),
   ];
 
   /// No description provided for @cancel.
@@ -3584,6 +3627,480 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Direct flash on warm film: amber glow, grain, rich reds'**
   String get styleFlashDescription;
+
+  /// Screen reader label of the quick self-timer button on the camera screen; state is Off / 3 s / 10 s.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-timer: {state}'**
+  String cameraTimerButton(String state);
+
+  /// No description provided for @cameraTimerCycleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to switch between off, 3 s and 10 s'**
+  String get cameraTimerCycleHint;
+
+  /// No description provided for @cameraLastShotOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest photo, opens the album'**
+  String get cameraLastShotOpen;
+
+  /// No description provided for @cameraLastShotEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos yet, opens the album'**
+  String get cameraLastShotEmpty;
+
+  /// No description provided for @deleteOnlyOwnOrAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the person who took it or an admin can delete this'**
+  String get deleteOnlyOwnOrAdmin;
+
+  /// No description provided for @videoPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get videoPlay;
+
+  /// No description provided for @videoPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get videoPause;
+
+  /// No description provided for @language.
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get language;
+
+  /// No description provided for @languageSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System language'**
+  String get languageSystem;
+
+  /// No description provided for @languageSystemCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'System ({language})'**
+  String languageSystemCurrent(String language);
+
+  /// No description provided for @languageSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search languages'**
+  String get languageSearchHint;
+
+  /// No description provided for @languageNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No language found'**
+  String get languageNoResults;
+
+  /// Name of the private personal roll for loose photos that are not for a shared album (CamTrip "roll" term).
+  ///
+  /// In en, this message translates to:
+  /// **'My roll'**
+  String get personalRollTitle;
+
+  /// Short tag on the personal roll tile: nobody else sees it.
+  ///
+  /// In en, this message translates to:
+  /// **'Just for you'**
+  String get personalRollSubtitle;
+
+  /// Subtitle of the personal roll in the camera group picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Loose photos, just for you'**
+  String get personalRollPickerSubtitle;
+
+  /// Short label (1-2 words) of the selection bar action that moves photos from the personal roll to an album.
+  ///
+  /// In en, this message translates to:
+  /// **'To album'**
+  String get personalRollMove;
+
+  /// Title of the sheet that picks the album to move photos to.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to album'**
+  String get personalRollMoveTitle;
+
+  /// Shown when there is no album to move photos into.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an album or join one with a code first.'**
+  String get personalRollMoveNoAlbums;
+
+  /// No description provided for @personalRollMoved.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 photo moved to {album}} other{{count} photos moved to {album}}}'**
+  String personalRollMoved(int count, String album);
+
+  /// Note at the top of the personal roll gallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see these photos. Move them to an album to share them.'**
+  String get personalRollPrivateNote;
+
+  /// No description provided for @paywallTripPassSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Only this trip, for the whole group'**
+  String get paywallTripPassSub;
+
+  /// No description provided for @paywallOneTime.
+  ///
+  /// In en, this message translates to:
+  /// **'one-time'**
+  String get paywallOneTime;
+
+  /// No description provided for @paywallBestValue.
+  ///
+  /// In en, this message translates to:
+  /// **'Best value'**
+  String get paywallBestValue;
+
+  /// No description provided for @paywallRollFullTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your roll is full - {used}/{limit} photos'**
+  String paywallRollFullTitle(int used, int limit);
+
+  /// No description provided for @paywallRollFullSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep shooting with a Trip Pass or Pro.'**
+  String get paywallRollFullSub;
+
+  /// No description provided for @paywallCameraTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This camera is part of Pro'**
+  String get paywallCameraTitle;
+
+  /// No description provided for @paywallCameraSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock all {count} cameras.'**
+  String paywallCameraSub(int count);
+
+  /// No description provided for @paywallWatermarkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recap without watermark'**
+  String get paywallWatermarkTitle;
+
+  /// No description provided for @paywallWatermarkSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Share your recap without the CamTrip logo.'**
+  String get paywallWatermarkSub;
+
+  /// No description provided for @paywallDeletionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your trip'**
+  String get paywallDeletionTitle;
+
+  /// No description provided for @paywallDeletionSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Free trips are deleted on {date}. A Trip Pass or Pro keeps it forever.'**
+  String paywallDeletionSub(String date);
+
+  /// No description provided for @paywallTripPassTerms.
+  ///
+  /// In en, this message translates to:
+  /// **'One-time purchase of {price} for this trip. Not a subscription.'**
+  String paywallTripPassTerms(String price);
+
+  /// No description provided for @buyTripPass.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Trip Pass'**
+  String get buyTripPass;
+
+  /// No description provided for @tripPassActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip Pass active: this trip is Pro for everyone'**
+  String get tripPassActive;
+
+  /// No description provided for @tripPassActivating.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment received. Your Trip Pass will be active in a moment.'**
+  String get tripPassActivating;
+
+  /// No description provided for @proViaTripPass.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip Pass from {name}'**
+  String proViaTripPass(String name);
+
+  /// No description provided for @rollCounterSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {limit} shots on your roll'**
+  String rollCounterSemantics(int used, int limit);
+
+  /// No description provided for @rollHeldTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 photo doesn\'t fit on your roll} other{{count} photos don\'t fit on your roll}}'**
+  String rollHeldTitle(int count);
+
+  /// No description provided for @rollHeldBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep them with Pro or a Trip Pass'**
+  String get rollHeldBody;
+
+  /// No description provided for @deletionBannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{Keep your trip - 1 day left} other{Keep your trip - {days} days left}}'**
+  String deletionBannerTitle(int days);
+
+  /// No description provided for @deletionBannerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Free trips are deleted 30 days after they end. A Trip Pass or Pro keeps it forever.'**
+  String get deletionBannerBody;
+
+  /// No description provided for @apiRollFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Your roll is full ({limit} shots). Get a Trip Pass or Pro to keep shooting.'**
+  String apiRollFull(int limit);
+
+  /// No description provided for @apiTripPassFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The Trip Pass could not be activated. Contact support@camtrip.app.'**
+  String get apiTripPassFailed;
+
+  /// No description provided for @apiTripPassExists.
+  ///
+  /// In en, this message translates to:
+  /// **'This trip already has a Trip Pass.'**
+  String get apiTripPassExists;
+
+  /// No description provided for @tripPassUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The Trip Pass is not available right now. Try again later.'**
+  String get tripPassUnavailable;
+
+  /// No description provided for @tripMapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip map'**
+  String get tripMapTitle;
+
+  /// No description provided for @tripMapOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip map and stats'**
+  String get tripMapOpen;
+
+  /// No description provided for @tripMapLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the trip map'**
+  String get tripMapLoadFailed;
+
+  /// No description provided for @tripMapStatDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days'**
+  String get tripMapStatDays;
+
+  /// No description provided for @tripMapStatPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get tripMapStatPhotos;
+
+  /// No description provided for @tripMapStatVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Videos'**
+  String get tripMapStatVideos;
+
+  /// No description provided for @tripMapStatMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get tripMapStatMembers;
+
+  /// No description provided for @tripMapStatDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'km travelled'**
+  String get tripMapStatDistance;
+
+  /// No description provided for @tripMapStatCountries.
+  ///
+  /// In en, this message translates to:
+  /// **'Countries'**
+  String get tripMapStatCountries;
+
+  /// No description provided for @tripMapStatPlaces.
+  ///
+  /// In en, this message translates to:
+  /// **'Places'**
+  String get tripMapStatPlaces;
+
+  /// No description provided for @tripMapBusiestDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Most photos on {day} ({count})'**
+  String tripMapBusiestDay(String day, int count);
+
+  /// No description provided for @tripMapTopPhotographer.
+  ///
+  /// In en, this message translates to:
+  /// **'Top photographer: {name} ({count})'**
+  String tripMapTopPhotographer(String name, int count);
+
+  /// No description provided for @tripMapOffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'The trip map is off'**
+  String get tripMapOffTitle;
+
+  /// No description provided for @tripMapOffMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A group admin can turn on the trip map in the group settings. You always see the stats.'**
+  String get tripMapOffMessage;
+
+  /// No description provided for @tripMapOffMessageAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on the trip map to see where your photos were taken. Everyone decides for themselves whether to join in.'**
+  String get tripMapOffMessageAdmin;
+
+  /// No description provided for @tripMapEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on trip map'**
+  String get tripMapEnable;
+
+  /// No description provided for @tripMapEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No places on the map yet'**
+  String get tripMapEmptyTitle;
+
+  /// No description provided for @tripMapEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'New photos from members who share their location appear here, rounded to about 100 m.'**
+  String get tripMapEmptyMessage;
+
+  /// No description provided for @tripMapConsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip map'**
+  String get tripMapConsentTitle;
+
+  /// No description provided for @tripMapConsentQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Share where your photos were taken on this group\'s trip map?'**
+  String get tripMapConsentQuestion;
+
+  /// No description provided for @tripMapConsentDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Only group members see it, rounded to about 100 m. The location is never put in the photo itself, and you can turn this off at any time in the group settings.'**
+  String get tripMapConsentDetail;
+
+  /// No description provided for @tripMapConsentYes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, share'**
+  String get tripMapConsentYes;
+
+  /// No description provided for @tripMapConsentNo.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get tripMapConsentNo;
+
+  /// No description provided for @tripMapLocationDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'No access to your location. You can allow it in your phone\'s settings.'**
+  String get tripMapLocationDenied;
+
+  /// No description provided for @tripMapSettingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show on a map where photos were taken. Members decide for themselves whether to share.'**
+  String get tripMapSettingSubtitle;
+
+  /// No description provided for @tripMapDisableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off the trip map?'**
+  String get tripMapDisableTitle;
+
+  /// No description provided for @tripMapDisableMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'All locations in this group are deleted. If you turn the map on again later, everyone is asked again.'**
+  String get tripMapDisableMessage;
+
+  /// No description provided for @tripMapDisable.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get tripMapDisable;
+
+  /// No description provided for @tripMapMySharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Share my location'**
+  String get tripMapMySharing;
+
+  /// No description provided for @tripMapMySharingOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Your new photos appear on the trip map (rounded to about 100 m).'**
+  String get tripMapMySharingOn;
+
+  /// No description provided for @tripMapMySharingOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off. Your photos don\'t appear on the map.'**
+  String get tripMapMySharingOff;
+
+  /// No description provided for @tripMapStopSharingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing your location?'**
+  String get tripMapStopSharingTitle;
+
+  /// No description provided for @tripMapStopSharingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The locations of all your photos in this group are deleted.'**
+  String get tripMapStopSharingMessage;
+
+  /// No description provided for @tripMapStopSharing.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing'**
+  String get tripMapStopSharing;
 }
 
 class _AppLocalizationsDelegate
@@ -3597,22 +4114,43 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) => <String>[
+    'ar',
+    'bg',
+    'ca',
     'cs',
     'da',
     'de',
+    'el',
     'en',
     'es',
+    'et',
     'fi',
+    'fil',
     'fr',
+    'he',
+    'hi',
+    'hr',
+    'hu',
+    'id',
     'it',
     'ja',
     'ko',
+    'lt',
+    'lv',
+    'ms',
     'nb',
     'nl',
     'pl',
     'pt',
+    'ro',
+    'ru',
+    'sk',
+    'sl',
     'sv',
+    'th',
     'tr',
+    'uk',
+    'vi',
     'zh',
   ].contains(locale.languageCode);
 
@@ -3621,6 +4159,18 @@ class _AppLocalizationsDelegate
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when language+script codes are specified.
+  switch (locale.languageCode) {
+    case 'zh':
+      {
+        switch (locale.scriptCode) {
+          case 'Hant':
+            return AppLocalizationsZhHant();
+        }
+        break;
+      }
+  }
+
   // Lookup logic when language+country codes are specified.
   switch (locale.languageCode) {
     case 'pt':
@@ -3635,26 +4185,54 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
 
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'ar':
+      return AppLocalizationsAr();
+    case 'bg':
+      return AppLocalizationsBg();
+    case 'ca':
+      return AppLocalizationsCa();
     case 'cs':
       return AppLocalizationsCs();
     case 'da':
       return AppLocalizationsDa();
     case 'de':
       return AppLocalizationsDe();
+    case 'el':
+      return AppLocalizationsEl();
     case 'en':
       return AppLocalizationsEn();
     case 'es':
       return AppLocalizationsEs();
+    case 'et':
+      return AppLocalizationsEt();
     case 'fi':
       return AppLocalizationsFi();
+    case 'fil':
+      return AppLocalizationsFil();
     case 'fr':
       return AppLocalizationsFr();
+    case 'he':
+      return AppLocalizationsHe();
+    case 'hi':
+      return AppLocalizationsHi();
+    case 'hr':
+      return AppLocalizationsHr();
+    case 'hu':
+      return AppLocalizationsHu();
+    case 'id':
+      return AppLocalizationsId();
     case 'it':
       return AppLocalizationsIt();
     case 'ja':
       return AppLocalizationsJa();
     case 'ko':
       return AppLocalizationsKo();
+    case 'lt':
+      return AppLocalizationsLt();
+    case 'lv':
+      return AppLocalizationsLv();
+    case 'ms':
+      return AppLocalizationsMs();
     case 'nb':
       return AppLocalizationsNb();
     case 'nl':
@@ -3663,10 +4241,24 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
       return AppLocalizationsPl();
     case 'pt':
       return AppLocalizationsPt();
+    case 'ro':
+      return AppLocalizationsRo();
+    case 'ru':
+      return AppLocalizationsRu();
+    case 'sk':
+      return AppLocalizationsSk();
+    case 'sl':
+      return AppLocalizationsSl();
     case 'sv':
       return AppLocalizationsSv();
+    case 'th':
+      return AppLocalizationsTh();
     case 'tr':
       return AppLocalizationsTr();
+    case 'uk':
+      return AppLocalizationsUk();
+    case 'vi':
+      return AppLocalizationsVi();
     case 'zh':
       return AppLocalizationsZh();
   }

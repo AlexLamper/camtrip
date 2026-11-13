@@ -1,0 +1,6 @@
+/* Permission texts shown by iOS. Keep in sync with Info.plist (English) and lib/l10n/GLOSSARY.md. */
+"NSCameraUsageDescription" = "CamTrip 使用你的相機為群組拍攝照片和影片。";
+"NSMicrophoneUsageDescription" = "CamTrip 使用你的麥克風為影片錄製聲音。";
+"NSPhotoLibraryAddUsageDescription" = "CamTrip 會將照片儲存到你的照片圖庫，放在以群組命名的相簿中。";
+"NSPhotoLibraryUsageDescription" = "從圖庫中選擇照片，與你的群組分享。";
+"NSLocationWhenInUseUsageDescription" = "CamTrip 只會在你同意時將你的位置用於群組的旅行地圖：精確到約 100 公尺，且僅該群組可見。";

@@ -3,3 +3,4 @@
 "NSMicrophoneUsageDescription" = "CamTrip używa mikrofonu, aby nagrywać dźwięk do filmów.";
 "NSPhotoLibraryAddUsageDescription" = "CamTrip zapisuje twoje zdjęcia w bibliotece, w albumie o nazwie twojej grupy.";
 "NSPhotoLibraryUsageDescription" = "Wybierz zdjęcia z biblioteki, aby udostępnić je swojej grupie.";
+"NSLocationWhenInUseUsageDescription" = "CamTrip używa twojej lokalizacji tylko do mapy podróży grupy, jeśli się zgodzisz: z dokładnością do ok. 100 m i widocznej tylko dla tej grupy.";

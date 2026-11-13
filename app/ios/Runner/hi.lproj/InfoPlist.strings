@@ -1,0 +1,6 @@
+/* Permission texts shown by iOS. Keep in sync with Info.plist (English) and lib/l10n/GLOSSARY.md. */
+"NSCameraUsageDescription" = "CamTrip आपके ग्रुप के लिए फ़ोटो और वीडियो लेने के लिए आपके कैमरे का इस्तेमाल करता है।";
+"NSMicrophoneUsageDescription" = "CamTrip वीडियो में आवाज़ रिकॉर्ड करने के लिए आपके माइक्रोफ़ोन का इस्तेमाल करता है।";
+"NSPhotoLibraryAddUsageDescription" = "CamTrip आपकी फ़ोटो आपकी फ़ोटो लाइब्रेरी में, आपके ग्रुप के नाम वाले एल्बम में सेव करता है।";
+"NSPhotoLibraryUsageDescription" = "अपने ग्रुप के साथ शेयर करने के लिए अपनी लाइब्रेरी से फ़ोटो चुनें।";
+"NSLocationWhenInUseUsageDescription" = "CamTrip आपकी लोकेशन का इस्तेमाल सिर्फ़ किसी ग्रुप के ट्रिप मैप के लिए करता है, अगर आप सहमत हों: लगभग 100 मीटर तक राउंड करके और सिर्फ़ उसी ग्रुप को दिखती है।";

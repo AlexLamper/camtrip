@@ -195,6 +195,27 @@ class GalleryController extends Notifier<GalleryState> {
     }
   }
 
+  /// "Verplaats naar album": moves my own photos from my personal roll into
+  /// the album [target] (the server checks it: own photos, a group I am in,
+  /// and that group's Pro rules for Pro camera styles). Optimistic: they
+  /// leave the roll at once and come back if the server says no. Returns how
+  /// many were moved.
+  Future<int> moveTo(List<String> ids, Group target) async {
+    if (ids.isEmpty) return 0;
+    final removed = _removeLocal(ids.toSet());
+    try {
+      final res = await _api.post('/photos/move', {'photoIds': ids, 'groupId': target.serverId});
+      _applyGroup(res['group']);
+      // The roll's counts and cover changed too; the album and "Alle foto's" reload.
+      unawaited(ref.read(personalRollProvider.notifier).reload().then((_) {}, onError: (_) {}));
+      ref.read(uploadedProvider).add(target.id);
+      return (res['moved'] as num?)?.toInt() ?? removed.length;
+    } catch (_) {
+      _restore(removed);
+      rethrow;
+    }
+  }
+
   /// "Verbergen voor mij": gone from this user's gallery only. Optimistic.
   /// Returns the hidden photos, so a SnackBar can offer "Ongedaan maken".
   Future<List<Photo>> hide(List<String> ids) async {
@@ -360,9 +381,9 @@ class Downloader {
       await Api.download(item['url'] as String, path);
       try {
         if (item['kind'] == 'video') {
-          await Gal.putVideo(path, album: 'CamTrip - ${group.name}');
+          await Gal.putVideo(path, album: group.deviceAlbum);
         } else {
-          await Gal.putImage(path, album: 'CamTrip - ${group.name}');
+          await Gal.putImage(path, album: group.deviceAlbum);
         }
       } on GalException catch (e) {
         throw ApiException(e.type == GalExceptionType.notEnoughSpace ? L10n.current.phoneFull : L10n.current.albumSaveFailedShort);

@@ -123,7 +123,7 @@ enum GroupType { vacation, event, permanent }
 class Group {
   Group({
     required this.id,
-    required this.name,
+    required String name,
     required this.type,
     required this.startDate,
     required this.endDate,
@@ -143,10 +143,44 @@ class Group {
     this.hiddenCount = 0,
     this.proSource,
     this.proByName,
-  });
+    this.tripPassByName,
+    this.rollUsed = 0,
+    this.rollLimit,
+    DateTime? fetchedAt,
+    this.isPersonal = false,
+    this.tripMap = TripMapState.off,
+    String? serverId,
+  })  : _name = name,
+        serverId = serverId ?? id,
+        fetchedAt = fetchedAt ?? DateTime.now();
 
+  /// The id the app uses for my personal roll ("Mijn rolletje"), whatever
+  /// its server id is. The API accepts it wherever a group id goes, so photos
+  /// taken offline (before the roll's real id is known) can still be queued.
+  static const personalRollId = 'me';
+
+  /// The app-side id: [personalRollId] for the personal roll, else the server id.
   final String id;
-  final String name;
+
+  /// The group's id on the server (the same as [id] except for the personal roll).
+  final String serverId;
+
+  /// My private personal roll for loose photos: only me, no invite, no
+  /// members, never deleted automatically. Shown as "Mijn rolletje".
+  final bool isPersonal;
+
+  final String _name;
+
+  /// Shown name. The personal roll gets its label in the app's language.
+  String get name => isPersonal ? L10n.current.personalRollTitle : _name;
+
+  /// The phone album its photos are saved to. One stable name for the
+  /// personal roll (not translated), so a language switch never makes a second album.
+  String get deviceAlbum => isPersonal ? 'CamTrip' : 'CamTrip - $_name';
+
+  /// Is [groupId] this group (by app id or server id)?
+  bool isId(String groupId) => groupId == id || groupId == serverId;
+
   final GroupType type;
   final DateTime? startDate;
   final DateTime? endDate;
@@ -169,12 +203,32 @@ class Group {
   /// Photos this user hid for themselves ("Verborgen foto's").
   final int hiddenCount;
 
+  /// Reiskaart: switched on for the group, and do I share my locations.
+  final TripMapState tripMap;
+
   /// Group Pro: 'self' = my own Pro, 'group' = another member's ("Pro via Sanne").
   /// One Pro in the group = Pro for everyone in it. null when not a Pro group.
   final String? proSource;
 
   /// Name of the member whose Pro the group uses.
   final String? proByName;
+
+  /// Who bought this group's Trip Pass (Pro for good, for everyone in it); null = no pass.
+  final String? tripPassByName;
+
+  /// My free roll here: shots used out of [rollLimit] ("18/24"). [rollLimit]
+  /// null = no limit for me here (my own Pro, a Pro member or a Trip Pass).
+  /// For my personal roll the 24 start again every calendar month.
+  final int rollUsed;
+  final int? rollLimit;
+
+  /// When this copy came from the server (to tell it from newer counts the upload queue saw).
+  final DateTime fetchedAt;
+
+  bool get hasTripPass => tripPassByName != null;
+
+  /// Pro thanks to a Trip Pass (and not my own Pro).
+  bool get isProViaTripPass => isProGroup && proSource == 'tripPass';
 
   /// Pro thanks to someone else in the group, not my own account.
   bool get isProViaGroup => isProGroup && proSource == 'group';
@@ -199,8 +253,33 @@ class Group {
     return null;
   }
 
+  /// Stand-in for my personal roll before the server sent it (first start, offline).
+  factory Group.personalPlaceholder({required String ownerId, bool isPro = false}) => Group(
+        id: personalRollId,
+        name: '',
+        type: GroupType.permanent,
+        startDate: null,
+        endDate: null,
+        defaultStyle: 'flash',
+        code: '',
+        status: 'active',
+        photoCount: 0,
+        videoCount: 0,
+        coverUrl: null,
+        deleteAfter: null,
+        isProGroup: isPro,
+        memberLimit: null,
+        myRole: 'admin',
+        ownerId: ownerId,
+        members: const [],
+        proSource: isPro ? 'self' : null,
+        isPersonal: true,
+      );
+
   factory Group.fromJson(Map<String, dynamic> j) => Group(
-        id: j['id'] as String,
+        id: j['isPersonal'] == true ? personalRollId : j['id'] as String,
+        serverId: j['id'] as String,
+        isPersonal: j['isPersonal'] == true,
         name: j['name'] as String,
         type: GroupType.values.firstWhere((t) => t.name == j['type'], orElse: () => GroupType.vacation),
         startDate: _date(j['startDate']),
@@ -221,11 +300,17 @@ class Group {
         hiddenCount: (j['hiddenCount'] as num?)?.toInt() ?? 0,
         proSource: j['proSource'] as String?,
         proByName: (j['proBy'] as Map?)?['name'] as String?,
+        tripMap: TripMapState.fromJson(j['tripMap']),
+        tripPassByName: (j['tripPass'] as Map?)?['purchasedByName'] as String?,
+        rollUsed: ((j['roll'] as Map?)?['used'] as num?)?.toInt() ?? 0,
+        rollLimit: ((j['roll'] as Map?)?['limit'] as num?)?.toInt(),
       );
 
   Group copyWith({String? name, bool? archived, int? hiddenCount, int? photoCount, int? videoCount, DateTime? endDate}) => Group(
         id: id,
-        name: name ?? this.name,
+        serverId: serverId,
+        isPersonal: isPersonal,
+        name: name ?? _name,
         type: type,
         startDate: startDate,
         endDate: endDate ?? this.endDate,
@@ -245,7 +330,35 @@ class Group {
         hiddenCount: hiddenCount ?? this.hiddenCount,
         proSource: proSource,
         proByName: proByName,
+        tripMap: tripMap,
+        tripPassByName: tripPassByName,
+        rollUsed: rollUsed,
+        rollLimit: rollLimit,
+        fetchedAt: fetchedAt,
       );
+}
+
+/// Reiskaart (trip map) state of a group for me. The map is off by default;
+/// a group admin switches it on. Each member then chooses whether their own
+/// photos get a (coarse) location: [myConsent] null = not asked yet.
+class TripMapState {
+  const TripMapState({required this.enabled, this.myConsent});
+  static const off = TripMapState(enabled: false);
+
+  final bool enabled;
+  final bool? myConsent;
+
+  /// Only when both are on does the camera read the location.
+  bool get sharesLocation => enabled && myConsent == true;
+
+  /// Ask "Deel waar je foto's gemaakt zijn ...?" before the first photo.
+  bool get needsConsent => enabled && myConsent == null;
+
+  factory TripMapState.fromJson(Object? j) {
+    if (j is! Map) return off;
+    final c = j['myConsent'];
+    return TripMapState(enabled: j['enabled'] == true, myConsent: c is bool ? c : null);
+  }
 }
 
 class Reaction {

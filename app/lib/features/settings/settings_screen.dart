@@ -16,6 +16,7 @@ import '../../models/models.dart';
 import '../admin/admin_api.dart';
 import '../auth/auth_controller.dart';
 import '../premium/premium_controller.dart';
+import 'language_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -128,6 +129,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ],
         SectionLabel(l.account),
+        SettingRow(
+          key: const ValueKey('settings-language'),
+          title: l.language,
+          subtitle: currentLanguageLabel(context, ref.watch(appLanguageProvider)),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => openLanguagePicker(context),
+        ),
         SettingRow(
           title: l.manageSubscription,
           trailing: const Icon(Icons.chevron_right),
@@ -274,7 +282,7 @@ class _OpenReportsBadge extends StatelessWidget {
       excludeSemantics: true,
       child: Container(
         key: const ValueKey('openReportsBadge'),
-        margin: const EdgeInsets.only(right: 6),
+        margin: const EdgeInsetsDirectional.only(end: 6),
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
         constraints: const BoxConstraints(minWidth: 22),
         decoration: BoxDecoration(color: CT.accent, borderRadius: BorderRadius.circular(11)),

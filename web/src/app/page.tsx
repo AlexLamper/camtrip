@@ -157,9 +157,10 @@ export default function Home() {
         </section>
 
         <section className="wrap">
-          <h2 className="display">Gratis, of Pro</h2>
+          <h2 className="display">Gratis, Trip Pass of Pro</h2>
           <p className="sub">
-            Voor de meeste groepen is gratis genoeg. En <strong>één Pro in de groep = Pro voor iedereen in die groep.</strong>
+            Gratis krijgt iedereen een rolletje van 24 foto’s per reis. Meer nodig? Eén Trip Pass of één Pro in de groep ={' '}
+            <strong>Pro voor iedereen in die groep.</strong>
           </p>
           <div className="pricing section-body">
             <div className="plan">
@@ -167,17 +168,30 @@ export default function Home() {
               <div className="price">€0</div>
               <div className="per">voor altijd</div>
               <ul>
+                <li>24 foto’s of video’s per persoon per reis</li>
                 <li>Groepen tot 10 personen</li>
                 <li>Film, Instant en Wegwerp</li>
                 <li>Foto’s en video’s delen</li>
                 <li>Bewaard tot 30 dagen na je trip</li>
               </ul>
             </div>
+            <div className="plan">
+              <h3>Trip Pass</h3>
+              <div className="price">€4,99</div>
+              <div className="per">eenmalig, per reis · geen abonnement</div>
+              <ul>
+                <li>Alles van Pro voor één reis</li>
+                <li>Voor de hele groep</li>
+                <li>Onbeperkt foto’s en leden</li>
+                <li>Voor altijd bewaard</li>
+              </ul>
+            </div>
             <div className="plan pro">
               <h3>CamTrip Pro</h3>
               <div className="price">€49,99</div>
-              <div className="per">per jaar · of €7,99 per maand · 7 dagen gratis proberen</div>
+              <div className="per">per jaar · of €7,99 per maand</div>
               <ul>
+                <li>Onbeperkt foto’s op elke reis</li>
                 <li>Alle camerastijlen</li>
                 <li>Onbeperkt leden en opslag</li>
                 <li>Recaps zonder watermerk</li>
@@ -207,6 +221,22 @@ export default function Home() {
               <p>Alleen de mensen in je groep. Groepen zijn privé en alleen te joinen met de code of link.</p>
             </details>
             <details>
+              <summary>Wat is het rolletje?</summary>
+              <p>
+                Gratis heeft iedereen per reis een rolletje van 24 foto’s of video’s, net als een echt wegwerpcameraatje. Is je
+                rolletje vol, dan kun je Pro nemen, of één Trip Pass van €4,99 voor de hele groep: dan schiet iedereen in die
+                reis onbeperkt. In Mijn rolletje (je eigen foto’s buiten een album) krijg je gratis elke maand 24 nieuwe.
+              </p>
+            </details>
+            <details>
+              <summary>Wat is een Trip Pass?</summary>
+              <p>
+                Een eenmalige aankoop van €4,99 voor één reis. De hele groep krijgt dan alles van Pro in die reis: onbeperkt
+                foto’s en leden, alle camerastijlen, recaps zonder watermerk, en de reis blijft voor altijd bewaard. Geen
+                abonnement, niets om op te zeggen.
+              </p>
+            </details>
+            <details>
               <summary>Moet iedereen in mijn groep Pro nemen?</summary>
               <p>
                 Nee. Eén Pro-lid is genoeg: de groep wordt dan een Pro-groep voor iedereen erin, met alle camerastijlen,
@@ -218,7 +248,7 @@ export default function Home() {
               <summary>Hoe lang blijven de foto’s bewaard?</summary>
               <p>
                 Gratis groepen blijven tot 30 dagen na de einddatum, daarna worden ze verwijderd. Zodra iemand in de groep
-                Pro heeft, blijven ze altijd bewaard. Vergeet niet op tijd op “Alles opslaan” te tikken.
+                Pro heeft, of iemand een Trip Pass voor de reis koopt, blijven ze altijd bewaard. Vergeet niet op tijd op “Alles opslaan” te tikken.
               </p>
             </details>
           </div>

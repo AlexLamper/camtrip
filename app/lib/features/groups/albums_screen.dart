@@ -19,7 +19,8 @@ import 'join_sheet.dart';
 /// The two tabs of the home screen.
 enum HomeTab { albums, photos }
 
-/// Home. Tab "Albums": all groups as instant prints, the active one marked.
+/// Home. Tab "Albums": my personal roll ("Mijn rolletje", loose photos only
+/// I see) first, then all groups as instant prints, the active one marked.
 /// Long-press an album for Archiveren / Verlaten / Verwijderen. Groups the
 /// user archived sit collapsed under "Gearchiveerd" at the bottom; swipe one
 /// to put it back. Tab "Alle foto's": every photo the user made, as a grid
@@ -61,8 +62,6 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
   @override
   Widget build(BuildContext context) {
     final groups = ref.watch(groupsProvider);
-    final mine = (groups.value ?? const <Group>[]).where((g) => !g.archived);
-    final canShoot = mine.any((g) => !g.isClosed);
     final l = context.l10n;
     final selecting = _sel.active && _tab == HomeTab.photos;
 
@@ -113,7 +112,8 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
           ),
         ]),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        floatingActionButton: !canShoot || selecting
+        // Always something to shoot into: at least my personal roll.
+        floatingActionButton: selecting
             ? null
             : Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 22),
@@ -138,7 +138,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
     const titleSize = 30.0, minScale = 0.8, chipGap = 8.0, chipEnd = 10.0;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 14, 16, 0),
+      padding: const EdgeInsetsDirectional.fromSTEB(22, 14, 16, 0),
       child: LayoutBuilder(builder: (context, c) {
         final scaler = MediaQuery.textScalerOf(context);
         final tp = TextPainter(text: TextSpan(text: title, style: CT.title(titleSize)), textDirection: TextDirection.ltr, textScaler: scaler, maxLines: 1)
@@ -201,7 +201,8 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
   }
 
   Widget _albums(AsyncValue<List<Group>> groups) {
-    final activeId = ref.watch(activeGroupIdProvider);
+    final activeId = ref.watch(activeGroupProvider)?.id;
+    final roll = ref.watch(personalRollProvider);
     final list = groups.value ?? const <Group>[];
     // Open groups first, then ones an admin closed; my archived ones apart.
     final mine = list.where((g) => !g.archived).toList();
@@ -226,7 +227,11 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
                 action: SizedBox(width: 200, child: CTButton(l.retry, onTap: () => ref.read(groupsProvider.notifier).reload())),
               ),
             )
-          else if (list.isEmpty)
+          else if (list.isEmpty) ...[
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+              sliver: _grid(context, ref, [roll], activeId),
+            ),
             SliverFillRemaining(
               hasScrollBody: false,
               child: EmptyState(
@@ -238,11 +243,11 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
                   SizedBox(width: 240, child: CTButton(l.haveCode, kind: CTButtonKind.outline, onTap: () => showJoinSheet(context))),
                 ]),
               ),
-            )
-          else ...[
+            ),
+          ] else ...[
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-              sliver: _grid(context, ref, [...active, null], activeId),
+              sliver: _grid(context, ref, [roll, ...active, null], activeId),
             ),
             if (archived.isNotEmpty) ...[
               SliverToBoxAdapter(child: _archivedHeader(archived.length)),
@@ -307,7 +312,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
         key: ValueKey('archived-${g.id}'),
         direction: DismissDirection.endToStart,
         background: Container(
-          alignment: Alignment.centerRight,
+          alignment: AlignmentDirectional.centerEnd,
           padding: const EdgeInsets.symmetric(horizontal: 20),
           margin: const EdgeInsets.symmetric(vertical: 4),
           decoration: BoxDecoration(color: CT.ink, borderRadius: BorderRadius.circular(14)),
@@ -379,6 +384,7 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
             ),
           );
         }
+        if (g.isPersonal) return _rollTile(g, rotation: i.isEven ? -2 : 2, isActive: g.id == activeId);
         final isActive = g.id == activeId && !g.isArchived;
         return GestureDetector(
           key: ValueKey('album-${g.id}'),
@@ -418,6 +424,57 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
           ),
         );
       }, childCount: items.length),
+    );
+  }
+
+  /// "Mijn rolletje": the personal roll, as a print with its own look (a film
+  /// canister on dark paper, a lock, "Alleen voor jou"). No long-press menu:
+  /// it cannot be archived, left or deleted.
+  Widget _rollTile(Group g, {required double rotation, required bool isActive}) {
+    final l = context.l10n;
+    return GestureDetector(
+      key: const ValueKey('album-personal-roll'),
+      onTap: () => context.push('/group/${g.id}'),
+      child: InstantPrint(
+        rotation: rotation,
+        bottom: 44,
+        caption: Padding(
+          padding: const EdgeInsets.only(left: 3, right: 3),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Icon(Icons.lock_person_outlined, size: 13, color: CT.ink),
+              const SizedBox(width: 4),
+              Flexible(child: Text(g.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(13, weight: FontWeight.w600))),
+              if (isActive) ...[const SizedBox(width: 5), const Icon(Icons.circle, size: 8, color: CT.accent)],
+            ]),
+            Text(
+              [if (isActive) l.activeTag, l.personalRollSubtitle, '${g.totalCount}'].join(' · '),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: CT.text(10.5, color: CT.muted),
+            ),
+          ]),
+        ),
+        child: Stack(fit: StackFit.expand, children: [
+          if (g.coverUrl == null)
+            Container(color: CT.ink)
+          else
+            NetPhoto(g.coverUrl!, cacheKey: 'cover_${g.id}_${g.photoCount}'),
+          // The film canister badge marks it as "my own roll", also over a cover photo.
+          Align(
+            alignment: g.coverUrl == null ? Alignment.center : Alignment.topLeft,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Container(
+                key: const ValueKey('personal-roll-canister'),
+                padding: EdgeInsets.all(g.coverUrl == null ? 14 : 6),
+                decoration: BoxDecoration(color: CT.accent, shape: BoxShape.circle, boxShadow: CT.cardShadow),
+                child: Icon(Icons.camera_roll_outlined, color: Colors.white, size: g.coverUrl == null ? 30 : 16),
+              ),
+            ),
+          ),
+        ]),
+      ),
     );
   }
 }

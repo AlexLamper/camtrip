@@ -4,10 +4,12 @@ import { handler, json } from '@/lib/http';
 import { deleteGroupEverywhere } from '@/lib/groups';
 import { groupIsPro, refreshRetentionForMember } from '@/lib/pro';
 import { deleteKeys } from '@/lib/storage';
+import { NOT_PERSONAL } from '@/lib/personal-roll';
 
 /**
  * Daily: removes free groups whose 30 days after the end have passed, and
  * uploads that were reserved but never completed (after 2 days).
+ * Personal rolls ("Mijn rolletje") are never removed while the account exists.
  */
 export const GET = handler(async (req) => {
   const secret = process.env.CRON_SECRET;
@@ -22,7 +24,7 @@ export const GET = handler(async (req) => {
   ).lean();
   for (const u of lapsed) await refreshRetentionForMember(u._id);
 
-  const due = await Group.find({ deleteAfter: { $ne: null, $lt: new Date() } }).lean<GroupDoc[]>();
+  const due = await Group.find({ deleteAfter: { $ne: null, $lt: new Date() }, ...NOT_PERSONAL }).lean<GroupDoc[]>();
   let deletedGroups = 0;
   for (const g of due) {
     // A member may have Pro since deleteAfter was set (one Pro member = Pro group).

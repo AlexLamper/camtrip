@@ -12,8 +12,22 @@ import '../../core/api.dart';
 import '../../l10n/l10n.dart';
 import '../../main.dart';
 import '../auth/auth_controller.dart';
+import '../tripmap/trip_location.dart' show TripLatLng;
 
-enum UploadStatus { waiting, uploading, failed }
+/// held: the free roll in this group was full (402 roll_full). The shot stays
+/// on the phone and is not retried by itself; Pro or a Trip Pass releases it
+/// ([UploadQueue.releaseHeld]).
+enum UploadStatus { waiting, uploading, failed, held }
+
+/// My roll in one group as the server last said it, and when.
+class RollSeen {
+  const RollSeen({required this.used, required this.limit, required this.at});
+  final int used;
+
+  /// null = no limit (Pro, Pro group or Trip Pass).
+  final int? limit;
+  final DateTime at;
+}
 
 class UploadItem {
   UploadItem({
@@ -35,6 +49,9 @@ class UploadItem {
     this.error,
     this.photoId,
     this.uploads,
+    this.replaces,
+    this.lat,
+    this.lng,
   });
 
   final String id;
@@ -56,6 +73,14 @@ class UploadItem {
   String? photoId;
   Map<String, String>? uploads;
 
+  /// A reservation that was given up for fresh URLs; the server drops it on the next init.
+  String? replaces;
+
+  /// Reiskaart: coarse capture location (~100 m), only when the group's trip
+  /// map is on and I agreed. Sent next to the file on upload init, never in it.
+  final double? lat;
+  final double? lng;
+
   bool get isVideo => kind == 'video';
 
   Map<String, dynamic> toJson() => {
@@ -72,10 +97,17 @@ class UploadItem {
         'originalPath': originalPath,
         'displayPath': displayPath,
         'thumbPath': thumbPath,
-        'status': status == UploadStatus.failed ? 'failed' : 'waiting',
+        'status': switch (status) {
+          UploadStatus.failed => 'failed',
+          UploadStatus.held => 'held',
+          _ => 'waiting',
+        },
         'error': error,
         'photoId': photoId,
         'uploads': uploads,
+        if (replaces != null) 'replaces': replaces,
+        if (lat != null && lng != null) 'lat': lat,
+        if (lat != null && lng != null) 'lng': lng,
       };
 
   factory UploadItem.fromJson(Map<String, dynamic> j) => UploadItem(
@@ -92,10 +124,17 @@ class UploadItem {
         originalPath: j['originalPath'] as String,
         displayPath: j['displayPath'] as String,
         thumbPath: j['thumbPath'] as String,
-        status: j['status'] == 'failed' ? UploadStatus.failed : UploadStatus.waiting,
+        status: switch (j['status']) {
+          'failed' => UploadStatus.failed,
+          'held' => UploadStatus.held,
+          _ => UploadStatus.waiting,
+        },
         error: j['error'] as String?,
         photoId: j['photoId'] as String?,
         uploads: (j['uploads'] as Map?)?.cast<String, String>(),
+        replaces: j['replaces'] as String?,
+        lat: (j['lat'] as num?)?.toDouble(),
+        lng: (j['lng'] as num?)?.toDouble(),
       );
 }
 
@@ -122,6 +161,38 @@ class UploadQueue extends Notifier<List<UploadItem>> {
   }
 
   bool get online => _online;
+
+  /// groupId -> my roll there, from the latest upload init (or its 402).
+  /// Newer than a group's own count when shots were reserved after it was loaded.
+  final Map<String, RollSeen> rollSeen = {};
+
+  /// Shots held back in [groupId] (or anywhere, without it) because the roll was full.
+  int heldCount([String? groupId]) =>
+      state.where((i) => i.status == UploadStatus.held && (groupId == null || i.groupId == groupId)).length;
+
+  /// After Pro or a Trip Pass: try the held shots again (the server decides).
+  Future<void> releaseHeld() async {
+    var any = false;
+    for (final i in state) {
+      if (i.status != UploadStatus.held) continue;
+      i.status = UploadStatus.waiting;
+      i.error = null;
+      any = true;
+    }
+    if (!any) return;
+    state = [...state];
+    await _save();
+    unawaited(process());
+  }
+
+  void _seeRoll(String groupId, Object? roll) {
+    final m = roll is Map ? roll : null;
+    rollSeen[groupId] = RollSeen(
+      used: (m?['used'] as num?)?.toInt() ?? 0,
+      limit: (m?['limit'] as num?)?.toInt(),
+      at: DateTime.now(),
+    );
+  }
   bool get onWifi => _onWifi;
 
   Future<Directory> _queueDir() async {
@@ -175,6 +246,7 @@ class UploadQueue extends Notifier<List<UploadItem>> {
     required Uint8List display,
     required Uint8List thumb,
     String originalExt = 'jpg',
+    TripLatLng? location,
   }) async {
     final dir = await _queueDir();
     final id = const Uuid().v4();
@@ -198,6 +270,8 @@ class UploadQueue extends Notifier<List<UploadItem>> {
         originalPath: o.path,
         displayPath: d.path,
         thumbPath: t.path,
+        lat: location?.lat,
+        lng: location?.lng,
       ),
     ];
     await _save();
@@ -218,7 +292,8 @@ class UploadQueue extends Notifier<List<UploadItem>> {
 
   Future<void> retryAll() async {
     for (final i in state) {
-      if (i.status == UploadStatus.uploading) continue;
+      // Held shots wait for Pro or a Trip Pass (releaseHeld), not for a retry.
+      if (i.status == UploadStatus.uploading || i.status == UploadStatus.held) continue;
       i.status = UploadStatus.waiting;
       i.error = null;
     }
@@ -293,9 +368,13 @@ class UploadQueue extends Notifier<List<UploadItem>> {
           'durationMs': i.durationMs,
           'takenAt': i.takenAt.toUtc().toIso8601String(),
           'fromRoll': i.fromRoll,
+          if (i.lat != null && i.lng != null) 'location': {'lat': i.lat, 'lng': i.lng},
+          if (i.replaces != null) 'replaces': i.replaces,
         });
         i.photoId = res['photoId'] as String;
         i.uploads = (res['uploads'] as Map).cast<String, String>();
+        i.replaces = null;
+        if (res.containsKey('roll')) _seeRoll(i.groupId, res['roll']);
         await _save();
       }
       final original = await File(i.originalPath).readAsBytes();
@@ -332,7 +411,9 @@ class UploadQueue extends Notifier<List<UploadItem>> {
       ref.read(uploadedProvider).add(i.groupId);
       return _Result.done;
     } on _ExpiredUpload {
-      // Ask for fresh upload URLs (a new reservation) on the next pass.
+      // Ask for fresh upload URLs (a new reservation) on the next pass; the
+      // server drops this one then, so it does not count twice on the roll.
+      i.replaces = i.photoId ?? i.replaces;
       i.uploads = null;
       i.photoId = null;
       i.status = i.error == 'retry' ? UploadStatus.failed : UploadStatus.waiting;
@@ -342,6 +423,15 @@ class UploadQueue extends Notifier<List<UploadItem>> {
       return i.status == UploadStatus.waiting ? _Result.retry : _Result.failed;
     } on ApiException catch (e) {
       final offline = e.isOffline;
+      if (e.isRollFull) {
+        // Roll full: keep the shot on the phone instead of losing it.
+        i.status = UploadStatus.held;
+        i.error = null;
+        _seeRoll(i.groupId, e.data);
+        _touch(i);
+        await _save();
+        return _Result.failed;
+      }
       if (offline) {
         i.status = UploadStatus.waiting;
       } else {

@@ -7,11 +7,24 @@
 //   - 'gift':         a proGrant given by an admin (until null = lifetime)
 //   - 'admin':        app admins always have Pro
 // A group is Pro when ANY current member has personal Pro ('group' for the others):
-// one Pro in the group = Pro for everyone in that group.
+// one Pro in the group = Pro for everyone in that group. A group is also Pro,
+// for good, when someone bought a Trip Pass for it ('tripPass', lib/trip-pass.ts).
 import type { Types } from 'mongoose';
 
-export type ProSource = 'subscription' | 'gift' | 'admin' | 'group';
-export type PersonalProSource = Exclude<ProSource, 'group'>;
+export type ProSource = 'subscription' | 'gift' | 'admin' | 'group' | 'tripPass';
+export type PersonalProSource = Exclude<ProSource, 'group' | 'tripPass'>;
+
+/** The Trip Pass stored on a group (Group.tripPass). */
+export interface TripPassFields {
+  transactionId?: string | null;
+  purchasedBy?: Types.ObjectId | string | null;
+  purchasedAt?: Date | string | null;
+}
+
+/** A Trip Pass counts when it has a transaction (a refund removes the whole field). */
+export function tripPassActive(tripPass: TripPassFields | null | undefined): boolean {
+  return Boolean(tripPass?.transactionId);
+}
 
 export interface ProFields {
   _id?: Types.ObjectId | string;
@@ -90,23 +103,32 @@ export interface GroupPro {
   isPro: boolean;
   /** The member whose Pro the group uses (the viewer, else the owner, else the longest member). */
   proBy: { id: string; name: string; reason: PersonalProSource } | null;
+  /** The group has a Trip Pass (Pro for good, whoever is in it). */
+  tripPass: boolean;
 }
 
 /**
- * A group is Pro when any current member has personal Pro. [members] are the
- * group's current members (user documents with the Pro fields), in join order.
- * The member credited in "Pro via ..." is the viewer when they have Pro
- * themselves, else the owner, else the first Pro member in join order.
+ * A group is Pro when any current member has personal Pro, or when it has a
+ * Trip Pass. [members] are the group's current members (user documents with
+ * the Pro fields), in join order. The member credited in "Pro via ..." is the
+ * viewer when they have Pro themselves, else the owner, else the first Pro
+ * member in join order (null when only the Trip Pass makes it Pro).
  */
 export function groupPro(
   members: ProFields[],
-  opts: { viewerId?: Types.ObjectId | string | null; ownerId?: Types.ObjectId | string | null; now?: Date } = {},
+  opts: {
+    viewerId?: Types.ObjectId | string | null;
+    ownerId?: Types.ObjectId | string | null;
+    now?: Date;
+    tripPass?: TripPassFields | null;
+  } = {},
 ): GroupPro {
   const now = opts.now ?? new Date();
+  const tripPass = tripPassActive(opts.tripPass);
   const pro = members
     .map((m) => ({ m, p: userPro(m, now) }))
     .filter((x) => x.p.isPro);
-  if (!pro.length) return { isPro: false, proBy: null };
+  if (!pro.length) return { isPro: tripPass, proBy: null, tripPass };
   const pick =
     (opts.viewerId != null && pro.find((x) => String(x.m._id) === String(opts.viewerId))) ||
     (opts.ownerId != null && pro.find((x) => String(x.m._id) === String(opts.ownerId))) ||
@@ -114,7 +136,24 @@ export function groupPro(
   return {
     isPro: true,
     proBy: { id: String(pick.m._id ?? ''), name: pick.m.name || 'Vriend', reason: pick.p.reason! },
+    tripPass,
   };
+}
+
+/**
+ * Where a viewer's Pro in one group comes from, for the app:
+ * 'self' = their own Pro, 'tripPass' = the group's Trip Pass (lasts for good,
+ * so it is named before a member's Pro, which can lapse), 'group' = another
+ * member's Pro ("Pro via Sanne"). null = no Pro here.
+ */
+export function groupProSource(
+  group: GroupPro,
+  viewerId: Types.ObjectId | string | null | undefined,
+): 'self' | 'group' | 'tripPass' | null {
+  if (!group.isPro) return null;
+  if (group.proBy && viewerId != null && group.proBy.id === String(viewerId)) return 'self';
+  if (group.tripPass) return 'tripPass';
+  return group.proBy ? 'group' : null;
 }
 
 /**
@@ -123,7 +162,7 @@ export function groupPro(
  */
 export function proInGroup(viewerPro: UserPro, group: GroupPro): { isPro: boolean; source: ProSource | null } {
   if (viewerPro.isPro) return { isPro: true, source: viewerPro.reason };
-  if (group.isPro) return { isPro: true, source: 'group' };
+  if (group.isPro) return { isPro: true, source: group.tripPass ? 'tripPass' : 'group' };
   return { isPro: false, source: null };
 }
 

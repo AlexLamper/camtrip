@@ -3,6 +3,7 @@ import { Group, type GroupDoc } from '@/lib/models';
 import { handler, json } from '@/lib/http';
 import { pushToUsers } from '@/lib/push';
 import { recapNotice } from '@/lib/push-i18n';
+import { NOT_PERSONAL } from '@/lib/personal-roll';
 
 /**
  * Daily: when a trip or event has ended, tell everyone their recap is ready.
@@ -16,6 +17,7 @@ export const GET = handler(async (req) => {
     endDate: { $ne: null, $lt: new Date() },
     recapNotifiedAt: null,
     photoCount: { $gte: 5 },
+    ...NOT_PERSONAL,
   }).lean<GroupDoc[]>();
 
   for (const g of groups) {

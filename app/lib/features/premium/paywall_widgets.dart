@@ -65,24 +65,30 @@ class BenefitLine extends StatelessWidget {
   }
 }
 
-/// A selectable plan: name, store price and a line or two below it.
-class PlanCard extends StatelessWidget {
-  const PlanCard({
+/// One choice in the paywall's list (Trip Pass, Pro year, Pro month): a radio,
+/// the name with one line below it, and the price on the right. Compact, so
+/// three of them fit above the fold on an iPhone SE.
+class PaywallOption extends StatelessWidget {
+  const PaywallOption({
     super.key,
     required this.selected,
     required this.title,
-    required this.price,
     required this.sub,
+    required this.price,
     required this.onTap,
-    this.highlight,
+    this.priceNote,
     this.badge,
   });
 
   final bool selected;
   final String title;
-  final String price;
   final String sub;
-  final String? highlight;
+  final String price;
+
+  /// Small text under the price ("eenmalig").
+  final String? priceNote;
+
+  /// Highlight next to the title ("Beste deal").
   final String? badge;
   final VoidCallback onTap;
 
@@ -96,35 +102,36 @@ class PlanCard extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.fromLTRB(12, 11, 10, 11),
+          padding: const EdgeInsets.fromLTRB(12, 9, 14, 9),
           decoration: BoxDecoration(
             color: CT.paper,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: selected ? CT.ink : CT.line, width: selected ? 2 : 1.5),
             boxShadow: selected ? CT.cardShadow : null,
           ),
-          child: Stack(clipBehavior: Clip.none, children: [
-            Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Row(children: [
-                Expanded(child: Text(title, style: CT.text(13, weight: FontWeight.w600, height: 1.2))),
-                Icon(selected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded, size: 18, color: selected ? CT.ink : CT.line),
+          child: Row(children: [
+            Icon(selected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded, size: 20, color: selected ? CT.ink : CT.line),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+                Wrap(spacing: 6, runSpacing: 2, crossAxisAlignment: WrapCrossAlignment.center, children: [
+                  Text(title, style: CT.text(14.5, weight: FontWeight.w700, height: 1.2)),
+                  if (badge != null)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      decoration: BoxDecoration(color: CT.accent, borderRadius: BorderRadius.circular(6)),
+                      child: Text(badge!, style: CT.text(10, color: Colors.white, weight: FontWeight.w700, height: 1.3)),
+                    ),
+                ]),
+                const SizedBox(height: 1),
+                Text(sub, style: CT.text(12, color: CT.muted, height: 1.25)),
               ]),
-              const SizedBox(height: 2),
-              Text(price, style: CT.title(22)),
-              const SizedBox(height: 3),
-              if (highlight != null) Text(highlight!, style: CT.text(12, color: CT.accent, weight: FontWeight.w700, height: 1.25)),
-              Text(sub, style: CT.text(11.5, color: CT.muted, height: 1.25)),
+            ),
+            const SizedBox(width: 8),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
+              Text(price, style: CT.title(18)),
+              if (priceNote != null) Text(priceNote!, style: CT.text(11, color: CT.muted, height: 1.2)),
             ]),
-            if (badge != null)
-              Positioned(
-                top: -21,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                  decoration: BoxDecoration(color: CT.accent, borderRadius: BorderRadius.circular(6)),
-                  child: Text(badge!, style: CT.text(10, color: Colors.white, weight: FontWeight.w700, height: 1.3)),
-                ),
-              ),
           ]),
         ),
       ),

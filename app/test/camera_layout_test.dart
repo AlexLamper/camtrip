@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 import 'package:camtrip/core/theme.dart';
 import 'package:camtrip/features/camera/camera_layout.dart';
 import 'package:camtrip/features/camera/camera_picker_sheet.dart';
+import 'package:camtrip/features/camera/camera_settings.dart';
 import 'package:camtrip/features/camera/flash_control.dart';
 import 'package:camtrip/features/camera/shutter_button.dart';
 import 'package:camtrip/features/camera/styles.dart';
@@ -47,6 +48,7 @@ Widget _screen({
             modeSwitch: CameraModeSwitch(videoMode: false, onChanged: (_) {}),
             lastShot: const LastShotThumb(thumb: null, pending: 0),
             shutter: ShutterButton(videoMode: false, recording: false, busy: false, onTap: onShutter),
+            timer: CameraTimerButton(timer: ShutterTimer.off, onPressed: () {}),
           ),
         ),
       ),
@@ -90,9 +92,13 @@ void main() {
         expect(shutter.dx, closeTo(size.width / 2, 1));
         // the last shot sits under the flash button
         expect(t.getCenter(find.byKey(const ValueKey('camera-last-shot'))).dx, closeTo(flash.dx, 1));
+        // and the self-timer mirrors it under the flip button, level with it
+        final timer = t.getCenter(find.byKey(const ValueKey('camera-timer-button')));
+        expect(timer.dx, closeTo(flip.dx, 1));
+        expect(timer.dy, closeTo(t.getCenter(find.byKey(const ValueKey('camera-last-shot'))).dy, 1));
 
         // 44pt+ targets
-        for (final k in [_flash, _flip, _picker]) {
+        for (final k in [_flash, _flip, _picker, const ValueKey('camera-timer-button')]) {
           expect(t.getSize(find.byKey(k)).height, greaterThanOrEqualTo(44), reason: '$k');
           expect(t.getSize(find.byKey(k)).width, greaterThanOrEqualTo(44), reason: '$k');
         }

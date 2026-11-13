@@ -48,6 +48,10 @@ class Prefs {
   Map<String, dynamic>? get cachedGroups => _json('cache_groups');
   set cachedGroups(Map<String, dynamic>? v) => _setJson('cache_groups', v);
 
+  /// My personal roll ("Mijn rolletje") as last sent by the server: {userId, group}.
+  Map<String, dynamic>? get cachedPersonalRoll => _json('cache_personal_roll');
+  set cachedPersonalRoll(Map<String, dynamic>? v) => _setJson('cache_personal_roll', v);
+
   Map<String, dynamic>? _json(String key) {
     final raw = _p.getString(key);
     if (raw == null) return null;
@@ -60,6 +64,11 @@ class Prefs {
   }
 
   void _setJson(String key, Map<String, dynamic>? v) => v == null ? _p.remove(key) : _p.setString(key, jsonEncode(v));
+
+  /// The app language picked in Settings ("nl", "pt_BR", "zh_Hant"), or null
+  /// to follow the phone's language.
+  String? get language => _p.getString('language');
+  set language(String? v) => v == null ? _p.remove('language') : _p.setString('language', v);
 
   bool get onboarded => _p.getBool('onboarded') ?? false;
   set onboarded(bool v) => _p.setBool('onboarded', v);

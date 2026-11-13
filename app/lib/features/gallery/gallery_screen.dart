@@ -14,6 +14,7 @@ import '../auth/auth_controller.dart';
 import '../camera/processor.dart';
 import '../groups/groups_controller.dart';
 import '../premium/pro_badge.dart';
+import '../premium/roll.dart';
 import '../upload/upload_queue.dart';
 import 'gallery_controller.dart';
 import 'photo_actions.dart';
@@ -68,7 +69,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
     try {
       final n = await Downloader.save(ref.read(apiProvider), group, ids, onProgress: (p) => mounted ? setState(() => _download = p) : null);
       if (!mounted) return;
-      showMessage(context, context.l10n.photosSavedToAlbum(n, 'CamTrip - ${group.name}'));
+      showMessage(context, context.l10n.photosSavedToAlbum(n, group.deviceAlbum));
       setState(_sel.exit);
     } catch (e) {
       if (mounted) showMessage(context, ApiException.from(e).message);
@@ -93,6 +94,46 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
       if (!mounted) return;
       final l = context.l10n;
       showMessage(context, r.forbidden > 0 ? l.photosDeletedSkipped(r.deleted, r.forbidden) : l.photosDeleted(r.deleted));
+    } catch (e) {
+      if (mounted) showMessage(context, ApiException.from(e).message);
+    }
+  }
+
+  /// "Verplaats naar album" (personal roll only): pick an album I can shoot
+  /// into, then the picked photos move there and leave the roll.
+  Future<void> _moveSelected() async {
+    final ids = _sel.ids.toList();
+    if (ids.isEmpty) return;
+    final l = context.l10n;
+    final albums = (ref.read(groupsProvider).value ?? const <Group>[]).where((g) => !g.isClosed && !g.archived).toList();
+    if (albums.isEmpty) return showMessage(context, l.personalRollMoveNoAlbums);
+    final target = await showModalBottomSheet<Group>(
+      context: context,
+      isScrollControlled: true,
+      builder: (c) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(c).size.height * 0.7),
+          child: ListView(shrinkWrap: true, padding: const EdgeInsets.fromLTRB(20, 0, 20, 16), children: [
+            Text(l.personalRollMoveTitle, style: CT.title(22)),
+            const SizedBox(height: 8),
+            for (final g in albums)
+              ListTile(
+                key: ValueKey('move-to-${g.id}'),
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.photo_album_outlined),
+                title: Text(g.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(16, weight: FontWeight.w600)),
+                subtitle: Text('${l.membersCount(g.members.length)} · ${l.photosCount(g.totalCount)}', style: CT.text(13, color: CT.muted)),
+                onTap: () => Navigator.pop(c, g),
+              ),
+          ]),
+        ),
+      ),
+    );
+    if (target == null || !mounted) return;
+    setState(_sel.exit);
+    try {
+      final n = await _ctrl.moveTo(ids, target);
+      if (mounted) showMessage(context, context.l10n.personalRollMoved(n, target.name));
     } catch (e) {
       if (mounted) showMessage(context, ApiException.from(e).message);
     }
@@ -148,6 +189,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   }
 
   Future<void> _uploadFromRoll(Group group) async {
+    // Roll already full: picking photos would only park them on the phone.
+    if (ref.read(rollProvider(group.id))?.full ?? false) {
+      await openPaywall(context, reason: PaywallReason.rollFull, group: group);
+      return;
+    }
     final List<XFile> files;
     try {
       files = await ImagePicker().pickMultiImage(imageQuality: 95, limit: 50);
@@ -305,6 +351,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
         onShare: _shareSelected,
         onFavorite: _favoriteSelected,
         onHide: _hideSelected,
+        onMove: group.isPersonal ? _moveSelected : null,
         onDelete: _sel.deletable(photos, me, group).isEmpty ? null : () => _deleteSelected(group),
       ),
     );
@@ -335,18 +382,33 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
         else
           Row(children: [
             IconButton(tooltip: l.back, onPressed: () => context.pop(), icon: const Icon(Icons.arrow_back)),
+            if (!group.isPersonal) const SizedBox(width: 48), // balances the map button, keeps the title centred
             Expanded(
               child: Text(
-                [group.code, Fmt.range(group.startDate, group.endDate)].where((s) => s.isNotEmpty).join(' · '),
+                group.isPersonal
+                    ? l.personalRollSubtitle
+                    : [group.code, Fmt.range(group.startDate, group.endDate)].where((s) => s.isNotEmpty).join(' · '),
                 textAlign: TextAlign.center,
                 style: CT.text(12, color: CT.muted, weight: FontWeight.w500),
               ),
             ),
-            IconButton(
-              tooltip: l.group,
-              onPressed: () => context.push('/group/${group.id}/settings'),
-              icon: const Icon(Icons.more_horiz),
-            ),
+            // My personal roll has no settings, members or invite.
+            if (group.isPersonal)
+              const SizedBox(width: 48)
+            else ...[
+              // Reiskaart + statistieken: stats for every shared group, the map once an admin turns it on.
+              IconButton(
+                key: const Key('gallery-tripmap'),
+                tooltip: l.tripMapOpen,
+                onPressed: () => context.push('/group/${group.id}/map'),
+                icon: Icon(group.tripMap.enabled ? Icons.map_outlined : Icons.insights_outlined),
+              ),
+              IconButton(
+                tooltip: l.group,
+                onPressed: () => context.push('/group/${group.id}/settings'),
+                icon: const Icon(Icons.more_horiz),
+              ),
+            ],
           ]),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -354,21 +416,33 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             Text(group.name, style: CT.title(30)),
             ProViaBadge(group.id),
             const SizedBox(height: 8),
-            GestureDetector(
-              onTap: () => context.push('/group/${group.id}/invite'),
-              child: Row(children: [
-                AvatarStack(group.members),
-                const SizedBox(width: 10),
-                Flexible(
-                  child: Text(
-                    '${l.photosCount(group.photoCount)}${group.videoCount > 0 ? ' · ${l.videosCount(group.videoCount)}' : ''}',
-                    style: CT.text(13, color: CT.muted),
-                  ),
-                ),
+            if (group.isPersonal) ...[
+              Text(
+                '${l.photosCount(group.photoCount)}${group.videoCount > 0 ? ' · ${l.videosCount(group.videoCount)}' : ''}',
+                style: CT.text(13, color: CT.muted),
+              ),
+              const SizedBox(height: 6),
+              Row(key: const ValueKey('personal-roll-note'), crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Icon(Icons.lock_outline, size: 15, color: CT.muted),
                 const SizedBox(width: 6),
-                const Icon(Icons.person_add_alt_1_outlined, size: 18, color: CT.muted),
+                Expanded(child: Text(l.personalRollPrivateNote, style: CT.text(12, color: CT.muted))),
               ]),
-            ),
+            ] else
+              GestureDetector(
+                onTap: () => context.push('/group/${group.id}/invite'),
+                child: Row(children: [
+                  AvatarStack(group.members),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      '${l.photosCount(group.photoCount)}${group.videoCount > 0 ? ' · ${l.videosCount(group.videoCount)}' : ''}',
+                      style: CT.text(13, color: CT.muted),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.person_add_alt_1_outlined, size: 18, color: CT.muted),
+                ]),
+              ),
             if (pending > 0) ...[
               const SizedBox(height: 12),
               GestureDetector(
@@ -415,7 +489,29 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                 child: Text('🎞️  ${l.makeRecapNow}', style: CT.text(13, color: CT.accent, weight: FontWeight.w600)),
               ),
             ],
-            if (group.deleteAfter != null && group.hasEnded) ...[
+            // Shots that did not fit on the free roll wait on this phone.
+            if (ref.watch(uploadQueueProvider.select((q) => q.where((i) => i.status == UploadStatus.held && group.isId(i.groupId)).length))
+                case final held when held > 0) ...[
+              const SizedBox(height: 12),
+              PaywallNudge(
+                key: const ValueKey('roll-held-banner'),
+                icon: Icons.camera_roll_outlined,
+                title: l.rollHeldTitle(held),
+                body: l.rollHeldBody,
+                onTap: () => openPaywall(context, reason: PaywallReason.rollFull, group: group),
+              ),
+            ],
+            // A week before a free trip is deleted: a gentle nudge to keep it.
+            if (daysUntilDeletion(group) case final days?) ...[
+              const SizedBox(height: 12),
+              PaywallNudge(
+                key: const ValueKey('deletion-banner'),
+                icon: Icons.inventory_2_outlined,
+                title: l.deletionBannerTitle(days),
+                body: l.freeGroupDeleteNotice(Fmt.shortYear(group.deleteAfter!)),
+                onTap: () => openPaywall(context, reason: PaywallReason.deletion, group: group),
+              ),
+            ] else if (group.deleteAfter != null && group.hasEnded) ...[
               const SizedBox(height: 10),
               Text(
                 l.freeGroupDeleteNotice(Fmt.shortYear(group.deleteAfter!)),
@@ -429,13 +525,15 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                 CTChip(l.filterAll, selected: !gallery.filter.favorites && gallery.filter.userId == null, onTap: () => ctrl.setFilter(const GalleryFilter.all())),
                 const SizedBox(width: 8),
                 CTChip(l.filterFavorites, icon: Icons.star_rounded, selected: gallery.filter.favorites, onTap: () => ctrl.setFilter(const GalleryFilter.favorites())),
-                const SizedBox(width: 8),
-                CTChip(
-                  gallery.filter.userId == null ? l.filterPerPerson : (group.member(gallery.filter.userId!)?.name ?? l.filterPerson),
-                  icon: Icons.person_outline,
-                  selected: gallery.filter.userId != null,
-                  onTap: () => _pickPerson(group),
-                ),
+                if (!group.isPersonal) ...[
+                  const SizedBox(width: 8),
+                  CTChip(
+                    gallery.filter.userId == null ? l.filterPerPerson : (group.member(gallery.filter.userId!)?.name ?? l.filterPerson),
+                    icon: Icons.person_outline,
+                    selected: gallery.filter.userId != null,
+                    onTap: () => _pickPerson(group),
+                  ),
+                ],
                 const SizedBox(width: 8),
                 CTChip(_selecting ? l.done : l.select, icon: Icons.check_circle_outline, selected: _selecting, onTap: () {
                   setState(() => _selecting ? _sel.exit() : _sel.active = true);
@@ -524,8 +622,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
           ),
         ),
         if (_selecting)
-          Positioned(
-            right: 8,
+          PositionedDirectional(
+            end: 8,
             top: 8,
             child: Container(
               decoration: const BoxDecoration(shape: BoxShape.circle, boxShadow: [BoxShadow(color: Color(0x40000000), blurRadius: 6)]),

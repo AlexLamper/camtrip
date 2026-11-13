@@ -70,6 +70,19 @@ test('serialized photo gets its group name', () => {
     groupId: 'g1',
     thumbUrl: 'https://t',
     groupName: 'Mallorca',
+    groupPersonal: false,
   });
   assert.equal(withGroupName({ id: 'p2', groupId: 'gone' }, names).groupName, '');
+});
+
+test('photos in the personal roll are marked groupPersonal', () => {
+  const names = new Map([['g1', 'Mallorca'], ['roll', 'Mijn rolletje']]);
+  const personal = new Set(['roll']);
+  assert.equal(withGroupName({ id: 'p1', groupId: 'roll' }, names, personal).groupPersonal, true);
+  assert.equal(withGroupName({ id: 'p2', groupId: 'g1' }, names, personal).groupPersonal, false);
+});
+
+test('Alle foto\'s filter includes the personal roll like any other group the user is in', () => {
+  const f = buildMyPhotosFilter({ userId: 'u', groupIds: ['g1', 'roll'] }, oid);
+  assert.deepEqual(f.$and[0].groupId, { $in: ['g1', 'roll'] });
 });

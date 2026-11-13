@@ -2148,4 +2148,306 @@ class AppLocalizationsDa extends AppLocalizations {
   @override
   String get styleFlashDescription =>
       'Direkte blitz på varm film: ravfarvet glød, korn, dybe røde';
+
+  @override
+  String cameraTimerButton(String state) {
+    return 'Selvudløser: $state';
+  }
+
+  @override
+  String get cameraTimerCycleHint =>
+      'Tryk for at skifte mellem fra, 3 s og 10 s';
+
+  @override
+  String get cameraLastShotOpen => 'Seneste foto, åbner albummet';
+
+  @override
+  String get cameraLastShotEmpty => 'Ingen fotos endnu, åbner albummet';
+
+  @override
+  String get deleteOnlyOwnOrAdmin =>
+      'Kun den, der tog det, eller en administrator kan slette det';
+
+  @override
+  String get videoPlay => 'Afspil';
+
+  @override
+  String get videoPause => 'Pause';
+
+  @override
+  String get language => 'Sprog';
+
+  @override
+  String get languageSystem => 'Systemsprog';
+
+  @override
+  String languageSystemCurrent(String language) {
+    return 'System ($language)';
+  }
+
+  @override
+  String get languageSearchHint => 'Søg efter sprog';
+
+  @override
+  String get languageNoResults => 'Intet sprog fundet';
+
+  @override
+  String get personalRollTitle => 'Min filmrulle';
+
+  @override
+  String get personalRollSubtitle => 'Kun til dig';
+
+  @override
+  String get personalRollPickerSubtitle => 'Løse billeder, kun til dig';
+
+  @override
+  String get personalRollMove => 'Til album';
+
+  @override
+  String get personalRollMoveTitle => 'Flyt til album';
+
+  @override
+  String get personalRollMoveNoAlbums =>
+      'Opret først et album, eller deltag i et med en kode.';
+
+  @override
+  String personalRollMoved(int count, String album) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count billeder flyttet til $album',
+      one: '1 billede flyttet til $album',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get personalRollPrivateNote =>
+      'Kun du kan se disse billeder. Flyt dem til et album for at dele dem.';
+
+  @override
+  String get paywallTripPassSub => 'Kun denne tur, for hele gruppen';
+
+  @override
+  String get paywallOneTime => 'engangskøb';
+
+  @override
+  String get paywallBestValue => 'Bedste pris';
+
+  @override
+  String paywallRollFullTitle(int used, int limit) {
+    return 'Din rulle er fuld - $used/$limit billeder';
+  }
+
+  @override
+  String get paywallRollFullSub =>
+      'Bliv ved med at tage billeder med et Trip Pass eller Pro.';
+
+  @override
+  String get paywallCameraTitle => 'Dette kamera er en del af Pro';
+
+  @override
+  String paywallCameraSub(int count) {
+    return 'Lås alle $count kameraer op.';
+  }
+
+  @override
+  String get paywallWatermarkTitle => 'Recap uden vandmærke';
+
+  @override
+  String get paywallWatermarkSub => 'Del din recap uden CamTrip-logo.';
+
+  @override
+  String get paywallDeletionTitle => 'Gem din tur';
+
+  @override
+  String paywallDeletionSub(String date) {
+    return 'Gratis ture slettes $date. Med Trip Pass eller Pro bliver den for altid.';
+  }
+
+  @override
+  String paywallTripPassTerms(String price) {
+    return 'Engangskøb til $price for denne tur. Intet abonnement.';
+  }
+
+  @override
+  String get buyTripPass => 'Køb Trip Pass';
+
+  @override
+  String get tripPassActive => 'Trip Pass aktivt: turen er Pro for alle';
+
+  @override
+  String get tripPassActivating =>
+      'Betaling modtaget. Dit Trip Pass er aktivt om et øjeblik.';
+
+  @override
+  String proViaTripPass(String name) {
+    return 'Trip Pass fra $name';
+  }
+
+  @override
+  String rollCounterSemantics(int used, int limit) {
+    return '$used af $limit billeder på din rulle';
+  }
+
+  @override
+  String rollHeldTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count billeder kan ikke være på din rulle',
+      one: '1 billede kan ikke være på din rulle',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get rollHeldBody => 'Gem dem med Pro eller et Trip Pass';
+
+  @override
+  String deletionBannerTitle(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Gem din tur - $days dage tilbage',
+      one: 'Gem din tur - 1 dag tilbage',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletionBannerBody =>
+      'Gratis ture slettes 30 dage efter slut. Med Trip Pass eller Pro bliver den for altid.';
+
+  @override
+  String apiRollFull(int limit) {
+    return 'Din rulle er fuld ($limit billeder). Få Trip Pass eller Pro for at fortsætte.';
+  }
+
+  @override
+  String get apiTripPassFailed =>
+      'Trip Pass kunne ikke aktiveres. Skriv til support@camtrip.app.';
+
+  @override
+  String get apiTripPassExists => 'Denne tur har allerede et Trip Pass.';
+
+  @override
+  String get tripPassUnavailable =>
+      'Trip Pass er ikke tilgængeligt lige nu. Prøv igen senere.';
+
+  @override
+  String get tripMapTitle => 'Rejsekort';
+
+  @override
+  String get tripMapOpen => 'Rejsekort og statistik';
+
+  @override
+  String get tripMapLoadFailed => 'Kunne ikke indlæse rejsekortet';
+
+  @override
+  String get tripMapStatDays => 'Dage';
+
+  @override
+  String get tripMapStatPhotos => 'Fotos';
+
+  @override
+  String get tripMapStatVideos => 'Videoer';
+
+  @override
+  String get tripMapStatMembers => 'Medlemmer';
+
+  @override
+  String get tripMapStatDistance => 'km rejst';
+
+  @override
+  String get tripMapStatCountries => 'Lande';
+
+  @override
+  String get tripMapStatPlaces => 'Steder';
+
+  @override
+  String tripMapBusiestDay(String day, int count) {
+    return 'Flest fotos $day ($count)';
+  }
+
+  @override
+  String tripMapTopPhotographer(String name, int count) {
+    return 'Topfotograf: $name ($count)';
+  }
+
+  @override
+  String get tripMapOffTitle => 'Rejsekortet er slået fra';
+
+  @override
+  String get tripMapOffMessage =>
+      'En admin kan slå rejsekortet til i gruppeindstillingerne. Statistikken ser du altid.';
+
+  @override
+  String get tripMapOffMessageAdmin =>
+      'Slå rejsekortet til for at se, hvor jeres fotos er taget. Alle vælger selv, om de vil være med.';
+
+  @override
+  String get tripMapEnable => 'Slå rejsekortet til';
+
+  @override
+  String get tripMapEmptyTitle => 'Ingen steder på kortet endnu';
+
+  @override
+  String get tripMapEmptyMessage =>
+      'Nye fotos fra medlemmer, der deler deres placering, vises her, afrundet til omkring 100 m.';
+
+  @override
+  String get tripMapConsentTitle => 'Rejsekort';
+
+  @override
+  String get tripMapConsentQuestion =>
+      'Del, hvor dine fotos er taget, på gruppens rejsekort?';
+
+  @override
+  String get tripMapConsentDetail =>
+      'Kun gruppemedlemmer ser det, afrundet til omkring 100 m. Placeringen kommer aldrig ind i selve fotoet, og du kan altid slå det fra i gruppeindstillingerne.';
+
+  @override
+  String get tripMapConsentYes => 'Ja, del';
+
+  @override
+  String get tripMapConsentNo => 'Nej';
+
+  @override
+  String get tripMapLocationDenied =>
+      'Ingen adgang til din placering. Du kan tillade det i telefonens indstillinger.';
+
+  @override
+  String get tripMapSettingSubtitle =>
+      'Vis på et kort, hvor fotos er taget. Medlemmerne vælger selv, om de deler.';
+
+  @override
+  String get tripMapDisableTitle => 'Slå rejsekortet fra?';
+
+  @override
+  String get tripMapDisableMessage =>
+      'Alle placeringer i gruppen slettes. Slår du kortet til igen senere, spørger vi alle igen.';
+
+  @override
+  String get tripMapDisable => 'Slå fra';
+
+  @override
+  String get tripMapMySharing => 'Del min placering';
+
+  @override
+  String get tripMapMySharingOn =>
+      'Dine nye fotos vises på rejsekortet (afrundet til omkring 100 m).';
+
+  @override
+  String get tripMapMySharingOff => 'Fra. Dine fotos vises ikke på kortet.';
+
+  @override
+  String get tripMapStopSharingTitle => 'Stop med at dele din placering?';
+
+  @override
+  String get tripMapStopSharingMessage =>
+      'Placeringerne for alle dine fotos i gruppen slettes.';
+
+  @override
+  String get tripMapStopSharing => 'Stop deling';
 }

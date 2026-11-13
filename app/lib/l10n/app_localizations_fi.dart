@@ -2145,4 +2145,304 @@ class AppLocalizationsFi extends AppLocalizations {
   @override
   String get styleFlashDescription =>
       'Suora salama lämpimälle filmille: meripihkan hehku, rae, täyteläiset punaiset';
+
+  @override
+  String cameraTimerButton(String state) {
+    return 'Itselaukaisin: $state';
+  }
+
+  @override
+  String get cameraTimerCycleHint => 'Napauta vaihtaaksesi: pois, 3 s ja 10 s';
+
+  @override
+  String get cameraLastShotOpen => 'Uusin kuva, avaa albumin';
+
+  @override
+  String get cameraLastShotEmpty => 'Ei vielä kuvia, avaa albumin';
+
+  @override
+  String get deleteOnlyOwnOrAdmin =>
+      'Vain kuvaaja tai ylläpitäjä voi poistaa tämän';
+
+  @override
+  String get videoPlay => 'Toista';
+
+  @override
+  String get videoPause => 'Tauko';
+
+  @override
+  String get language => 'Kieli';
+
+  @override
+  String get languageSystem => 'Järjestelmän kieli';
+
+  @override
+  String languageSystemCurrent(String language) {
+    return 'Järjestelmä ($language)';
+  }
+
+  @override
+  String get languageSearchHint => 'Hae kieltä';
+
+  @override
+  String get languageNoResults => 'Kieltä ei löytynyt';
+
+  @override
+  String get personalRollTitle => 'Oma filmirulla';
+
+  @override
+  String get personalRollSubtitle => 'Vain sinulle';
+
+  @override
+  String get personalRollPickerSubtitle => 'Irrallisia kuvia, vain sinulle';
+
+  @override
+  String get personalRollMove => 'Albumiin';
+
+  @override
+  String get personalRollMoveTitle => 'Siirrä albumiin';
+
+  @override
+  String get personalRollMoveNoAlbums =>
+      'Luo ensin albumi tai liity sellaiseen koodilla.';
+
+  @override
+  String personalRollMoved(int count, String album) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kuvaa siirretty albumiin $album',
+      one: '1 kuva siirretty albumiin $album',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get personalRollPrivateNote =>
+      'Vain sinä näet nämä kuvat. Siirrä ne albumiin jakaaksesi ne.';
+
+  @override
+  String get paywallTripPassSub => 'Vain tämä matka, koko ryhmälle';
+
+  @override
+  String get paywallOneTime => 'kertaosto';
+
+  @override
+  String get paywallBestValue => 'Paras hinta';
+
+  @override
+  String paywallRollFullTitle(int used, int limit) {
+    return 'Filmisi on täynnä - $used/$limit kuvaa';
+  }
+
+  @override
+  String get paywallRollFullSub => 'Jatka kuvaamista Trip Passilla tai Prolla.';
+
+  @override
+  String get paywallCameraTitle => 'Tämä kamera kuuluu Prohon';
+
+  @override
+  String paywallCameraSub(int count) {
+    return 'Avaa kaikki $count kameraa.';
+  }
+
+  @override
+  String get paywallWatermarkTitle => 'Recap ilman vesileimaa';
+
+  @override
+  String get paywallWatermarkSub => 'Jaa recap ilman CamTrip-logoa.';
+
+  @override
+  String get paywallDeletionTitle => 'Säilytä matkasi';
+
+  @override
+  String paywallDeletionSub(String date) {
+    return 'Ilmaiset matkat poistetaan $date. Trip Passilla tai Prolla se säilyy ikuisesti.';
+  }
+
+  @override
+  String paywallTripPassTerms(String price) {
+    return 'Kertaosto $price tälle matkalle. Ei tilaus.';
+  }
+
+  @override
+  String get buyTripPass => 'Osta Trip Pass';
+
+  @override
+  String get tripPassActive => 'Trip Pass käytössä: matka on Pro kaikille';
+
+  @override
+  String get tripPassActivating =>
+      'Maksu vastaanotettu. Trip Pass aktivoituu hetken päästä.';
+
+  @override
+  String proViaTripPass(String name) {
+    return 'Trip Pass: $name';
+  }
+
+  @override
+  String rollCounterSemantics(int used, int limit) {
+    return '$used/$limit kuvaa filmilläsi';
+  }
+
+  @override
+  String rollHeldTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count kuvaa ei enää mahdu filmille',
+      one: '1 kuva ei enää mahdu filmille',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get rollHeldBody => 'Säilytä ne Prolla tai Trip Passilla';
+
+  @override
+  String deletionBannerTitle(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Säilytä matkasi - $days päivää jäljellä',
+      one: 'Säilytä matkasi - 1 päivä jäljellä',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletionBannerBody =>
+      'Ilmaiset matkat poistetaan 30 päivää päättymisen jälkeen. Trip Passilla tai Prolla se säilyy ikuisesti.';
+
+  @override
+  String apiRollFull(int limit) {
+    return 'Filmisi on täynnä ($limit kuvaa). Hanki Trip Pass tai Pro jatkaaksesi.';
+  }
+
+  @override
+  String get apiTripPassFailed =>
+      'Trip Passia ei voitu aktivoida. Kirjoita osoitteeseen support@camtrip.app.';
+
+  @override
+  String get apiTripPassExists => 'Tällä matkalla on jo Trip Pass.';
+
+  @override
+  String get tripPassUnavailable =>
+      'Trip Pass ei ole nyt saatavilla. Yritä myöhemmin uudelleen.';
+
+  @override
+  String get tripMapTitle => 'Matkakartta';
+
+  @override
+  String get tripMapOpen => 'Matkakartta ja tilastot';
+
+  @override
+  String get tripMapLoadFailed => 'Matkakarttaa ei voitu ladata';
+
+  @override
+  String get tripMapStatDays => 'Päivää';
+
+  @override
+  String get tripMapStatPhotos => 'Kuvat';
+
+  @override
+  String get tripMapStatVideos => 'Videot';
+
+  @override
+  String get tripMapStatMembers => 'Jäsenet';
+
+  @override
+  String get tripMapStatDistance => 'km kuljettu';
+
+  @override
+  String get tripMapStatCountries => 'Maat';
+
+  @override
+  String get tripMapStatPlaces => 'Paikat';
+
+  @override
+  String tripMapBusiestDay(String day, int count) {
+    return 'Eniten kuvia: $day ($count)';
+  }
+
+  @override
+  String tripMapTopPhotographer(String name, int count) {
+    return 'Ahkerin kuvaaja: $name ($count)';
+  }
+
+  @override
+  String get tripMapOffTitle => 'Matkakartta on pois päältä';
+
+  @override
+  String get tripMapOffMessage =>
+      'Ylläpitäjä voi laittaa matkakartan päälle ryhmän asetuksista. Tilastot näet aina.';
+
+  @override
+  String get tripMapOffMessageAdmin =>
+      'Laita matkakartta päälle, niin näet missä kuvanne on otettu. Jokainen päättää itse, osallistuuko.';
+
+  @override
+  String get tripMapEnable => 'Laita matkakartta päälle';
+
+  @override
+  String get tripMapEmptyTitle => 'Kartalla ei ole vielä paikkoja';
+
+  @override
+  String get tripMapEmptyMessage =>
+      'Sijaintinsa jakavien jäsenten uudet kuvat näkyvät tässä noin 100 metrin tarkkuudella.';
+
+  @override
+  String get tripMapConsentTitle => 'Matkakartta';
+
+  @override
+  String get tripMapConsentQuestion =>
+      'Jaetaanko kuviesi ottopaikat tämän ryhmän matkakartalle?';
+
+  @override
+  String get tripMapConsentDetail =>
+      'Vain ryhmän jäsenet näkevät sen noin 100 metrin tarkkuudella. Sijainti ei koskaan tallennu itse kuvaan, ja voit poistaa tämän käytöstä milloin vain ryhmän asetuksista.';
+
+  @override
+  String get tripMapConsentYes => 'Kyllä, jaa';
+
+  @override
+  String get tripMapConsentNo => 'Ei';
+
+  @override
+  String get tripMapLocationDenied =>
+      'Ei pääsyä sijaintiisi. Voit sallia sen puhelimen asetuksista.';
+
+  @override
+  String get tripMapSettingSubtitle =>
+      'Näytä kartalla, missä kuvat on otettu. Jäsenet päättävät itse, jakavatko.';
+
+  @override
+  String get tripMapDisableTitle => 'Poistetaanko matkakartta käytöstä?';
+
+  @override
+  String get tripMapDisableMessage =>
+      'Kaikki ryhmän sijainnit poistetaan. Jos laitat kartan myöhemmin taas päälle, kysymme kaikilta uudelleen.';
+
+  @override
+  String get tripMapDisable => 'Poista käytöstä';
+
+  @override
+  String get tripMapMySharing => 'Jaa sijaintini';
+
+  @override
+  String get tripMapMySharingOn =>
+      'Uudet kuvasi näkyvät matkakartalla (noin 100 metrin tarkkuudella).';
+
+  @override
+  String get tripMapMySharingOff => 'Pois. Kuvasi eivät näy kartalla.';
+
+  @override
+  String get tripMapStopSharingTitle => 'Lopetetaanko sijainnin jakaminen?';
+
+  @override
+  String get tripMapStopSharingMessage =>
+      'Kaikkien kuviesi sijainnit tässä ryhmässä poistetaan.';
+
+  @override
+  String get tripMapStopSharing => 'Lopeta jakaminen';
 }

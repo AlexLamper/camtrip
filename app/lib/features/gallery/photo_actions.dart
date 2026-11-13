@@ -114,6 +114,7 @@ class SelectionActionBar extends StatelessWidget {
     required this.onDelete,
     this.favoriteOn = true,
     this.busyLabel,
+    this.onMove,
   });
 
   final int count;
@@ -124,6 +125,10 @@ class SelectionActionBar extends StatelessWidget {
 
   /// Null when none of the picked photos may be deleted by this user.
   final VoidCallback? onDelete;
+
+  /// Only in my personal roll ("Mijn rolletje"): "Naar album" takes the place
+  /// of "Verbergen" (hiding your own private photos from yourself makes no sense).
+  final VoidCallback? onMove;
 
   /// True: the favorite action adds; false: it removes.
   final bool favoriteOn;
@@ -177,7 +182,7 @@ class SelectionActionBar extends StatelessWidget {
     final enabled = count > 0 && busyLabel == null;
     final l = context.l10n;
     final favoriteLabel = favoriteOn ? l.favorite : l.unfavorite;
-    final labels = [l.save, l.share, favoriteLabel, l.hide, l.delete];
+    final labels = [l.save, l.share, favoriteLabel, onMove != null ? l.personalRollMove : l.hide, l.delete];
 
     Widget bar(double size) {
       Widget action(Key key, IconData icon, String label, VoidCallback? onTap, {Color? color}) {
@@ -210,7 +215,10 @@ class SelectionActionBar extends StatelessWidget {
         action(const Key('sel-save'), Icons.download_rounded, l.save, onSave),
         action(const Key('sel-share'), Icons.ios_share, l.share, onShare),
         action(const Key('sel-favorite'), favoriteOn ? Icons.star_outline_rounded : Icons.star_rounded, favoriteLabel, onFavorite),
-        action(const Key('sel-hide'), Icons.visibility_off_outlined, l.hide, onHide),
+        if (onMove != null)
+          action(const Key('sel-move'), Icons.drive_file_move_outline, l.personalRollMove, onMove)
+        else
+          action(const Key('sel-hide'), Icons.visibility_off_outlined, l.hide, onHide),
         action(const Key('sel-delete'), Icons.delete_outline, l.delete, onDelete, color: const Color(0xFFFF8A73)),
       ]);
     }

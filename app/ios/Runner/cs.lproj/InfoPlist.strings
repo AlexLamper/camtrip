@@ -3,3 +3,4 @@
 "NSMicrophoneUsageDescription" = "CamTrip používá mikrofon k nahrávání zvuku k videím.";
 "NSPhotoLibraryAddUsageDescription" = "CamTrip ukládá tvoje fotky do knihovny, do alba s názvem tvé skupiny.";
 "NSPhotoLibraryUsageDescription" = "Vyber fotky z knihovny a sdílej je se svou skupinou.";
+"NSLocationWhenInUseUsageDescription" = "CamTrip používá tvou polohu jen pro mapu cesty skupiny, pokud souhlasíš: zaokrouhlenou na asi 100 m a viditelnou jen pro tu skupinu.";

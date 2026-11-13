@@ -1,0 +1,6 @@
+/* Permission texts shown by iOS. Keep in sync with Info.plist (English) and lib/l10n/GLOSSARY.md. */
+"NSCameraUsageDescription" = "Το CamTrip χρησιμοποιεί την κάμερα για να τραβάς φωτογραφίες και βίντεο για την ομάδα σου.";
+"NSMicrophoneUsageDescription" = "Το CamTrip χρησιμοποιεί το μικρόφωνο για να καταγράφει ήχο στα βίντεο.";
+"NSPhotoLibraryAddUsageDescription" = "Το CamTrip αποθηκεύει τις φωτογραφίες σου στη βιβλιοθήκη σου, σε ένα άλμπουμ με το όνομα της ομάδας σου.";
+"NSPhotoLibraryUsageDescription" = "Διάλεξε φωτογραφίες από τη βιβλιοθήκη σου για να τις μοιραστείς με την ομάδα σου.";
+"NSLocationWhenInUseUsageDescription" = "Το CamTrip χρησιμοποιεί την τοποθεσία σου μόνο για τον χάρτη ταξιδιού μιας ομάδας, αν συμφωνείς: στρογγυλεμένη σε περίπου 100 μ. και ορατή μόνο σε αυτή την ομάδα.";

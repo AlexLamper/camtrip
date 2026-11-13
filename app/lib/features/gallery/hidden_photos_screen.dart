@@ -114,8 +114,8 @@ class _HiddenPhotosScreenState extends ConsumerState<HiddenPhotosScreen> {
                       child: Stack(fit: StackFit.expand, children: [
                         ClipRRect(borderRadius: BorderRadius.circular(6), child: NetPhoto(p.thumbUrl, cacheKey: 'thumb_${p.id}')),
                         if (!on) Container(decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.35), borderRadius: BorderRadius.circular(6))),
-                        Positioned(
-                          right: 6,
+                        PositionedDirectional(
+                          end: 6,
                           top: 6,
                           child: Icon(on ? Icons.check_circle : Icons.radio_button_unchecked, color: on ? CT.accent : Colors.white, size: 22),
                         ),

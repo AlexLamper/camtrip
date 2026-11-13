@@ -62,8 +62,8 @@ export default function Terms() {
 
         <h2>CamTrip Pro</h2>
         <p>
-          Pro is een abonnement dat je afsluit via de App Store of Google Play, voor €7,99 per maand of €49,99 per jaar, met
-          7 dagen gratis proberen voor nieuwe abonnees. Het abonnement verlengt automatisch, tenzij je het minstens 24 uur
+          Pro is een abonnement dat je afsluit via de App Store of Google Play, voor €7,99 per maand of €49,99 per jaar. Er
+          is geen gratis proefperiode. Het abonnement verlengt automatisch, tenzij je het minstens 24 uur
           voor het einde van de periode opzegt in de instellingen van je App Store- of Google Play-account. Opzeggen kan
           altijd; je houdt Pro tot het einde van de betaalde periode. Betaling en terugbetaling lopen via Apple of Google,
           volgens hun voorwaarden.
@@ -73,6 +73,22 @@ export default function Terms() {
           leden en bewaren zolang de groep bestaat. Stopt dat lid met Pro of verlaat het de groep, en heeft niemand anders in
           de groep Pro, dan gelden de regels voor gratis groepen weer. Is de einddatum van de groep dan al meer dan 30 dagen
           geleden, dan kan de groep kort daarna worden verwijderd.
+        </p>
+
+        <h2>Het gratis rolletje</h2>
+        <p>
+          Zonder Pro kan iedereen per groep 24 foto’s of video’s delen (een video telt als één). In Mijn rolletje, je eigen
+          foto’s buiten een groep, zijn dat er 24 per kalendermaand. Foto’s die je verwijdert tellen niet meer mee. Is de
+          groep Pro, door een Pro-lid of een Trip Pass, dan geldt er geen limiet.
+        </p>
+
+        <h2>Trip Pass</h2>
+        <p>
+          Een Trip Pass is een eenmalige aankoop van €4,99 via de App Store of Google Play, geen abonnement. Je koopt hem voor
+          één groep; iedereen in die groep heeft daarin dan de Pro-functies, ook wie later bij de groep komt, en de groep wordt
+          niet automatisch verwijderd. Een Trip Pass is niet over te zetten naar een andere groep. Wordt de aankoop
+          terugbetaald, dan vervalt de Trip Pass en gelden de regels voor gratis groepen weer. Wordt de groep verwijderd, door
+          een beheerder of doordat je je account verwijdert, dan vervalt ook de Trip Pass.
         </p>
 
         <h2>Pro cadeau</h2>

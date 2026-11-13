@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api.dart';
+import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 import '../auth/auth_controller.dart';
 import 'gallery_controller.dart' show mergePhotos;
@@ -129,7 +130,11 @@ class AllPhotosController extends Notifier<AllPhotosState> {
 
   (List<Photo>, Map<String, String>) _parse(Map<String, dynamic> res) {
     _cursor = res['nextCursor'] as String?;
-    final items = ((res['photos'] as List?) ?? const []).cast<Map<String, dynamic>>();
+    final items = [
+      for (final j in ((res['photos'] as List?) ?? const []).cast<Map<String, dynamic>>())
+        // My personal roll goes by its app id ("me") and its name in the app's language.
+        if (j['groupPersonal'] == true) {...j, 'groupId': Group.personalRollId, 'groupName': L10n.current.personalRollTitle} else j,
+    ];
     final names = <String, String>{
       for (final j in items)
         if ((j['groupName'] as String?)?.isNotEmpty ?? false) j['groupId'] as String: j['groupName'] as String,

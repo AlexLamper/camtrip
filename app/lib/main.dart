@@ -15,6 +15,7 @@ import 'features/auth/onboarding_slides.dart';
 import 'features/groups/join_sheet.dart';
 import 'features/notifications/push.dart';
 import 'features/premium/premium_controller.dart';
+import 'features/settings/language_screen.dart';
 import 'features/upload/upload_queue.dart';
 import 'l10n/l10n.dart';
 import 'models/models.dart';
@@ -35,6 +36,8 @@ Future<void> main() async {
     session.token().timeout(const Duration(seconds: 2), onTimeout: () => null).catchError((Object _) => null),
     initializeDateFormatting(), // date names for every app language (in-memory)
   ).wait;
+
+  L10n.init(L10n.parseTag(prefs.language)); // the language picked in Settings, else the phone's
 
   final container = ProviderContainer(overrides: [
     prefsProvider.overrideWithValue(prefs),
@@ -140,7 +143,9 @@ class _CamTripAppState extends ConsumerState<CamTripApp> {
       debugShowCheckedModeBanner: false,
       theme: CT.theme(),
       routerConfig: ref.watch(routerProvider),
-      // Follows the phone's language: one of ours, otherwise English.
+      // The language picked in Settings, else the phone's: one of ours,
+      // otherwise English.
+      locale: ref.watch(appLanguageProvider),
       supportedLocales: L10n.supportedLocales,
       localeListResolutionCallback: L10n.resolveList,
       localizationsDelegates: L10n.delegates,

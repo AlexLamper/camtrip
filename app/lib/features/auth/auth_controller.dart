@@ -217,7 +217,8 @@ class AuthController extends AsyncNotifier<AppUser?> {
     await ref.read(sessionStorageProvider).clear();
     _prefs
       ?..cachedUser = null
-      ..cachedGroups = null;
+      ..cachedGroups = null
+      ..cachedPersonalRoll = null;
     state = const AsyncData(null);
   }
 

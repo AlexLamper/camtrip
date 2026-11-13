@@ -6,6 +6,7 @@ import { serializePhoto } from '@/lib/photos';
 import { pushToUsers } from '@/lib/push';
 import { newMediaNotice } from '@/lib/push-i18n';
 import { objectExists } from '@/lib/storage';
+import { isPersonalRoll } from '@/lib/personal-roll';
 
 // One push per person per group per window, however many photos they take:
 // "Daan deelt foto's in Mallorca '27" instead of twelve separate buzzes.
@@ -44,7 +45,8 @@ export const POST = handler<Params<{ id: string }>>(async (req, { params }) => {
     { new: true },
   ).lean<GroupDoc>();
 
-  if (group) {
+  // Mijn rolletje is private: nobody to tell.
+  if (group && !isPersonalRoll(group)) {
     const last = group.lastNotified?.[String(user._id) as keyof typeof group.lastNotified] as Date | undefined;
     const due = !last || Date.now() - new Date(last).getTime() > BUNDLE_WINDOW_MS;
     if (due) {

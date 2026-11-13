@@ -3,3 +3,4 @@
 "NSMicrophoneUsageDescription" = "CamTrip 需要使用麦克风为视频录制声音。";
 "NSPhotoLibraryAddUsageDescription" = "CamTrip 会把你的照片保存到照片图库中以群组命名的相簿里。";
 "NSPhotoLibraryUsageDescription" = "从图库中选择照片，与你的群组分享。";
+"NSLocationWhenInUseUsageDescription" = "CamTrip 仅在你同意后将你的位置用于群组的旅行地图：精确到约 100 米，且只有该群组可见。";

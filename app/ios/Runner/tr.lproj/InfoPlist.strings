@@ -3,3 +3,4 @@
 "NSMicrophoneUsageDescription" = "CamTrip, videolarda ses kaydetmek için mikrofonunu kullanır.";
 "NSPhotoLibraryAddUsageDescription" = "CamTrip fotoğraflarını, fotoğraf arşivinde grubunun adını taşıyan bir albüme kaydeder.";
 "NSPhotoLibraryUsageDescription" = "Grubunla paylaşmak için arşivinden fotoğraf seç.";
+"NSLocationWhenInUseUsageDescription" = "CamTrip konumunu yalnızca kabul edersen bir grubun gezi haritası için kullanır: yaklaşık 100 m hassasiyetle ve yalnızca o grup görebilir.";

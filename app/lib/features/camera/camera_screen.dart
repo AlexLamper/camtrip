@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,8 +15,12 @@ import '../../core/widgets.dart';
 import '../../l10n/l10n.dart';
 import '../../main.dart';
 import '../../models/models.dart';
+import '../gallery/all_photos_controller.dart';
+import '../gallery/gallery_controller.dart';
 import '../groups/groups_controller.dart';
 import '../premium/pro_gate.dart';
+import '../premium/roll.dart';
+import '../tripmap/trip_location.dart';
 import '../upload/upload_queue.dart';
 import 'camera_layout.dart';
 import 'camera_picker_sheet.dart';
@@ -30,8 +35,9 @@ import 'styles.dart';
 import 'video_processor.dart';
 import 'viewfinder_overlays.dart';
 
-/// Album on the phone; the same name in every language, so it never splits.
-String albumName(Group g) => 'CamTrip - ${g.name}';
+/// Album on the phone; the same name in every language, so it never splits
+/// ("CamTrip - groep", or just "CamTrip" for my personal roll).
+String albumName(Group g) => g.deviceAlbum;
 
 class CameraScreen extends ConsumerStatefulWidget {
   const CameraScreen({super.key});
@@ -78,7 +84,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
   bool _busy = false;
   bool _flashAnim = false;
   String? _error;
-  Uint8List? _lastThumb;
+
+  /// The shot taken in this session (processor output, already decoded),
+  /// with the group it went to; shown until something newer turns up.
+  LastShotCandidate? _lastShot;
+  String? _lastShotGroupId;
+
+  /// Bumped on each capture; pops the last-shot print.
+  int _shots = 0;
   DateTime? _recordStart;
   Timer? _recordTimer;
 
@@ -264,7 +277,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
 
   Future<void> _selectStyle(CameraStyle s) async {
     if (!ref.read(activeProGateProvider).canUseStyle(styleIsPro: s.pro)) {
-      context.push('/pro');
+      openPaywall(context, reason: PaywallReason.camera, group: ref.read(activeGroupProvider));
       return;
     }
     HapticFeedback.selectionClick();
@@ -314,6 +327,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
   }
 
   Future<void> _shoot(Group group) async {
+    // The free roll is full (24 per person per trip): the paywall, not a lost shot.
+    // A clip that is already recording can always be stopped.
+    if (!_recording && (ref.read(rollProvider(group.id))?.full ?? false)) {
+      HapticFeedback.heavyImpact();
+      unawaited(openPaywall(context, reason: PaywallReason.rollFull, group: group));
+      return;
+    }
     final c = _controller;
     if (c == null || _busy || !c.value.isInitialized) return;
     if (!ref.read(activeProGateProvider).canUseStyle(styleIsPro: _style.pro)) {
@@ -322,14 +342,33 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
       showMessage(context, context.l10n.styleProFallback(CameraStyle.defaultStyle.name));
       return;
     }
-    if (_videoMode) return _toggleRecording(group);
+    // Reiskaart: the first photo in a group with the trip map on asks once
+    // "Deel waar je foto's gemaakt zijn ...?" (changeable in the group settings).
+    if (group.tripMap.needsConsent && !_recording && _countdown == null) {
+      await askTripMapConsentIfNeeded(context, ref, group);
+      if (!mounted) return;
+    }
     // Self-timer: a second tap cancels the countdown.
     if (_countdown != null) return _cancelCountdown();
-    if (_settings.timer != ShutterTimer.off) return _startCountdown(group, _settings.timer.seconds);
+    if (_videoMode) {
+      // Stopping a clip never waits; starting one counts down like a photo.
+      if (!_recording && _settings.timer != ShutterTimer.off) return _startCountdown(_settings.timer.seconds, () => _toggleRecording(group));
+      return _toggleRecording(group);
+    }
+    if (_settings.timer != ShutterTimer.off) return _startCountdown(_settings.timer.seconds, () => _capture(group));
     return _capture(group);
   }
 
-  void _startCountdown(Group group, int seconds) {
+  /// The quick timer button right of the shutter: Uit -> 3s -> 10s, saved
+  /// like the same choice in the "..." sheet.
+  void _cycleTimer() {
+    final next = _settings.copyWith(timer: nextQuickTimer(_settings.timer));
+    HapticFeedback.selectionClick();
+    _settingsStore?.write(next);
+    _onSettingsChanged(next);
+  }
+
+  void _startCountdown(int seconds, Future<void> Function() action) {
     _countdownTimer?.cancel();
     if (_settings.haptics) HapticFeedback.selectionClick();
     setState(() => _countdown = seconds);
@@ -339,7 +378,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
       if (left <= 0) {
         t.cancel();
         setState(() => _countdown = null);
-        _capture(group);
+        final c = _controller;
+        if (c != null && c.value.isInitialized && !_busy) action();
         return;
       }
       if (_settings.haptics) HapticFeedback.selectionClick();
@@ -373,6 +413,8 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     Future.delayed(const Duration(milliseconds: 140), () => mounted ? setState(() => _flashAnim = false) : null);
     try {
       final shot = await c.takePicture();
+      // Reiskaart (opt-in): coarse location sent next to the photo, never written into it.
+      final where = ref.read(tripLocationProvider).forCapture(group.id);
       final takenAt = DateTime.now();
       if (mounted) {
         setState(() {
@@ -390,7 +432,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
         showDateStamp: opts.showDateStamp,
         mirror: opts.mirror,
       );
-      if (mounted) setState(() => _lastThumb = processed.thumb);
+      if (mounted) _showLastShot(group, MemoryImage(processed.thumb), takenAt);
       await ref.read(uploadQueueProvider.notifier).enqueue(
             groupId: group.id,
             kind: 'photo',
@@ -403,6 +445,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
             original: processed.original,
             display: processed.display,
             thumb: processed.thumb,
+            location: await where,
           );
       if (_settings.saveToRoll) {
         await _saveToAlbum(
@@ -459,13 +502,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     final durationMs = DateTime.now().difference(takenAt).inMilliseconds;
     try {
       final file = await c.stopVideoRecording();
+      final where = ref.read(tripLocationProvider).forCapture(group.id);
       if (mounted) setState(() => _busy = false);
       if (mounted && identical(_controller, c)) _lowLightMonitor.start(c);
       final styled = await VideoProcessor.applyStyle(File(file.path), _style);
       final thumbFile = await VideoProcessor.thumbnail(styled);
       final thumbBytes = thumbFile != null ? await thumbFile.readAsBytes() : placeholderJpeg();
       final thumbs = thumbBytes.isEmpty ? null : await processPhoto(thumbBytes, styleId: 'none', applyStyle: false);
-      if (mounted && thumbs != null) setState(() => _lastThumb = thumbs.thumb);
+      if (mounted && thumbs != null) _showLastShot(group, MemoryImage(thumbs.thumb), takenAt);
       final bytes = await styled.readAsBytes();
       await ref.read(uploadQueueProvider.notifier).enqueue(
             groupId: group.id,
@@ -481,6 +525,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
             display: thumbs?.display ?? thumbBytes,
             thumb: thumbs?.thumb ?? thumbBytes,
             originalExt: 'mp4',
+            location: await where,
           );
       if (_settings.saveToRoll) {
         await _saveToAlbum(() => Gal.putVideo(styled.path, album: albumName(group)));
@@ -494,6 +539,45 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     }
   }
 
+  /// Puts a fresh capture in the last-shot print right away, with a pop.
+  void _showLastShot(Group group, ImageProvider image, DateTime takenAt) {
+    setState(() {
+      _lastShot = LastShotCandidate(image: image, takenAt: takenAt, local: true);
+      _lastShotGroupId = group.id;
+      _shots++;
+    });
+  }
+
+  /// What the last-shot print shows: the newest of this session's capture,
+  /// the upload queue and the gallery, for the group being shot in (all of
+  /// the user's photos when there is none). Null: the empty print.
+  LastShotCandidate? _lastShotFor(Group? group) {
+    final queue = ref.watch(uploadQueueProvider);
+    final queued = group == null ? queue : queue.where((i) => i.groupId == group.id);
+    LastShotCandidate? newestQueued;
+    for (final i in queued) {
+      if (newestQueued == null || i.takenAt.isAfter(newestQueued.takenAt)) {
+        newestQueued = LastShotCandidate(image: FileImage(File(i.thumbPath)), takenAt: i.takenAt, local: true);
+      }
+    }
+    final Photo? latest;
+    if (group == null) {
+      latest = ref.watch(allPhotosProvider.select((s) => s.photos.isEmpty ? null : s.photos.first));
+    } else {
+      // Only the unfiltered list starts with the newest photo.
+      latest = ref.watch(galleryProvider(group.id).select((s) => s.filter == const GalleryFilter.all() && s.photos.isNotEmpty ? s.photos.first : null));
+    }
+    return newestShot([
+      if (_lastShot != null && (group == null || _lastShotGroupId == group.id)) _lastShot,
+      newestQueued,
+      if (latest != null && latest.thumbUrl.isNotEmpty)
+        LastShotCandidate(
+          image: ResizeImage(CachedNetworkImageProvider(latest.thumbUrl, cacheKey: 'thumb_${latest.id}'), width: 160, policy: ResizeImagePolicy.fit),
+          takenAt: latest.takenAt,
+        ),
+    ]);
+  }
+
   void _pickGroup(List<Group> groups) {
     showModalBottomSheet<void>(
       context: context,
@@ -503,12 +587,28 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(context.l10n.shootInGroup, style: CT.title(22)),
             const SizedBox(height: 12),
+            // My personal roll first: loose photos that are not for an album.
+            Builder(builder: (_) {
+              final roll = ref.read(personalRollProvider);
+              return ListTile(
+                key: const ValueKey('camera-pick-personal-roll'),
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.lock_person_outlined, color: CT.ink),
+                title: Text(roll.name, style: CT.text(16, weight: FontWeight.w600)),
+                subtitle: Text(context.l10n.personalRollPickerSubtitle, style: CT.text(13, color: CT.muted)),
+                trailing: ref.read(activeGroupProvider)?.isPersonal ?? false ? const Icon(Icons.check_circle, color: CT.accent) : null,
+                onTap: () {
+                  ref.read(activeGroupIdProvider.notifier).set(Group.personalRollId);
+                  Navigator.pop(c);
+                },
+              );
+            }),
             for (final g in groups.where((g) => !g.isArchived && !g.archived))
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(g.name, style: CT.text(16, weight: FontWeight.w600)),
                 subtitle: Text('${context.l10n.membersCount(g.members.length)} · ${context.l10n.photosCount(g.totalCount)}', style: CT.text(13, color: CT.muted)),
-                trailing: g.id == ref.read(activeGroupIdProvider) ? const Icon(Icons.check_circle, color: CT.accent) : null,
+                trailing: g.id == ref.read(activeGroupProvider)?.id ? const Icon(Icons.check_circle, color: CT.accent) : null,
                 onTap: () {
                   ref.read(activeGroupIdProvider.notifier).set(g.id);
                   Navigator.pop(c);
@@ -543,7 +643,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
               onClose: _recording ? null : () => context.pop(),
               onSettings: _recording ? null : _openSettings,
               groupPill: CameraGroupPill(
-                label: group == null ? l.chooseGroup : '${group.name} · ${group.members.length}',
+                label: group == null
+                    ? l.chooseGroup
+                    : group.isPersonal
+                        ? group.name
+                        : '${group.name} · ${group.members.length}',
+                personal: group?.isPersonal ?? false,
                 onTap: () => _pickGroup(groups),
               ),
             ),
@@ -573,7 +678,20 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
               flip: CameraFlipButton(front: _front, onPressed: _canFlip ? _flipCamera : null),
             ),
             // Pro styles unlocked by someone else in this group ("Pro via Sanne").
-            hint: gate.cameraHint == null
+            // Free roll counter ("18/24", orange from 20); hidden without a limit
+            // (Pro, Pro group, Trip Pass), where the Pro hint can show instead.
+            hint: group != null && ref.watch(rollProvider(group.id)) != null
+                ? Center(
+                    child: RollCounterPill(
+                      roll: ref.watch(rollProvider(group.id))!,
+                      onTap: () => openPaywall(
+                        context,
+                        reason: ref.read(rollProvider(group.id))?.full ?? false ? PaywallReason.rollFull : PaywallReason.general,
+                        group: group,
+                      ),
+                    ),
+                  )
+                : gate.cameraHint == null
                 ? null
                 : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                     const Icon(Icons.star_rounded, size: 14, color: CT.accent),
@@ -585,11 +703,13 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
                   ]),
             modeSwitch: CameraModeSwitch(videoMode: _videoMode, enabled: !_recording, onChanged: _setVideoMode),
             lastShot: LastShotThumb(
-              thumb: _lastThumb,
+              image: _lastShotFor(group)?.image,
+              shotKey: _shots,
               pending: pending,
-              onTap: group == null ? null : () => context.push('/group/${group.id}'),
+              onTap: () => context.push(group == null ? '/photos' : '/group/${group.id}'),
             ),
             shutter: _shutter(group),
+            timer: CameraTimerButton(timer: _settings.timer, onPressed: _recording || _countdown != null ? null : _cycleTimer),
           ),
         ),
         // Front-camera "flash": the whole screen turns white for the shot.

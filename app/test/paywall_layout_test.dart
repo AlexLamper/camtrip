@@ -1,7 +1,10 @@
 import 'package:camtrip/core/theme.dart';
+import 'package:camtrip/features/groups/groups_controller.dart';
 import 'package:camtrip/features/premium/paywall_screen.dart';
 import 'package:camtrip/features/premium/premium_controller.dart';
+import 'package:camtrip/features/premium/roll.dart';
 import 'package:camtrip/l10n/l10n.dart';
+import 'package:camtrip/models/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,15 +15,43 @@ import 'support/real_fonts.dart';
 
 const _se = Size(375, 667);
 
-Future<void> _pump(WidgetTester tester, {required Locale locale, double scale = 1, Size size = _se, double top = 20}) async {
-  tester.view.physicalSize = size * 3;
+Group _group({bool personal = false, bool tripPass = false, DateTime? deleteAfter}) => Group.fromJson({
+      'id': 'g1',
+      'name': 'Mallorca',
+      'type': personal ? 'permanent' : 'vacation',
+      'isPersonal': personal,
+      'code': 'ABC123',
+      'status': 'active',
+      'myRole': 'member',
+      'ownerId': 'owner',
+      'isProGroup': tripPass,
+      'proSource': tripPass ? 'tripPass' : null,
+      'tripPass': tripPass ? {'purchasedByName': 'Sanne'} : null,
+      'deleteAfter': deleteAfter?.toIso8601String(),
+      'roll': tripPass ? null : {'used': 24, 'limit': 24},
+      'memberLimit': 10,
+      'members': [
+        {'id': 'me', 'name': 'Ik', 'role': 'member'},
+      ],
+    });
+
+Future<void> _pump(
+  WidgetTester tester, {
+  required Locale locale,
+  double scale = 1,
+  PaywallReason reason = PaywallReason.general,
+  Group? group,
+}) async {
+  tester.view.physicalSize = _se * 3;
   tester.view.devicePixelRatio = 3;
-  tester.view.padding = FakeViewPadding(top: top * 3);
+  tester.view.padding = const FakeViewPadding(top: 20 * 3);
   addTearDown(tester.view.reset);
   await tester.pumpWidget(ProviderScope(
     overrides: [
       premiumProvider.overrideWith(FakePremium.new),
       isProProvider.overrideWith((ref) => false),
+      groupProvider.overrideWith((ref, id) => group != null && group.isId(id) ? group : null),
+      rollProvider.overrideWith((ref, id) => group == null || group.rollLimit == null ? null : RollState(used: group.rollUsed, limit: group.rollLimit!)),
     ],
     child: localizedApp(
       locale: locale,
@@ -29,7 +60,7 @@ Future<void> _pump(WidgetTester tester, {required Locale locale, double scale = 
         data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
         child: child!,
       ),
-      home: const PaywallScreen(),
+      home: PaywallScreen(reason: reason, groupId: group?.id),
     ),
   ));
   await tester.pump(const Duration(milliseconds: 100));
@@ -45,57 +76,109 @@ void _expectInView(WidgetTester tester, Finder finder, Size screen, String what)
   expect(r.bottom, lessThanOrEqualTo(screen.height), reason: '$what bottom ($r)');
 }
 
+/// Everything needed to buy is on an iPhone SE screen without scrolling.
+void _expectEssentialsInView(WidgetTester tester, AppLocalizations l, {required bool tripPass}) {
+  _expectInView(tester, find.byKey(const ValueKey('paywall-title')), _se, 'title');
+  if (tripPass) _expectInView(tester, find.byKey(const ValueKey('plan-trip-pass')), _se, 'trip pass option');
+  _expectInView(tester, find.byKey(const ValueKey('plan-annual')), _se, 'annual option');
+  _expectInView(tester, find.byKey(const ValueKey('plan-monthly')), _se, 'monthly option');
+  _expectInView(tester, find.byKey(const ValueKey('paywall-cta')), _se, 'CTA');
+  _expectInView(tester, find.byKey(const ValueKey('paywall-terms')), _se, 'terms');
+  for (final link in [l.restorePurchases, l.terms, l.privacy, 'EULA']) {
+    _expectInView(tester, find.text(link), _se, link);
+  }
+  _expectInView(tester, find.byTooltip(l.close), _se, 'close');
+}
+
 void main() {
   setUpAll(loadRealFonts);
 
-  for (final locale in const [Locale('nl'), Locale('en')]) {
-    testWidgets('$locale: prices, CTA and legal links are on an iPhone SE screen without scrolling', (tester) async {
+  for (final locale in const [Locale('nl'), Locale('en'), Locale('de')]) {
+    testWidgets('$locale: general paywall: Pro year and month, no Trip Pass, no free trial, fits an iPhone SE', (tester) async {
       await _pump(tester, locale: locale);
       expect(tester.takeException(), isNull);
       final l = lookupAppLocalizations(locale);
 
-      _expectInView(tester, find.text('CamTrip Pro'), _se, 'title');
-      _expectInView(tester, find.text(l.paywallBenefitStyles), _se, 'first benefit');
-      _expectInView(tester, find.text(l.paywallBenefitGroup), _se, 'last benefit');
+      _expectEssentialsInView(tester, l, tripPass: false);
+      expect(find.byKey(const ValueKey('plan-trip-pass')), findsNothing);
       _expectInView(tester, find.text('€ 47,99'), _se, 'annual price');
       _expectInView(tester, find.text('€ 7,49'), _se, 'monthly price');
-      _expectInView(tester, find.text(l.paywallFreeTrial(l.periodDays(7))), _se, 'trial label');
-      _expectInView(tester, find.text(l.paywallSaveBadge(47)), _se, 'save badge'); // 1 - 47.99 / (12 x 7.49)
-      _expectInView(tester, find.byKey(const ValueKey('paywall-cta')), _se, 'CTA');
-      _expectInView(tester, find.text(l.tryFree(l.periodDays(7))), _se, 'CTA label');
-      _expectInView(tester, find.textContaining(l.paywallAutoRenew('Google Play')), _se, 'auto-renew terms');
-      for (final link in [l.restorePurchases, l.terms, l.privacy, 'EULA']) {
-        _expectInView(tester, find.text(link), _se, link);
-      }
-      // the close button stays reachable
-      _expectInView(tester, find.byTooltip(l.close), _se, 'close');
-      // the list is not scrolled: the title is at the top
-      expect(tester.getRect(find.text('CamTrip Pro')).top, lessThan(_se.height / 2));
+      _expectInView(tester, find.text(l.paywallBestValue), _se, 'best value badge');
+      // The store still reports a 7-day intro offer: it is not advertised anywhere.
+      expect(find.textContaining(l.periodDays(7)), findsNothing);
+      expect(find.text(l.tryFree(l.periodDays(7))), findsNothing);
+      expect(find.text(l.paywallFreeTrial(l.periodDays(7))), findsNothing);
+      // Year is picked by default: "Word Pro" and the renewal terms.
+      expect(find.text(l.becomePro), findsOneWidget);
+      expect(find.textContaining(l.paywallPriceYear('€ 47,99')), findsOneWidget);
+      expect(find.textContaining(l.paywallAutoRenew('Google Play')), findsOneWidget);
     });
 
-    testWidgets('$locale: choosing monthly switches the CTA and the terms', (tester) async {
-      await _pump(tester, locale: locale);
+    testWidgets('$locale: roll full in a group: header 24/24, Trip Pass first and picked, fits an iPhone SE', (tester) async {
+      await _pump(tester, locale: locale, reason: PaywallReason.rollFull, group: _group());
+      expect(tester.takeException(), isNull);
       final l = lookupAppLocalizations(locale);
+
+      expect(find.text(l.paywallRollFullTitle(24, 24)), findsOneWidget);
+      _expectEssentialsInView(tester, l, tripPass: true);
+      _expectInView(tester, find.text('€ 4,49'), _se, 'trip pass price');
+      _expectInView(tester, find.text(l.paywallTripPassSub), _se, 'trip pass line');
+      // Trip Pass picked: its CTA and one-time terms, no auto-renew sentence.
+      expect(find.text(l.buyTripPass), findsOneWidget);
+      expect(find.text(l.paywallTripPassTerms('€ 4,49')), findsOneWidget);
+      expect(find.textContaining(l.paywallAutoRenew('Google Play')), findsNothing);
+      // Switching to the month brings the subscription terms back.
       await tester.tap(find.byKey(const ValueKey('plan-monthly')));
       await tester.pump();
       expect(find.text(l.becomePro), findsOneWidget);
       expect(find.textContaining(l.paywallPriceMonth('€ 7,49')), findsOneWidget);
-      await tester.tap(find.byKey(const ValueKey('plan-annual')));
-      await tester.pump();
-      expect(find.textContaining(l.paywallPriceYearTrial(l.periodDays(7), '€ 47,99')), findsOneWidget);
+      expect(find.textContaining(l.paywallAutoRenew('Google Play')), findsOneWidget);
     });
   }
 
+  testWidgets('each trigger has its own header', (tester) async {
+    final l = lookupAppLocalizations(dutch);
+    final until = DateTime(2026, 12, 1);
+    for (final (reason, title) in [
+      (PaywallReason.camera, l.paywallCameraTitle),
+      (PaywallReason.watermark, l.paywallWatermarkTitle),
+      (PaywallReason.deletion, l.paywallDeletionTitle),
+      (PaywallReason.general, 'CamTrip Pro'),
+    ]) {
+      await _pump(tester, locale: dutch, reason: reason, group: _group(deleteAfter: until));
+      expect(find.text(title), findsOneWidget, reason: reason.name);
+      expect(tester.takeException(), isNull);
+    }
+  });
+
+  testWidgets('deletion warning in a group picks the Trip Pass; a camera prompt picks the year', (tester) async {
+    final l = lookupAppLocalizations(dutch);
+    await _pump(tester, locale: dutch, reason: PaywallReason.deletion, group: _group(deleteAfter: DateTime(2026, 12, 1)));
+    expect(find.text(l.buyTripPass), findsOneWidget);
+    await _pump(tester, locale: dutch, reason: PaywallReason.camera, group: _group());
+    expect(find.byKey(const ValueKey('plan-trip-pass')), findsOneWidget);
+    expect(find.text(l.becomePro), findsOneWidget);
+  });
+
+  testWidgets('no Trip Pass for my personal roll, or for a trip that already has one', (tester) async {
+    await _pump(tester, locale: dutch, reason: PaywallReason.rollFull, group: _group(personal: true));
+    expect(find.byKey(const ValueKey('plan-trip-pass')), findsNothing);
+    await _pump(tester, locale: dutch, reason: PaywallReason.camera, group: _group(tripPass: true));
+    expect(find.byKey(const ValueKey('plan-trip-pass')), findsNothing);
+  });
+
   for (final locale in L10n.supportedLocales) {
     for (final scale in [1.0, 1.3]) {
-      testWidgets('$locale at text scale $scale: no overflow on an iPhone SE, scrolled to the end too', (tester) async {
-        await _pump(tester, locale: locale, scale: scale);
+      testWidgets('$locale at text scale $scale: no overflow on an iPhone SE with all three options, scrolled to the end too',
+          (tester) async {
+        await _pump(tester, locale: locale, scale: scale, reason: PaywallReason.rollFull, group: _group());
         expect(tester.takeException(), isNull);
+        final l = lookupAppLocalizations(locale);
+        if (scale == 1.0) _expectEssentialsInView(tester, l, tripPass: true);
         await tester.fling(find.byType(Scrollable).first, const Offset(0, -2000), 3000);
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         // the buy button and legal links never scroll away
-        final l = lookupAppLocalizations(locale);
         _expectInView(tester, find.byKey(const ValueKey('paywall-cta')), _se, 'CTA');
         _expectInView(tester, find.text(l.restorePurchases), _se, 'restore');
       });
@@ -106,17 +189,24 @@ void main() {
     tester.view.physicalSize = _se * 3;
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
+    final group = _group();
     await tester.pumpWidget(ProviderScope(
       overrides: [
         premiumProvider.overrideWith(_NoOffering.new),
         isProProvider.overrideWith((ref) => false),
+        groupProvider.overrideWith((ref, id) => group.isId(id) ? group : null),
+        rollProvider.overrideWith((ref, id) => const RollState(used: 24, limit: 24)),
       ],
-      child: localizedApp(theme: CT.theme(), home: const PaywallScreen()),
+      child: localizedApp(theme: CT.theme(), home: const PaywallScreen(reason: PaywallReason.rollFull, groupId: 'g1')),
     ));
     await tester.pump();
     expect(tester.takeException(), isNull);
     final l = lookupAppLocalizations(dutch);
     expect(find.text(l.subscriptionsLoadFailed), findsOneWidget);
+    // list prices while the store has not answered
+    expect(find.textContaining('4,99'), findsWidgets);
+    expect(find.textContaining('49,99'), findsOneWidget);
+    expect(find.textContaining('7,99'), findsOneWidget);
     _expectInView(tester, find.byKey(const ValueKey('paywall-cta')), _se, 'CTA');
     _expectInView(tester, find.text(l.restorePurchases), _se, 'restore');
   });

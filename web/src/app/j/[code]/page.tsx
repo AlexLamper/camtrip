@@ -3,6 +3,7 @@ import { Footer, Nav, StoreButtons } from '@/components/site';
 import { connectDB } from '@/lib/db';
 import { Group, User, type GroupDoc } from '@/lib/models';
 import { normalizeCode } from '@/lib/groups';
+import { joinable } from '@/lib/personal-roll';
 
 type Props = { params: Promise<{ code: string }> };
 
@@ -10,8 +11,8 @@ async function lookup(raw: string) {
   const code = normalizeCode(raw);
   try {
     await connectDB();
-    const group = await Group.findOne({ code }, { name: 1, ownerId: 1, members: 1, status: 1 }).lean<GroupDoc>();
-    if (!group) return { code, group: null };
+    const group = await Group.findOne({ code }, { name: 1, type: 1, ownerId: 1, members: 1, status: 1 }).lean<GroupDoc>();
+    if (!group || !joinable(group)) return { code, group: null };
     const owner = await User.findById(group.ownerId, { name: 1 }).lean();
     return { code, group: { name: group.name, owner: owner?.name ?? 'Iemand', members: group.members.length } };
   } catch {

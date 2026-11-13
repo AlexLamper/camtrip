@@ -136,6 +136,8 @@ jobs:
           REVENUECAT_APPLE_KEY: ${{ secrets.REVENUECAT_APPLE_KEY }}
           GOOGLE_IOS_CLIENT_ID: ${{ vars.GOOGLE_IOS_CLIENT_ID }}
           GOOGLE_SERVER_CLIENT_ID: ${{ vars.GOOGLE_SERVER_CLIENT_ID }}
+          # Reiskaart map tiles (CARTO Basemaps API key, see app/lib/features/tripmap/trip_tiles.dart).
+          CARTO_BASEMAPS_KEY: ${{ vars.CARTO_BASEMAPS_KEY }}
         run: |
           # BUILD_NAME / BUILD_NUMBER come from the "Resolve version" step.
           echo "Building $BUILD_NAME ($BUILD_NUMBER)"
@@ -153,7 +155,7 @@ jobs:
           # Only pass defines that are set, so the defaults in config.dart stay
           # in effect otherwise (an empty define would override them).
           DEFINES=()
-          for v in REVENUECAT_APPLE_KEY GOOGLE_IOS_CLIENT_ID GOOGLE_SERVER_CLIENT_ID; do
+          for v in REVENUECAT_APPLE_KEY GOOGLE_IOS_CLIENT_ID GOOGLE_SERVER_CLIENT_ID CARTO_BASEMAPS_KEY; do
             if [ -n "${!v:-}" ]; then DEFINES+=("--dart-define=$v=${!v}"); fi
           done
 

@@ -1,5 +1,6 @@
 // App-wide admin ("Beheer" in the app). Not the same as a group admin
 // (lib/groups.ts requireAdmin): this is the CamTrip team.
+import { NOT_PERSONAL } from './personal-roll';
 import { Types } from 'mongoose';
 import { z } from 'zod';
 import { Group, Photo, User, type UserDoc } from './models';
@@ -72,7 +73,7 @@ export function adminUserRow(u: UserDoc) {
 export async function adminUserDetail(u: UserDoc) {
   const now = new Date();
   const [groupsCount, photosCount, grantedBy] = await Promise.all([
-    Group.countDocuments({ 'members.userId': u._id }),
+    Group.countDocuments({ 'members.userId': u._id, ...NOT_PERSONAL }),
     Photo.countDocuments({ userId: u._id, status: 'ready' }),
     u.proGrant?.grantedBy ? User.findById(u.proGrant.grantedBy, { name: 1, email: 1 }).lean<UserDoc>() : null,
   ]);

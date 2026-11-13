@@ -8,33 +8,69 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api.dart';
 import '../../core/config.dart';
+import '../../core/format.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../l10n/l10n.dart';
+import '../../models/models.dart';
 import '../auth/onboarding_slides.dart' show OnboardingPhotos;
 import '../camera/styles.dart';
+import '../groups/groups_controller.dart';
 import 'paywall_widgets.dart';
 import 'premium_controller.dart';
+import 'roll.dart';
 
 export 'paywall_widgets.dart' show GroupProNote;
+export 'roll.dart' show PaywallReason, openPaywall, paywallLocation;
 
-/// The Pro paywall. At the default text size everything needed to buy
-/// (benefits, both prices, the button, the renewal terms and the legal links)
-/// fits on an iPhone SE without scrolling; the details below the plans and
-/// large accessibility text scroll.
+/// The three things the paywall sells.
+enum PaywallPlan { tripPass, annual, monthly }
+
+/// The paywall. A header that says why it opened ([reason]), then up to three
+/// options: Trip Pass (only for a group: [groupId]), Pro per year and Pro per
+/// month. No free trial: if the store still reports an introductory offer,
+/// it is not advertised. At the default text size everything needed to buy
+/// (header, options, the button, the terms and the legal links) fits on an
+/// iPhone SE without scrolling; the details below scroll.
 class PaywallScreen extends ConsumerStatefulWidget {
-  const PaywallScreen({super.key});
+  const PaywallScreen({super.key, this.reason = PaywallReason.general, this.groupId});
+
+  final PaywallReason reason;
+
+  /// App id of the group the paywall was opened from (offers the Trip Pass).
+  final String? groupId;
+
   @override
   ConsumerState<PaywallScreen> createState() => _PaywallScreenState();
 }
 
 class _PaywallScreenState extends ConsumerState<PaywallScreen> {
-  bool _annual = true;
+  PaywallPlan? _picked;
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() => ref.read(premiumProvider.notifier).loadOffering());
+  }
+
+  /// The group a Trip Pass would be for, or null when it cannot have one.
+  Group? _tripPassGroup() {
+    final id = widget.groupId;
+    if (id == null) return null;
+    final g = ref.watch(groupProvider(id));
+    if (g == null || g.isPersonal || g.hasTripPass) return null;
+    return g;
+  }
+
+  /// What is selected: the user's pick, else the Trip Pass when the roll is
+  /// full or the trip is about to go (the smallest step), else the year.
+  PaywallPlan _plan(bool tripPassOffered) {
+    final p = _picked;
+    if (p != null && (p != PaywallPlan.tripPass || tripPassOffered)) return p;
+    if (tripPassOffered && (widget.reason == PaywallReason.rollFull || widget.reason == PaywallReason.deletion)) {
+      return PaywallPlan.tripPass;
+    }
+    return PaywallPlan.annual;
   }
 
   Future<void> _buy(Package? p) async {
@@ -48,6 +84,17 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         showMessage(context, context.l10n.welcomePro);
         context.pop();
       }
+    } on ApiException catch (e) {
+      if (mounted) showMessage(context, e.message);
+    }
+  }
+
+  Future<void> _buyTripPass(Group group) async {
+    try {
+      final outcome = await ref.read(premiumProvider.notifier).purchaseTripPass(group);
+      if (!mounted || outcome == TripPassOutcome.cancelled) return;
+      showMessage(context, outcome == TripPassOutcome.activated ? context.l10n.tripPassActive : context.l10n.tripPassActivating);
+      context.pop();
     } on ApiException catch (e) {
       if (mounted) showMessage(context, e.message);
     }
@@ -67,57 +114,58 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   String _price(Package? p, double fallback) =>
       p?.storeProduct.priceString ?? NumberFormat.simpleCurrency(locale: L10n.intlLocale, name: 'EUR').format(fallback);
 
-  /// "7 dagen" / "1 maand" from the store's introductory offer, if it is free.
-  static String? _trialText(AppLocalizations l, Package? p) {
-    final intro = p?.storeProduct.introductoryPrice;
-    if (intro == null || intro.price > 0) return null;
-    final n = intro.periodNumberOfUnits * intro.cycles;
-    return switch (intro.periodUnit) {
-      PeriodUnit.day => l.periodDays(n),
-      PeriodUnit.week => n == 1 ? l.periodDays(7) : l.periodWeeks(n),
-      PeriodUnit.month => l.periodMonths(n),
-      PeriodUnit.year => l.periodYears(n),
-      _ => null,
-    };
-  }
-
-  /// What the year saves against twelve months, from the store's prices.
-  static int _savePercent(Package? annual, Package? monthly) {
-    final y = annual?.storeProduct.price, m = monthly?.storeProduct.price;
-    if (y == null || m == null || m <= 0) return 48; // 49,99 vs 12 x 7,99
-    return ((1 - y / (m * 12)) * 100).round().clamp(0, 99);
-  }
-
   void _open(String url) => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+
+  /// Title and one line below it, for why the paywall opened.
+  (String, String) _header(AppLocalizations l, bool isPro) {
+    if (isPro) return (l.paywallHavePro, l.paywallSubtitle);
+    final group = widget.groupId == null ? null : ref.watch(groupProvider(widget.groupId!));
+    switch (widget.reason) {
+      case PaywallReason.rollFull:
+        final roll = widget.groupId == null ? null : ref.watch(rollProvider(widget.groupId!));
+        final limit = roll?.limit ?? group?.rollLimit ?? 24;
+        final used = (roll?.used ?? limit).clamp(0, limit);
+        return (l.paywallRollFullTitle(used, limit), l.paywallRollFullSub);
+      case PaywallReason.camera:
+        return (l.paywallCameraTitle, l.paywallCameraSub(CameraStyle.all.length));
+      case PaywallReason.watermark:
+        return (l.paywallWatermarkTitle, l.paywallWatermarkSub);
+      case PaywallReason.deletion:
+        final until = group?.deleteAfter;
+        return (l.paywallDeletionTitle, until == null ? l.deletionBannerBody : l.paywallDeletionSub(Fmt.shortYear(until)));
+      case PaywallReason.general:
+        return ('CamTrip Pro', l.paywallSubtitle);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final s = ref.watch(premiumProvider);
     final isPro = ref.watch(isProProvider);
-    final annual = s.annual, monthly = s.monthly;
+    final annual = s.annual, monthly = s.monthly, tripPassPackage = s.tripPass;
     final l = context.l10n;
-    final trial = _trialText(l, _annual ? annual : monthly);
-    final annualTrial = _trialText(l, annual), monthlyTrial = _trialText(l, monthly);
+    final tripGroup = isPro ? null : _tripPassGroup();
+    final plan = _plan(tripGroup != null);
     final annualPrice = _price(annual, 49.99), monthlyPrice = _price(monthly, 7.99);
+    final tripPassPrice = _price(tripPassPackage, 4.99);
     final unavailable = s.configured && s.offering == null;
     final store = defaultTargetPlatform == TargetPlatform.iOS ? 'App Store' : 'Google Play';
+    final (title, subtitle) = _header(l, isPro);
 
-    final renew = [
-      switch ((_annual, trial)) {
-        (true, null) => l.paywallPriceYear(annualPrice),
-        (true, final t?) => l.paywallPriceYearTrial(t, annualPrice),
-        (false, null) => l.paywallPriceMonth(monthlyPrice),
-        (false, final t?) => l.paywallPriceMonthTrial(t, monthlyPrice),
-      },
-      l.paywallAutoRenew(store),
-    ].join(' ');
+    // Only subscriptions renew: the Trip Pass gets its own one-line terms.
+    final terms = switch (plan) {
+      PaywallPlan.tripPass => l.paywallTripPassTerms(tripPassPrice),
+      PaywallPlan.annual => '${l.paywallPriceYear(annualPrice)} ${l.paywallAutoRenew(store)}',
+      PaywallPlan.monthly => '${l.paywallPriceMonth(monthlyPrice)} ${l.paywallAutoRenew(store)}',
+    };
 
     final benefits = [
-      (Icons.auto_awesome_rounded, l.paywallBenefitStyles),
       (Icons.all_inclusive_rounded, l.paywallBenefitUnlimited),
-      (Icons.hd_rounded, l.paywallBenefitQuality),
+      (Icons.auto_awesome_rounded, l.paywallBenefitStyles),
       (Icons.groups_rounded, l.paywallBenefitGroup),
     ];
+
+    void pick(PaywallPlan p) => setState(() => _picked = p);
 
     return Scaffold(
       body: SafeArea(
@@ -125,45 +173,51 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           Expanded(
             child: Stack(children: [
               LayoutBuilder(builder: (context, box) {
-                // The hero gets what the essentials leave over, so the plans
+                // The hero gets what the essentials leave over, so the options
                 // stay on screen on small phones.
-                final hero = (box.maxHeight - 330 * MediaQuery.textScalerOf(context).scale(1)).clamp(0.0, 200.0);
-                return ListView(padding: const EdgeInsets.fromLTRB(24, 0, 24, 24), children: [
-                  if (hero >= 90) PaywallHero(height: hero, photos: const [OnboardingPhotos.sunset, OnboardingPhotos.friends]) else const SizedBox(height: 44),
-                  Text(isPro ? l.paywallHavePro : 'CamTrip Pro', style: CT.title(28)),
+                final essentials = tripGroup != null ? 400 : 340;
+                final hero = (box.maxHeight - essentials * MediaQuery.textScalerOf(context).scale(1)).clamp(0.0, 170.0);
+                return ListView(padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), children: [
+                  if (hero >= 90)
+                    PaywallHero(height: hero, photos: const [OnboardingPhotos.sunset, OnboardingPhotos.friends])
+                  else
+                    const SizedBox(height: 44),
+                  Text(title, key: const ValueKey('paywall-title'), style: CT.title(24)),
                   const SizedBox(height: 2),
-                  Text(l.paywallSubtitle, style: CT.text(14, color: CT.muted)),
-                  const SizedBox(height: 12),
+                  Text(subtitle, style: CT.text(14, color: CT.muted, height: 1.3)),
+                  const SizedBox(height: 10),
                   for (final (icon, text) in benefits) BenefitLine(icon: icon, text: text),
                   if (!isPro) ...[
-                    const SizedBox(height: 20),
-                    IntrinsicHeight(
-                      child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                        Expanded(
-                          child: PlanCard(
-                            key: const ValueKey('plan-annual'),
-                            selected: _annual,
-                            title: l.planYear,
-                            price: annualPrice,
-                            highlight: annualTrial != null ? l.paywallFreeTrial(annualTrial) : null,
-                            sub: l.pricePerMonth(annual?.storeProduct.pricePerMonthString ?? _price(null, 4.17)),
-                            badge: l.paywallSaveBadge(_savePercent(annual, monthly)),
-                            onTap: () => setState(() => _annual = true),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: PlanCard(
-                            key: const ValueKey('plan-monthly'),
-                            selected: !_annual,
-                            title: l.planMonth,
-                            price: monthlyPrice,
-                            highlight: monthlyTrial != null ? l.paywallFreeTrial(monthlyTrial) : null,
-                            sub: l.planMonthCancelAnytime,
-                            onTap: () => setState(() => _annual = false),
-                          ),
-                        ),
-                      ]),
+                    const SizedBox(height: 8),
+                    if (tripGroup != null) ...[
+                      PaywallOption(
+                        key: const ValueKey('plan-trip-pass'),
+                        selected: plan == PaywallPlan.tripPass,
+                        title: 'Trip Pass',
+                        sub: l.paywallTripPassSub,
+                        price: tripPassPrice,
+                        priceNote: l.paywallOneTime,
+                        onTap: () => pick(PaywallPlan.tripPass),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    PaywallOption(
+                      key: const ValueKey('plan-annual'),
+                      selected: plan == PaywallPlan.annual,
+                      title: 'Pro · ${l.planYear}',
+                      sub: l.pricePerMonth(annual?.storeProduct.pricePerMonthString ?? _price(null, 4.17)),
+                      price: annualPrice,
+                      badge: l.paywallBestValue,
+                      onTap: () => pick(PaywallPlan.annual),
+                    ),
+                    const SizedBox(height: 8),
+                    PaywallOption(
+                      key: const ValueKey('plan-monthly'),
+                      selected: plan == PaywallPlan.monthly,
+                      title: 'Pro · ${l.planMonth}',
+                      sub: l.planMonthCancelAnytime,
+                      price: monthlyPrice,
+                      onTap: () => pick(PaywallPlan.monthly),
                     ),
                   ],
                   // Below the fold: the long version, for whoever scrolls.
@@ -188,9 +242,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   const GroupProNote(),
                 ]);
               }),
-              Positioned(
+              PositionedDirectional(
                 top: 4,
-                right: 8,
+                end: 8,
                 child: CloseCircle(tooltip: l.close, onTap: () => context.pop()),
               ),
             ]),
@@ -208,14 +262,18 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                   ),
                 if (!isPro) ...[
                   CTButton(
-                    trial != null ? l.tryFree(trial) : l.becomePro,
+                    plan == PaywallPlan.tripPass ? l.buyTripPass : l.becomePro,
                     key: const ValueKey('paywall-cta'),
                     kind: CTButtonKind.dark,
                     loading: s.busy,
-                    onTap: () => _buy(_annual ? annual : monthly),
+                    onTap: () => switch (plan) {
+                      PaywallPlan.tripPass => _buyTripPass(tripGroup!),
+                      PaywallPlan.annual => _buy(annual),
+                      PaywallPlan.monthly => _buy(monthly),
+                    },
                   ),
                   const SizedBox(height: 6),
-                  Text(renew, textAlign: TextAlign.center, style: CT.text(11, color: CT.muted, height: 1.3)),
+                  Text(terms, key: const ValueKey('paywall-terms'), textAlign: TextAlign.center, style: CT.text(11, color: CT.muted, height: 1.3)),
                 ],
                 LegalLinks(links: [
                   (l.restorePurchases, s.busy ? null : _restore),

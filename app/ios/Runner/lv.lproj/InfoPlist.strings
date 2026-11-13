@@ -1,0 +1,6 @@
+/* Permission texts shown by iOS. Keep in sync with Info.plist (English) and lib/l10n/GLOSSARY.md. */
+"NSCameraUsageDescription" = "CamTrip izmanto kameru, lai tu varētu uzņemt bildes un video savai grupai.";
+"NSMicrophoneUsageDescription" = "CamTrip izmanto mikrofonu, lai ierakstītu skaņu video.";
+"NSPhotoLibraryAddUsageDescription" = "CamTrip saglabā tavas bildes bibliotēkā, albumā ar tavas grupas nosaukumu.";
+"NSPhotoLibraryUsageDescription" = "Izvēlies bildes no bibliotēkas, lai tās kopīgotu ar grupu.";
+"NSLocationWhenInUseUsageDescription" = "CamTrip izmanto tavu atrašanās vietu tikai grupas ceļojuma kartei, ja tu piekrīti: noapaļotu līdz aptuveni 100 m un redzamu tikai šai grupai.";

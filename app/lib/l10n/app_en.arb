@@ -1311,5 +1311,219 @@
   },
   "@styleFlashDescription": {
     "description": "One-line description of the Flash 400 camera style."
-  }
+  },
+  "cameraTimerButton": "Self-timer: {state}",
+  "cameraTimerCycleHint": "Tap to switch between off, 3 s and 10 s",
+  "cameraLastShotOpen": "Latest photo, opens the album",
+  "cameraLastShotEmpty": "No photos yet, opens the album",
+  "@cameraTimerButton": {
+    "description": "Screen reader label of the quick self-timer button on the camera screen; state is Off / 3 s / 10 s.",
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteOnlyOwnOrAdmin": "Only the person who took it or an admin can delete this",
+  "videoPlay": "Play",
+  "videoPause": "Pause",
+  "language": "Language",
+  "languageSystem": "System language",
+  "languageSystemCurrent": "System ({language})",
+  "@languageSystemCurrent": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  },
+  "languageSearchHint": "Search languages",
+  "languageNoResults": "No language found",
+  "personalRollTitle": "My roll",
+  "@personalRollTitle": {
+    "description": "Name of the private personal roll for loose photos that are not for a shared album (CamTrip \"roll\" term)."
+  },
+  "personalRollSubtitle": "Just for you",
+  "@personalRollSubtitle": {
+    "description": "Short tag on the personal roll tile: nobody else sees it."
+  },
+  "personalRollPickerSubtitle": "Loose photos, just for you",
+  "@personalRollPickerSubtitle": {
+    "description": "Subtitle of the personal roll in the camera group picker."
+  },
+  "personalRollMove": "To album",
+  "@personalRollMove": {
+    "description": "Short label (1-2 words) of the selection bar action that moves photos from the personal roll to an album."
+  },
+  "personalRollMoveTitle": "Move to album",
+  "@personalRollMoveTitle": {
+    "description": "Title of the sheet that picks the album to move photos to."
+  },
+  "personalRollMoveNoAlbums": "Create an album or join one with a code first.",
+  "@personalRollMoveNoAlbums": {
+    "description": "Shown when there is no album to move photos into."
+  },
+  "personalRollMoved": "{count, plural, =1{1 photo moved to {album}} other{{count} photos moved to {album}}}",
+  "@personalRollMoved": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "album": {
+        "type": "String"
+      }
+    }
+  },
+  "personalRollPrivateNote": "Only you can see these photos. Move them to an album to share them.",
+  "@personalRollPrivateNote": {
+    "description": "Note at the top of the personal roll gallery."
+  },
+  "paywallTripPassSub": "Only this trip, for the whole group",
+  "paywallOneTime": "one-time",
+  "paywallBestValue": "Best value",
+  "paywallRollFullTitle": "Your roll is full - {used}/{limit} photos",
+  "@paywallRollFullTitle": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallRollFullSub": "Keep shooting with a Trip Pass or Pro.",
+  "paywallCameraTitle": "This camera is part of Pro",
+  "paywallCameraSub": "Unlock all {count} cameras.",
+  "@paywallCameraSub": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "paywallWatermarkTitle": "Recap without watermark",
+  "paywallWatermarkSub": "Share your recap without the CamTrip logo.",
+  "paywallDeletionTitle": "Keep your trip",
+  "paywallDeletionSub": "Free trips are deleted on {date}. A Trip Pass or Pro keeps it forever.",
+  "@paywallDeletionSub": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallTripPassTerms": "One-time purchase of {price} for this trip. Not a subscription.",
+  "@paywallTripPassTerms": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "buyTripPass": "Get Trip Pass",
+  "tripPassActive": "Trip Pass active: this trip is Pro for everyone",
+  "tripPassActivating": "Payment received. Your Trip Pass will be active in a moment.",
+  "proViaTripPass": "Trip Pass from {name}",
+  "@proViaTripPass": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "rollCounterSemantics": "{used} of {limit} shots on your roll",
+  "@rollCounterSemantics": {
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "rollHeldTitle": "{count, plural, =1{1 photo doesn't fit on your roll} other{{count} photos don't fit on your roll}}",
+  "@rollHeldTitle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "rollHeldBody": "Keep them with Pro or a Trip Pass",
+  "deletionBannerTitle": "{days, plural, =1{Keep your trip - 1 day left} other{Keep your trip - {days} days left}}",
+  "@deletionBannerTitle": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "deletionBannerBody": "Free trips are deleted 30 days after they end. A Trip Pass or Pro keeps it forever.",
+  "apiRollFull": "Your roll is full ({limit} shots). Get a Trip Pass or Pro to keep shooting.",
+  "@apiRollFull": {
+    "placeholders": {
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "apiTripPassFailed": "The Trip Pass could not be activated. Contact support@camtrip.app.",
+  "apiTripPassExists": "This trip already has a Trip Pass.",
+  "tripPassUnavailable": "The Trip Pass is not available right now. Try again later.",
+  "tripMapTitle": "Trip map",
+  "tripMapOpen": "Trip map and stats",
+  "tripMapLoadFailed": "Couldn't load the trip map",
+  "tripMapStatDays": "Days",
+  "tripMapStatPhotos": "Photos",
+  "tripMapStatVideos": "Videos",
+  "tripMapStatMembers": "Members",
+  "tripMapStatDistance": "km travelled",
+  "tripMapStatCountries": "Countries",
+  "tripMapStatPlaces": "Places",
+  "tripMapBusiestDay": "Most photos on {day} ({count})",
+  "@tripMapBusiestDay": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripMapTopPhotographer": "Top photographer: {name} ({count})",
+  "@tripMapTopPhotographer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tripMapOffTitle": "The trip map is off",
+  "tripMapOffMessage": "A group admin can turn on the trip map in the group settings. You always see the stats.",
+  "tripMapOffMessageAdmin": "Turn on the trip map to see where your photos were taken. Everyone decides for themselves whether to join in.",
+  "tripMapEnable": "Turn on trip map",
+  "tripMapEmptyTitle": "No places on the map yet",
+  "tripMapEmptyMessage": "New photos from members who share their location appear here, rounded to about 100 m.",
+  "tripMapConsentTitle": "Trip map",
+  "tripMapConsentQuestion": "Share where your photos were taken on this group's trip map?",
+  "tripMapConsentDetail": "Only group members see it, rounded to about 100 m. The location is never put in the photo itself, and you can turn this off at any time in the group settings.",
+  "tripMapConsentYes": "Yes, share",
+  "tripMapConsentNo": "No",
+  "tripMapLocationDenied": "No access to your location. You can allow it in your phone's settings.",
+  "tripMapSettingSubtitle": "Show on a map where photos were taken. Members decide for themselves whether to share.",
+  "tripMapDisableTitle": "Turn off the trip map?",
+  "tripMapDisableMessage": "All locations in this group are deleted. If you turn the map on again later, everyone is asked again.",
+  "tripMapDisable": "Turn off",
+  "tripMapMySharing": "Share my location",
+  "tripMapMySharingOn": "Your new photos appear on the trip map (rounded to about 100 m).",
+  "tripMapMySharingOff": "Off. Your photos don't appear on the map.",
+  "tripMapStopSharingTitle": "Stop sharing your location?",
+  "tripMapStopSharingMessage": "The locations of all your photos in this group are deleted.",
+  "tripMapStopSharing": "Stop sharing"
 }

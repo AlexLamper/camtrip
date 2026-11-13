@@ -66,13 +66,23 @@ export default function Privacy() {
             gerechtvaardigd belang, namelijk een veilige app en het beschermen van gebruikers tegen misbruik.
           </li>
           <li>
+            <strong>Reiskaart (optioneel):</strong> alleen als een beheerder de reiskaart voor een groep aanzet én jij daar
+            ja op zegt, stuurt de app bij het maken van een foto of video in die groep een grove locatie mee (afgerond op
+            ongeveer 100 meter), los van het bestand. Op de server bepalen we daar alleen het land bij, zonder externe
+            dienst. Waarom: om de foto’s van de groep op een kaart te tonen, met statistieken zoals de afgelegde afstand.
+            Alleen leden van die groep zien de kaart. Grondslag: toestemming. Je kunt die altijd intrekken in de
+            groepsinstellingen; dan verwijderen we direct alle locaties van jouw foto’s in die groep. Ook bij het verlaten
+            van de groep, het uitzetten van de reiskaart, het verwijderen van een foto of van je account gaan de locaties weg.
+          </li>
+          <li>
             <strong>Technische logs:</strong> onze hosting houdt korte tijd technische gegevens bij, zoals IP-adressen en
             foutmeldingen. Grondslag: gerechtvaardigd belang, namelijk de app veilig en werkend houden.
           </li>
         </ul>
         <p>
-          We vragen geen toegang tot je locatie en slaan geen locatie op. De app haalt metadata zoals de locatie (EXIF/GPS)
-          uit elke foto en video voordat die wordt geüpload, ook bij bestanden uit je filmrol. We gebruiken geen advertenties, maken geen profielen van je en verkopen nooit
+          Buiten de optionele reiskaart vragen we geen toegang tot je locatie en slaan we geen locatie op. De app haalt
+          metadata zoals de locatie (EXIF/GPS) altijd uit elke foto en video voordat die wordt geüpload, ook bij bestanden
+          uit je filmrol en ook als de reiskaart aanstaat. We gebruiken geen advertenties, maken geen profielen van je en verkopen nooit
           gegevens aan anderen.
         </p>
 
@@ -90,6 +100,9 @@ export default function Privacy() {
           </li>
           <li>
             <strong>Meldingen:</strong> om je te laten weten dat er nieuwe foto’s of een recap klaarstaan.
+          </li>
+          <li>
+            <strong>Locatie (alleen tijdens gebruik):</strong> alleen voor de reiskaart, als je daar in een groep ja op zegt.
           </li>
         </ul>
         <p>
@@ -171,6 +184,10 @@ export default function Privacy() {
           <li>Apple Push Notification service: het afleveren van pushmeldingen.</li>
           <li>RevenueCat: beheer van abonnementen. De betaling zelf loopt via de App Store of Google Play.</li>
           <li>Apple en Google: inloggen met je Apple- of Google-account, als je daarvoor kiest.</li>
+          <li>
+            CARTO: de kaartafbeeldingen van de reiskaart (kaartdata © OpenStreetMap-bijdragers). Alleen als je de kaart
+            opent; CARTO ziet dan je IP-adres en welk kaartgebied je bekijkt, niet je foto’s of locaties.
+          </li>
         </ul>
         <p>
           Daarnaast geven we gegevens alleen door als de wet ons daartoe verplicht, bijvoorbeeld op een rechtmatig verzoek
@@ -238,12 +255,14 @@ export default function Privacy() {
         <p>
           CamTrip is made by Alex Lamper (AL Design, Middelharnis, the Netherlands). We only process what the app needs: your
           account (name, e-mail, a scrypt password hash or your Apple/Google id), your groups, the photos and videos you share
-          (location and other metadata are removed before upload), reactions, push tokens (with your consent) and your Pro status. Your photos are only visible to
+          (location and other metadata are removed before upload), reactions, an optional trip-map location (only when a group
+          admin turns the trip map on and you agree; rounded to about 100 m, sent separately from the file, visible only to
+          that group, and deleted when you withdraw consent, leave, or delete the photo or your account), push tokens (with your consent) and your Pro status. Your photos are only visible to
           members of the group you share them in. You can report photos and block people; reports are reviewed within 24
           hours and we may remove content and ban accounts. Free groups are deleted 30 days after their end date. Deleting
           your account in the app removes your data (and revokes Sign in with Apple); backups and logs are cleared within
           about 30 days and login-attempt records after 15 minutes. We use processors (Vercel, MongoDB Atlas in Frankfurt,
-          Cloudflare R2, Apple Push Notification service, RevenueCat, Apple and Google sign-in) with safeguards such
+          Cloudflare R2, Apple Push Notification service, RevenueCat, Apple and Google sign-in, CARTO map tiles) with safeguards such
           as SCCs or the EU-US Data Privacy Framework for transfers outside the EU. CamTrip is for ages 13 and up, with
           parental consent where national law requires it. You have the right to access, correct, delete and export your data,
           to object, and to complain to the Dutch Data Protection Authority (Autoriteit Persoonsgegevens). The website only

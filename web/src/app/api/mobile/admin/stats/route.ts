@@ -1,6 +1,7 @@
 import { Group, Photo, Report, User } from '@/lib/models';
 import { handler, json } from '@/lib/http';
 import { requireAdmin } from '@/lib/admin';
+import { NOT_PERSONAL } from '@/lib/personal-roll';
 
 /** GET -> numbers for the "Beheer" overview. */
 export const GET = handler(async (req) => {
@@ -13,7 +14,7 @@ export const GET = handler(async (req) => {
   const [users, newThisWeek, groups, photos, videos, subscription, gift, giftOnly, admins, banned, openReports] = await Promise.all([
     User.countDocuments({}),
     User.countDocuments({ createdAt: { $gte: weekAgo } }),
-    Group.countDocuments({}),
+    Group.countDocuments({ ...NOT_PERSONAL }),
     Photo.countDocuments({ status: 'ready', kind: { $ne: 'video' } }),
     Photo.countDocuments({ status: 'ready', kind: 'video' }),
     User.countDocuments({ ...activeSub, banned: { $ne: true } }),

@@ -12,6 +12,7 @@ import '../auth/auth_controller.dart';
 import '../camera/camera_picker_sheet.dart';
 import '../camera/styles.dart';
 import '../premium/pro_gate.dart';
+import '../tripmap/trip_map_settings.dart';
 import 'group_actions.dart';
 import 'groups_controller.dart';
 
@@ -113,6 +114,8 @@ class GroupSettingsScreen extends ConsumerWidget {
             onTap: () => _run(context, () => ctrl.updateGroup(g.id, {'status': g.isArchived ? 'active' : 'archived'})),
           ),
         ],
+        // Reiskaart: admins switch it on/off, everyone chooses whether to share.
+        if (!g.isPersonal && (g.isAdmin || g.tripMap.enabled)) TripMapSettingsSection(group: g),
         SectionLabel('${l.members} (${g.members.length}${g.memberLimit != null ? ' / ${g.memberLimit}' : ''})'),
         for (final m in g.members)
           Padding(

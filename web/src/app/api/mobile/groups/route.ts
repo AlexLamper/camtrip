@@ -4,10 +4,12 @@ import { body, handler, HttpError, json } from '@/lib/http';
 import { requireUser } from '@/lib/auth';
 import { hasPro } from '@/lib/entitlements';
 import { computeDeleteAfter, serializeGroup, uniqueCode } from '@/lib/groups';
+import { NOT_PERSONAL } from '@/lib/personal-roll';
 
 export const GET = handler(async (req) => {
   const user = await requireUser(req);
-  const groups = await Group.find({ 'members.userId': user._id }).sort({ status: 1, updatedAt: -1 }).lean<GroupDoc[]>();
+  // The personal roll ("Mijn rolletje") is not an album: GET /me/roll serves it.
+  const groups = await Group.find({ 'members.userId': user._id, ...NOT_PERSONAL }).sort({ status: 1, updatedAt: -1 }).lean<GroupDoc[]>();
   return json({ groups: await Promise.all(groups.map((g) => serializeGroup(g, user._id))) });
 });
 

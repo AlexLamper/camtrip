@@ -1,0 +1,6 @@
+/* Permission texts shown by iOS. Keep in sync with Info.plist (English) and lib/l10n/GLOSSARY.md. */
+"NSCameraUsageDescription" = "CamTrip използва камерата ти, за да снимаш снимки и видеа за групата си.";
+"NSMicrophoneUsageDescription" = "CamTrip използва микрофона ти, за да записва звук към видеата.";
+"NSPhotoLibraryAddUsageDescription" = "CamTrip запазва снимките ти в библиотеката, в албум с името на групата ти.";
+"NSPhotoLibraryUsageDescription" = "Избери снимки от библиотеката си, за да ги споделиш с групата.";
+"NSLocationWhenInUseUsageDescription" = "CamTrip използва местоположението ти само за картата на пътуването на група, ако си съгласен: закръглено до около 100 м и видимо само за тази група.";

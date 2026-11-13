@@ -18,6 +18,7 @@ import '../features/groups/invite_screen.dart';
 import '../features/premium/paywall_screen.dart';
 import '../features/recap/recap_screen.dart';
 import '../features/settings/settings_screen.dart';
+import '../features/tripmap/trip_map_screen.dart';
 import '../features/upload/queue_screen.dart';
 import 'theme.dart';
 
@@ -103,7 +104,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/new', pageBuilder: (_, s) => modalPage(s, const CreateGroupScreen())),
       GoRoute(path: '/camera', pageBuilder: (_, s) => modalPage(s, const CameraScreen())),
-      GoRoute(path: '/pro', pageBuilder: (_, s) => modalPage(s, const PaywallScreen())),
+      // ?reason=roll_full|camera|watermark|deletion sets the header; ?group=<id> offers the Trip Pass.
+      GoRoute(
+        path: '/pro',
+        pageBuilder: (_, s) => modalPage(
+          s,
+          PaywallScreen(reason: PaywallReason.parse(s.uri.queryParameters['reason']), groupId: s.uri.queryParameters['group']),
+        ),
+      ),
       GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       // Instellingen > Beheer (app admins only; the screen and the API both check).
       // ?tab=reports opens Meldingen (from a "Nieuwe melding" push).
@@ -123,6 +131,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/group/:id/settings', builder: (_, s) => GroupSettingsScreen(groupId: s.pathParameters['id']!)),
       GoRoute(path: '/group/:id/hidden', builder: (_, s) => HiddenPhotosScreen(groupId: s.pathParameters['id']!)),
+      // Reiskaart + statistieken.
+      GoRoute(path: '/group/:id/map', builder: (_, s) => TripMapScreen(groupId: s.pathParameters['id']!)),
       GoRoute(
         path: '/group/:id/recap',
         pageBuilder: (_, s) => modalPage(s, RecapScreen(groupId: s.pathParameters['id']!)),

@@ -109,7 +109,10 @@ export interface ProGrant {
 }
 
 // ---------------------------------------------------------------- Group
+/** Types people can pick when they create a group. */
 export const GROUP_TYPES = ['vacation', 'event', 'permanent'] as const;
+/** Plus 'personal': each user's private "Mijn rolletje" (lib/personal-roll.ts), never created by hand. */
+export const ALL_GROUP_TYPES = [...GROUP_TYPES, 'personal'] as const;
 export const CAMERA_STYLES = [
   'flash',
   'film',
@@ -137,6 +140,18 @@ const memberSchema = new Schema(
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     role: { type: String, enum: ['admin', 'member'], default: 'member' },
     joinedAt: { type: Date, default: () => new Date() },
+    // Reiskaart: does this member share where their photos were taken?
+    // null = not asked yet, false = no, true = yes (lib/trip-map.ts).
+    mapConsent: { type: Boolean, default: null },
+  },
+  { _id: false },
+);
+
+const tripPassSchema = new Schema(
+  {
+    transactionId: { type: String, required: true },
+    purchasedBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    purchasedAt: { type: Date, default: () => new Date() },
   },
   { _id: false },
 );
@@ -144,7 +159,7 @@ const memberSchema = new Schema(
 const groupSchema = new Schema(
   {
     name: { type: String, required: true, maxlength: 60 },
-    type: { type: String, enum: GROUP_TYPES, required: true },
+    type: { type: String, enum: ALL_GROUP_TYPES, required: true },
     startDate: { type: Date, default: null },
     endDate: { type: Date, default: null },
     defaultStyle: { type: String, enum: CAMERA_STYLES, default: DEFAULT_STYLE },
@@ -164,20 +179,28 @@ const groupSchema = new Schema(
     // Members who archived this group for themselves ("Archiveren" in the
     // albums list). Personal: the group stays as it is for everyone else.
     archivedBy: { type: [Schema.Types.ObjectId], default: [] },
+    // Trip Pass: a one-time purchase that makes this group Pro for good, for
+    // everyone in it (lib/trip-pass.ts). null = none, or refunded.
+    tripPass: { type: tripPassSchema, default: null },
+    // Reiskaart (trip map): off by default, an admin switches it on.
+    tripMap: { enabled: { type: Boolean, default: false } },
   },
   { timestamps: true },
 );
 groupSchema.index({ 'members.userId': 1 });
+// One personal roll per user, so lazy creation from two requests at once cannot make two.
+groupSchema.index({ ownerId: 1 }, { unique: true, name: 'one_personal_roll', partialFilterExpression: { type: 'personal' } });
 
 export interface GroupMember {
   userId: Types.ObjectId;
   role: 'admin' | 'member';
   joinedAt: Date;
+  mapConsent?: boolean | null;
 }
 export interface GroupDoc {
   _id: Types.ObjectId;
   name: string;
-  type: (typeof GROUP_TYPES)[number];
+  type: (typeof ALL_GROUP_TYPES)[number];
   startDate: Date | null;
   endDate: Date | null;
   defaultStyle: string;
@@ -192,8 +215,51 @@ export interface GroupDoc {
   recapNotifiedAt: Date | null;
   lastNotified?: Record<string, Date>;
   archivedBy?: Types.ObjectId[];
+  tripPass?: GroupTripPass | null;
+  tripMap?: { enabled?: boolean };
   createdAt?: Date;
   updatedAt?: Date;
+}
+
+export interface GroupTripPass {
+  transactionId: string;
+  purchasedBy: Types.ObjectId;
+  purchasedAt: Date;
+}
+
+// ---------------------------------------------------------------- Trip Pass purchases
+// One document per store transaction, ever: a transaction can be applied to
+// one group only, once. A refund marks it 'refunded' (and removes the group's
+// pass), so the same transaction can never unlock anything again.
+const tripPassPurchaseSchema = new Schema(
+  {
+    transactionId: { type: String, required: true, unique: true },
+    rcId: { type: String, default: null },
+    groupId: { type: Schema.Types.ObjectId, ref: 'Group', required: true, index: true },
+    userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    status: { type: String, enum: ['active', 'refunded'], default: 'active' },
+    store: { type: String, default: null },
+    sandbox: { type: Boolean, default: false },
+    // 'app' = POST /groups/:id/trip-pass, 'webhook' = the RevenueCat safety net.
+    appliedVia: { type: String, enum: ['app', 'webhook'], default: 'app' },
+    purchasedAt: { type: Date, default: () => new Date() },
+    refundedAt: { type: Date, default: null },
+  },
+  { timestamps: true },
+);
+
+export interface TripPassPurchaseDoc {
+  _id: Types.ObjectId;
+  transactionId: string;
+  rcId: string | null;
+  groupId: Types.ObjectId;
+  userId: Types.ObjectId;
+  status: 'active' | 'refunded';
+  store: string | null;
+  sandbox: boolean;
+  appliedVia: 'app' | 'webhook';
+  purchasedAt: Date;
+  refundedAt: Date | null;
 }
 
 // ---------------------------------------------------------------- Photo
@@ -201,6 +267,15 @@ const reactionSchema = new Schema(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     emoji: { type: String, required: true },
+  },
+  { _id: false },
+);
+
+const tripLocationSchema = new Schema(
+  {
+    lat: { type: Number, required: true },
+    lng: { type: Number, required: true },
+    countryCode: { type: String, default: null },
   },
   { _id: false },
 );
@@ -224,6 +299,9 @@ const photoSchema = new Schema(
     reactions: { type: [reactionSchema], default: [] },
     favoritedBy: { type: [Schema.Types.ObjectId], default: [] },
     status: { type: String, enum: ['pending', 'ready'], default: 'pending' },
+    // Reiskaart: where it was taken, coarsened to ~100 m, only with the group's
+    // map on and the photographer's consent. Never in the file itself.
+    location: { type: tripLocationSchema, default: undefined },
   },
   { timestamps: true },
 );
@@ -249,6 +327,7 @@ export interface PhotoDoc {
   caption: string;
   reactions: { userId: Types.ObjectId; emoji: string }[];
   favoritedBy: Types.ObjectId[];
+  location?: { lat: number; lng: number; countryCode?: string | null } | null;
   status: 'pending' | 'ready';
   createdAt?: Date;
   updatedAt?: Date;
@@ -331,5 +410,7 @@ export const Group = (mongoose.models.Group ?? mongoose.model('Group', groupSche
 export const Photo = (mongoose.models.Photo ?? mongoose.model('Photo', photoSchema)) as unknown as Model<PhotoDoc>;
 export const Report = (mongoose.models.Report ?? mongoose.model('Report', reportSchema)) as unknown as Model<ReportDoc>;
 export const HiddenPhoto = (mongoose.models.HiddenPhoto ?? mongoose.model('HiddenPhoto', hiddenPhotoSchema)) as unknown as Model<HiddenPhotoDoc>;
+export const TripPassPurchase = (mongoose.models.TripPassPurchase ??
+  mongoose.model('TripPassPurchase', tripPassPurchaseSchema)) as unknown as Model<TripPassPurchaseDoc>;
 export const WebhookEvent = (mongoose.models.WebhookEvent ?? mongoose.model('WebhookEvent', webhookEventSchema)) as unknown as Model<{ eventId: string }>;
 export const AuthAttempt = (mongoose.models.AuthAttempt ?? mongoose.model('AuthAttempt', authAttemptSchema)) as unknown as Model<{ key: string; createdAt: Date }>;

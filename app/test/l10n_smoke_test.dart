@@ -10,6 +10,7 @@ import 'package:camtrip/features/groups/create_group_screen.dart';
 import 'package:camtrip/features/groups/group_settings_screen.dart';
 import 'package:camtrip/features/groups/invite_screen.dart';
 import 'package:camtrip/features/premium/paywall_screen.dart';
+import 'package:camtrip/features/settings/language_screen.dart';
 import 'package:camtrip/features/settings/settings_screen.dart';
 import 'package:camtrip/features/upload/queue_screen.dart';
 import 'package:camtrip/features/upload/upload_queue.dart';
@@ -30,7 +31,11 @@ import 'support/real_fonts.dart';
 // languages on the smallest supported phone (iPhone SE, 375x667), with real
 // fonts: no exceptions and no overflow, even with longer translations.
 
-const _locales = [Locale('en'), Locale('de'), Locale('ja')];
+// Arabic is right-to-left; Russian, Thai and Hindi are long or tall scripts.
+// (Inter has no Arabic, Thai or Devanagari glyphs, so those render with
+// Inter's fallback box: the layout and overflow checks still apply, the exact
+// glyph widths do not.)
+const _locales = [Locale('en'), Locale('de'), Locale('ja'), Locale('ar'), Locale('ru'), Locale('th'), Locale('hi')];
 
 class _SignedOut extends AuthController {
   @override
@@ -134,11 +139,38 @@ void main() {
         for (var page = 0; page < 3; page++) {
           await tester.pumpAndSettle();
           expectClean(tester, 'slide ${page + 1}');
-          if (page < 2) await tester.drag(find.byType(PageView), const Offset(-375, 0));
+          // Swipe towards the reading direction (pages run right-to-left in Arabic).
+          if (page < 2) await tester.drag(find.byType(PageView), Offset(locale.languageCode == 'ar' ? 375 : -375, 0));
         }
         final l = lookupAppLocalizations(locale);
         expect(find.text(l.createAccount), findsOneWidget);
         expect(find.text(l.signIn), findsOneWidget);
+        // The language switch on the welcome screen, in the right corner for
+        // the reading direction.
+        final button = find.byKey(const ValueKey('onboarding-language'));
+        expect(button, findsOneWidget);
+        final rtl = Directionality.of(tester.element(button)) == TextDirection.rtl;
+        expect(rtl, locale.languageCode == 'ar');
+        final x = tester.getCenter(button).dx;
+        expect(rtl ? x < 375 / 2 : x > 375 / 2, isTrue, reason: 'language button at the end side');
+      });
+
+      testWidgets('language picker: search and pick', (tester) async {
+        await pumpScreen(tester, locale, const SettingsScreen());
+        final row = find.byKey(const ValueKey('settings-language'));
+        await tester.scrollUntilVisible(row, 200, scrollable: find.byType(Scrollable).first);
+        await tester.tap(row);
+        await tester.pumpAndSettle();
+        expectClean(tester, 'picker open');
+        expect(find.byType(LanguageScreen), findsOneWidget);
+        await tester.enterText(find.byType(TextField), 'deut');
+        await tester.pumpAndSettle();
+        expect(find.text('Deutsch'), findsOneWidget);
+        expect(find.text('Français'), findsNothing);
+        await tester.enterText(find.byType(TextField), 'zzzz');
+        await tester.pumpAndSettle();
+        expect(find.text(lookupAppLocalizations(locale).languageNoResults), findsOneWidget);
+        expectClean(tester, 'picker searched');
       });
 
       testWidgets('e-mail sign-in in every mode, with validation errors', (tester) async {
@@ -163,6 +195,7 @@ void main() {
         'upload queue': (const QueueScreen(), l.queueAllShared),
         'settings': (const SettingsScreen(), l.settings),
         'paywall': (const PaywallScreen(), l.paywallSubtitle),
+        'language picker': (const LanguageScreen(), l.languageSystem),
       };
       for (final s in screens.entries) {
         testWidgets(s.key, (tester) async {

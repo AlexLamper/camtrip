@@ -4,8 +4,10 @@ Key terms as used in the app (generated from the ARB files in this folder), so s
 
 - "CamTrip" and "CamTrip Pro" are never translated; "Pro" stays "Pro".
 - Plain hyphens only ("-"), no long dashes.
-- Informal "you" everywhere it exists (je / du / tu / tú / ty / sinä ...); Japanese and Korean use polite neutral UI style, Chinese uses 你.
-- Camera style names Film, Instant, Golden and Chrome stay as names in Latin-script languages; only "Wegwerp" (disposable) and "Z/W" (black and white) are translated. Japanese, Korean and Chinese use their own script for all styles.
+- Informal "you" everywhere it exists (je / du / tu / tú / ty / ти / te / sina / kamu ...); Japanese, Korean and Thai use polite neutral UI style, Chinese uses 你, Malay uses "anda", Hindi uses आप (the normal app register), Arabic uses the masculine singular, Hebrew mostly neutral forms (infinitive buttons, "את/ה" where a person is addressed).
+- Camera style names Film, Instant, Golden and Chrome (and Lomo, Super 8, Golden Hour) stay as names in Latin-script languages; disposable, black and white, Flash 400 and the picker names (Summer, Night 800, Sepia, Mint, Pink) are translated. Japanese, Korean, Chinese, Cyrillic, Greek, Thai, Hindi, Arabic and Hebrew use their own script for all styles. Style names stay short (about 11 characters) so they fit the camera picker cards.
+- Plurals use the language's own CLDR forms (one / few / many / other in Russian, Ukrainian, Polish, Czech, Slovak, Lithuanian; zero / one / other in Latvian; one / two / few / other in Slovenian; one / few / other in Croatian and Romanian; one / two / other in Hebrew; zero / one / two / few / many / other in Arabic).
+- Arabic and Hebrew are right-to-left: use EdgeInsetsDirectional / AlignmentDirectional / PositionedDirectional in layouts.
 - Dutch (nl) is the source of meaning; English (en) is the gen-l10n template.
 
 ## Languages
@@ -30,6 +32,28 @@ Key terms as used in the app (generated from the ARB files in this folder), so s
 | `ja` | 日本語 | ja | ja |
 | `ko` | 한국어 | ko | ko |
 | `zh` | 简体中文 | zh-Hans | zh-Hans |
+| `zh_Hant` | 繁體中文 | zh-Hant (zh-TW / zh-HK) | zh-Hant |
+| `uk` | Українська | uk | uk |
+| `ru` | Русский | ru | ru |
+| `ro` | Română | ro | ro |
+| `hu` | Magyar | hu | hu |
+| `el` | Ελληνικά | el | el |
+| `bg` | Български | Play: bg-BG (no App Store locale) | bg |
+| `hr` | Hrvatski | hr | hr |
+| `sk` | Slovenčina | sk | sk |
+| `sl` | Slovenščina | Play: sl (no App Store locale) | sl |
+| `lt` | Lietuvių | Play: lt (no App Store locale) | lt |
+| `lv` | Latviešu | Play: lv (no App Store locale) | lv |
+| `et` | Eesti | Play: et (no App Store locale) | et |
+| `ca` | Català | ca | ca |
+| `id` | Bahasa Indonesia | id | id |
+| `ms` | Bahasa Melayu | ms | ms |
+| `vi` | Tiếng Việt | vi | vi |
+| `th` | ไทย | th | th |
+| `hi` | हिन्दी | hi | hi |
+| `ar` | العربية | ar-SA | ar |
+| `he` | עברית | he | he |
+| `fil` | Filipino | Play: fil (no App Store locale) | fil |
 
 ## Nederlands (`nl`)
 
@@ -390,3 +414,443 @@ Key terms as used in the app (generated from the ARB files in this folder), so s
 | Get Pro (button) | 开通 Pro |
 | Tagline | 全组共用一卷胶卷 |
 | Group Pro rule | 群组里有一人是 Pro，全组都是 Pro |
+
+## 繁體中文 (`zh_Hant`)
+
+| Term | 繁體中文 |
+|---|---|
+| Group | 群組 |
+| Album (a group as seen in the list) | 相簿 |
+| Roll (the shared "film") | 膠捲 |
+| Recap (video after the trip) | 回顧 |
+| Members | 成員 |
+| Photo / Video | 照片 / 影片 |
+| Camera styles | 底片, 拍立得, 一次性, 黑白, 金色, 鉻彩 |
+| Recap templates | 黃金時刻, 快節奏, 膠捲, 寶麗來 |
+| Invite code / Join | 邀請碼 / 加入 |
+| Archive / Hide / Block / Report | 歸檔 / 隱藏 / 遮蔽 / 舉報照片 |
+| Date stamp | 日期戳 |
+| Watermark | 開通 Pro 去除水印 |
+| Get Pro (button) | 開通 Pro |
+| Tagline | 全組共用一卷膠捲 |
+| Group Pro rule | 群組裡有一人是 Pro，全組都是 Pro |
+
+## Українська (`uk`)
+
+| Term | Українська |
+|---|---|
+| Group | Група |
+| Album (a group as seen in the list) | Альбоми |
+| Roll (the shared "film") | плівка |
+| Recap (video after the trip) | Підсумок |
+| Members | Учасники |
+| Photo / Video | Фото / Відео |
+| Camera styles | Плівка, Інстант, Одноразова, Ч/Б, Золото, Хром |
+| Recap templates | Золота година, Швидкий, Плівка, Полароїд |
+| Invite code / Join | код / Приєднатися |
+| Archive / Hide / Block / Report | В архів / Приховати / Заблокувати / Поскаржитися на фото |
+| Date stamp | Дата на фото |
+| Watermark | Прибери водяний знак із Pro |
+| Get Pro (button) | Перейти на Pro |
+| Tagline | Одна плівка на всю компанію |
+| Group Pro rule | Один Pro у групі = Pro для всіх у цій групі |
+
+## Русский (`ru`)
+
+| Term | Русский |
+|---|---|
+| Group | Группа |
+| Album (a group as seen in the list) | Альбомы |
+| Roll (the shared "film") | плёнка |
+| Recap (video after the trip) | Итоги |
+| Members | Участники |
+| Photo / Video | Фото / Видео |
+| Camera styles | Плёнка, Инстант, Одноразовая, Ч/Б, Золото, Хром |
+| Recap templates | Золотой час, Быстрый, Плёнка, Полароид |
+| Invite code / Join | код / Присоединиться |
+| Archive / Hide / Block / Report | В архив / Скрыть / Заблокировать / Пожаловаться на фото |
+| Date stamp | Дата на фото |
+| Watermark | Убери водяной знак с Pro |
+| Get Pro (button) | Перейти на Pro |
+| Tagline | Одна плёнка на всю компанию |
+| Group Pro rule | Один Pro в группе = Pro для всех в этой группе |
+
+## Română (`ro`)
+
+| Term | Română |
+|---|---|
+| Group | Grup |
+| Album (a group as seen in the list) | Albume |
+| Roll (the shared "film") | film |
+| Recap (video after the trip) | Recap |
+| Members | Membri |
+| Photo / Video | Poză / Video |
+| Camera styles | Film, Instant, Aruncabil, A/N, Golden, Chrome |
+| Recap templates | Golden Hour, Rapid, Rolă de film, Polaroid |
+| Invite code / Join | cod / Intră |
+| Archive / Hide / Block / Report | Arhivează / Ascunde / Blochează / Raportează poza |
+| Date stamp | Ștampilă cu data |
+| Watermark | Scoate filigranul cu Pro |
+| Get Pro (button) | Ia Pro |
+| Tagline | Un singur film pentru tot grupul |
+| Group Pro rule | Un Pro în grup = Pro pentru toți din acel grup |
+
+## Magyar (`hu`)
+
+| Term | Magyar |
+|---|---|
+| Group | Csoport |
+| Album (a group as seen in the list) | Albumok |
+| Roll (the shared "film") | film |
+| Recap (video after the trip) | Összefoglaló |
+| Members | Tagok |
+| Photo / Video | Fotó / Videó |
+| Camera styles | Film, Instant, Eldobható, FF, Golden, Chrome |
+| Recap templates | Golden Hour, Gyors, Filmtekercs, Polaroid |
+| Invite code / Join | kód: / Csatlakozás |
+| Archive / Hide / Block / Report | Archiválás / Elrejtés / Letiltás / Fotó jelentése |
+| Date stamp | Dátumbélyeg |
+| Watermark | Vízjel eltávolítása Pro-val |
+| Get Pro (button) | Pro-t kérek |
+| Tagline | Egy film az egész csapatnak |
+| Group Pro rule | Egy Pro a csoportban = Pro mindenkinek abban a csoportban |
+
+## Ελληνικά (`el`)
+
+| Term | Ελληνικά |
+|---|---|
+| Group | Ομάδα |
+| Album (a group as seen in the list) | Άλμπουμ |
+| Roll (the shared "film") | φιλμ |
+| Recap (video after the trip) | Ανασκόπηση |
+| Members | Μέλη |
+| Photo / Video | Φωτογραφία / Βίντεο |
+| Camera styles | Φιλμ, Instant, Μιας χρήσης, Α/Μ, Χρυσό, Χρώμιο |
+| Recap templates | Χρυσή ώρα, Γρήγορο, Ρολό φιλμ, Polaroid |
+| Invite code / Join | κωδικός / Είσοδος |
+| Archive / Hide / Block / Report | Αρχειοθέτηση / Απόκρυψη / Αποκλεισμός / Αναφορά φωτογραφίας |
+| Date stamp | Σφραγίδα ημερομηνίας |
+| Watermark | Αφαίρεσε το υδατογράφημα με Pro |
+| Get Pro (button) | Απόκτησε Pro |
+| Tagline | Ένα φιλμ για όλη την παρέα |
+| Group Pro rule | Ένα Pro στην ομάδα = Pro για όλους σε αυτή την ομάδα |
+
+## Български (`bg`)
+
+| Term | Български |
+|---|---|
+| Group | Група |
+| Album (a group as seen in the list) | Албуми |
+| Roll (the shared "film") | лента |
+| Recap (video after the trip) | Обобщение |
+| Members | Членове |
+| Photo / Video | Снимка / Видео |
+| Camera styles | Филм, Инстант, Еднократна, Ч/Б, Златно, Хром |
+| Recap templates | Златен час, Бързо, Филмова лента, Полароид |
+| Invite code / Join | код / Присъедини се |
+| Archive / Hide / Block / Report | Архивирай / Скрий / Блокирай / Докладвай снимката |
+| Date stamp | Дата върху снимката |
+| Watermark | Махни водния знак с Pro |
+| Get Pro (button) | Вземи Pro |
+| Tagline | Една лента за цялата група |
+| Group Pro rule | Един Pro в групата = Pro за всички в тази група |
+
+## Hrvatski (`hr`)
+
+| Term | Hrvatski |
+|---|---|
+| Group | Grupa |
+| Album (a group as seen in the list) | Albumi |
+| Roll (the shared "film") | film |
+| Recap (video after the trip) | Sažetak |
+| Members | Članovi |
+| Photo / Video | Fotka / Video |
+| Camera styles | Film, Instant, Jednokratni, C/B, Golden, Chrome |
+| Recap templates | Golden Hour, Brzo, Filmska rola, Polaroid |
+| Invite code / Join | kôd / Pridruži se |
+| Archive / Hide / Block / Report | Arhiviraj / Sakrij / Blokiraj / Prijavi fotku |
+| Date stamp | Datum na fotki |
+| Watermark | Ukloni vodeni žig uz Pro |
+| Get Pro (button) | Uzmi Pro |
+| Tagline | Jedan film za cijelu ekipu |
+| Group Pro rule | Jedan Pro u grupi = Pro za sve u toj grupi |
+
+## Slovenčina (`sk`)
+
+| Term | Slovenčina |
+|---|---|
+| Group | Skupina |
+| Album (a group as seen in the list) | Albumy |
+| Roll (the shared "film") | film |
+| Recap (video after the trip) | Zhrnutie |
+| Members | Členovia |
+| Photo / Video | Fotka / Video |
+| Camera styles | Film, Instant, Jednorazový, Č/B, Golden, Chrome |
+| Recap templates | Golden Hour, Rýchle, Filmový pás, Polaroid |
+| Invite code / Join | kód / Pridať sa |
+| Archive / Hide / Block / Report | Archivovať / Skryť / Zablokovať / Nahlásiť fotku |
+| Date stamp | Dátum na fotke |
+| Watermark | Odstráň vodoznak s Pro |
+| Get Pro (button) | Získať Pro |
+| Tagline | Jeden film pre celú partiu |
+| Group Pro rule | Jedno Pro v skupine = Pro pre všetkých v tejto skupine |
+
+## Slovenščina (`sl`)
+
+| Term | Slovenščina |
+|---|---|
+| Group | Skupina |
+| Album (a group as seen in the list) | Albumi |
+| Roll (the shared "film") | film |
+| Recap (video after the trip) | Povzetek |
+| Members | Člani |
+| Photo / Video | Fotka / Video |
+| Camera styles | Film, Instant, Enkratni, Č/B, Golden, Chrome |
+| Recap templates | Golden Hour, Hitro, Filmski trak, Polaroid |
+| Invite code / Join | koda / Pridruži se |
+| Archive / Hide / Block / Report | Arhiviraj / Skrij / Blokiraj / Prijavi fotko |
+| Date stamp | Datum na fotki |
+| Watermark | Odstrani vodni žig s Pro |
+| Get Pro (button) | Pridobi Pro |
+| Tagline | En film za vso ekipo |
+| Group Pro rule | En Pro v skupini = Pro za vse v tej skupini |
+
+## Lietuvių (`lt`)
+
+| Term | Lietuvių |
+|---|---|
+| Group | Grupė |
+| Album (a group as seen in the list) | Albumai |
+| Roll (the shared "film") | juosta |
+| Recap (video after the trip) | Apžvalga |
+| Members | Nariai |
+| Photo / Video | Nuotrauka / Vaizdo įrašas |
+| Camera styles | Film, Instant, Vienkartinė, N/B, Golden, Chrome |
+| Recap templates | Golden Hour, Greita, Fotojuosta, Polaroid |
+| Invite code / Join | kodas / Prisijungti |
+| Archive / Hide / Block / Report | Archyvuoti / Slėpti / Užblokuoti / Pranešti apie nuotrauką |
+| Date stamp | Datos žyma |
+| Watermark | Pašalink vandens ženklą su Pro |
+| Get Pro (button) | Gauti Pro |
+| Tagline | Viena juosta visai kompanijai |
+| Group Pro rule | Vienas Pro grupėje = Pro visiems toje grupėje |
+
+## Latviešu (`lv`)
+
+| Term | Latviešu |
+|---|---|
+| Group | Grupa |
+| Album (a group as seen in the list) | Albumi |
+| Roll (the shared "film") | filmiņa |
+| Recap (video after the trip) | Kopsavilkums |
+| Members | Dalībnieki |
+| Photo / Video | Bilde / Video |
+| Camera styles | Film, Instant, Vienreizējā, M/B, Golden, Chrome |
+| Recap templates | Golden Hour, Ātrs, Filmiņa, Polaroid |
+| Invite code / Join | kods / Pievienoties |
+| Archive / Hide / Block / Report | Arhivēt / Paslēpt / Bloķēt / Ziņot par bildi |
+| Date stamp | Datuma zīmogs |
+| Watermark | Noņem ūdenszīmi ar Pro |
+| Get Pro (button) | Iegūt Pro |
+| Tagline | Viena filmiņa visai kompānijai |
+| Group Pro rule | Viens Pro grupā = Pro visiem šajā grupā |
+
+## Eesti (`et`)
+
+| Term | Eesti |
+|---|---|
+| Group | Grupp |
+| Album (a group as seen in the list) | Albumid |
+| Roll (the shared "film") | film |
+| Recap (video after the trip) | Kokkuvõte |
+| Members | Liikmed |
+| Photo / Video | Pilt / Video |
+| Camera styles | Film, Instant, Ühekordne, MV, Golden, Chrome |
+| Recap templates | Golden Hour, Kiire, Filmirull, Polaroid |
+| Invite code / Join | kood / Liitu |
+| Archive / Hide / Block / Report | Arhiveeri / Peida / Blokeeri / Teata pildist |
+| Date stamp | Kuupäevatempel |
+| Watermark | Eemalda vesimärk Pro-ga |
+| Get Pro (button) | Hangi Pro |
+| Tagline | Üks film kogu seltskonnale |
+| Group Pro rule | Üks Pro grupis = Pro kõigile selles grupis |
+
+## Català (`ca`)
+
+| Term | Català |
+|---|---|
+| Group | Grup |
+| Album (a group as seen in the list) | Àlbums |
+| Roll (the shared "film") | rodet |
+| Recap (video after the trip) | Resum |
+| Members | Membres |
+| Photo / Video | Foto / Vídeo |
+| Camera styles | Film, Instant, D'un sol ús, B/N, Golden, Chrome |
+| Recap templates | Golden Hour, Ràpid, Rodet, Polaroid |
+| Invite code / Join | codi / Uneix-t'hi |
+| Archive / Hide / Block / Report | Arxiva / Amaga / Bloqueja / Denuncia la foto |
+| Date stamp | Data a la foto |
+| Watermark | Treu la marca d'aigua amb Pro |
+| Get Pro (button) | Fes-te Pro |
+| Tagline | Un sol rodet per a tota la colla |
+| Group Pro rule | Un Pro al grup = Pro per a tothom en aquell grup |
+
+## Bahasa Indonesia (`id`)
+
+| Term | Bahasa Indonesia |
+|---|---|
+| Group | Grup |
+| Album (a group as seen in the list) | Album |
+| Roll (the shared "film") | rol film |
+| Recap (video after the trip) | Recap |
+| Members | Anggota |
+| Photo / Video | Foto / Video |
+| Camera styles | Film, Instant, Sekali Pakai, H&P, Golden, Chrome |
+| Recap templates | Golden Hour, Cepat, Rol film, Polaroid |
+| Invite code / Join | kode / Gabung |
+| Archive / Hide / Block / Report | Arsipkan / Sembunyikan / Blokir / Laporkan foto |
+| Date stamp | Cap tanggal |
+| Watermark | Hapus watermark dengan Pro |
+| Get Pro (button) | Jadi Pro |
+| Tagline | Satu rol film untuk satu geng |
+| Group Pro rule | Satu Pro di grup = Pro untuk semua orang di grup itu |
+
+## Bahasa Melayu (`ms`)
+
+| Term | Bahasa Melayu |
+|---|---|
+| Group | Kumpulan |
+| Album (a group as seen in the list) | Album |
+| Roll (the shared "film") | gulung filem |
+| Recap (video after the trip) | Recap |
+| Members | Ahli |
+| Photo / Video | Foto / Video |
+| Camera styles | Film, Instant, Pakai Buang, H&P, Golden, Chrome |
+| Recap templates | Golden Hour, Pantas, Gulung filem, Polaroid |
+| Invite code / Join | kod / Sertai |
+| Archive / Hide / Block / Report | Arkibkan / Sembunyikan / Sekat / Laporkan foto |
+| Date stamp | Cop tarikh |
+| Watermark | Buang tera air dengan Pro |
+| Get Pro (button) | Dapatkan Pro |
+| Tagline | Satu gulung filem untuk seluruh geng |
+| Group Pro rule | Satu Pro dalam kumpulan = Pro untuk semua dalam kumpulan itu |
+
+## Tiếng Việt (`vi`)
+
+| Term | Tiếng Việt |
+|---|---|
+| Group | Nhóm |
+| Album (a group as seen in the list) | Album |
+| Roll (the shared "film") | cuộn phim |
+| Recap (video after the trip) | Tổng kết |
+| Members | Thành viên |
+| Photo / Video | Ảnh / Video |
+| Camera styles | Film, Instant, Dùng một lần, Đen trắng, Golden, Chrome |
+| Recap templates | Golden Hour, Nhanh, Cuộn phim, Polaroid |
+| Invite code / Join | mã / Tham gia |
+| Archive / Hide / Block / Report | Lưu trữ / Ẩn / Chặn / Báo cáo ảnh |
+| Date stamp | Dấu ngày tháng |
+| Watermark | Bỏ hình mờ với Pro |
+| Get Pro (button) | Nâng cấp Pro |
+| Tagline | Một cuộn phim cho cả nhóm |
+| Group Pro rule | Một Pro trong nhóm = Pro cho mọi người trong nhóm đó |
+
+## ไทย (`th`)
+
+| Term | ไทย |
+|---|---|
+| Group | กลุ่ม |
+| Album (a group as seen in the list) | อัลบั้ม |
+| Roll (the shared "film") | ฟิล์ม |
+| Recap (video after the trip) | สรุป |
+| Members | สมาชิก |
+| Photo / Video | รูป / วิดีโอ |
+| Camera styles | ฟิล์ม, อินสแตนท์, ใช้แล้วทิ้ง, ขาวดำ, โกลเด้น, โครม |
+| Recap templates | โกลเด้นอาวร์, เร็ว, ม้วนฟิล์ม, โพลารอยด์ |
+| Invite code / Join | รหัส / เข้าร่วม |
+| Archive / Hide / Block / Report | เก็บถาวร / ซ่อน / บล็อก / รายงานรูป |
+| Date stamp | ประทับวันที่ |
+| Watermark | ลบลายน้ำด้วย Pro |
+| Get Pro (button) | อัปเกรดเป็น Pro |
+| Tagline | ฟิล์มม้วนเดียวสำหรับทั้งแก๊ง |
+| Group Pro rule | Pro หนึ่งคนในกลุ่ม = Pro สำหรับทุกคนในกลุ่มนั้น |
+
+## हिन्दी (`hi`)
+
+| Term | हिन्दी |
+|---|---|
+| Group | ग्रुप |
+| Album (a group as seen in the list) | एल्बम |
+| Roll (the shared "film") | रोल |
+| Recap (video after the trip) | रीकैप |
+| Members | सदस्य |
+| Photo / Video | फ़ोटो / वीडियो |
+| Camera styles | फ़िल्म, इंस्टेंट, डिस्पोज़ेबल, मोनो, गोल्डन, क्रोम |
+| Recap templates | गोल्डन आवर, तेज़, फ़िल्म रोल, पोलरॉइड |
+| Invite code / Join | कोड / जुड़ें |
+| Archive / Hide / Block / Report | आर्काइव करें / छिपाएँ / ब्लॉक करें / फ़ोटो की रिपोर्ट करें |
+| Date stamp | तारीख की मोहर |
+| Watermark | Pro से वॉटरमार्क हटाएँ |
+| Get Pro (button) | Pro लें |
+| Tagline | पूरे ग्रुप के लिए एक रोल |
+| Group Pro rule | ग्रुप में एक Pro = उस ग्रुप में सबके लिए Pro |
+
+## العربية (`ar`)
+
+| Term | العربية |
+|---|---|
+| Group | المجموعة |
+| Album (a group as seen in the list) | الألبومات |
+| Roll (the shared "film") | فيلم |
+| Recap (video after the trip) | الملخّص |
+| Members | الأعضاء |
+| Photo / Video | صورة / فيديو |
+| Camera styles | فيلم, فوري, لمرة واحدة, أبيض وأسود, ذهبي, كروم |
+| Recap templates | الساعة الذهبية, سريع, بكرة فيلم, بولارويد |
+| Invite code / Join | الرمز / انضمام |
+| Archive / Hide / Block / Report | أرشفة / إخفاء / حظر / الإبلاغ عن الصورة |
+| Date stamp | ختم التاريخ |
+| Watermark | أزل العلامة المائية مع Pro |
+| Get Pro (button) | احصل على Pro |
+| Tagline | فيلم واحد للمجموعة كلها |
+| Group Pro rule | Pro واحد في المجموعة = Pro للجميع في تلك المجموعة |
+
+## עברית (`he`)
+
+| Term | עברית |
+|---|---|
+| Group | קבוצה |
+| Album (a group as seen in the list) | אלבומים |
+| Roll (the shared "film") | פילם |
+| Recap (video after the trip) | סיכום |
+| Members | חברים |
+| Photo / Video | תמונה / וידאו |
+| Camera styles | פילם, אינסטנט, חד־פעמית, שחור־לבן, זהוב, כרום |
+| Recap templates | שעת זהב, מהיר, גליל פילם, פולרואיד |
+| Invite code / Join | קוד / הצטרפות |
+| Archive / Hide / Block / Report | העברה לארכיון / הסתרה / חסימה / דיווח על התמונה |
+| Date stamp | חותמת תאריך |
+| Watermark | הסרת סימן המים עם Pro |
+| Get Pro (button) | שדרוג ל-Pro |
+| Tagline | פילם אחד לכל החבורה |
+| Group Pro rule | Pro אחד בקבוצה = Pro לכולם באותה קבוצה |
+
+## Filipino (`fil`)
+
+| Term | Filipino |
+|---|---|
+| Group | Grupo |
+| Album (a group as seen in the list) | Mga album |
+| Roll (the shared "film") | roll |
+| Recap (video after the trip) | Recap |
+| Members | Mga miyembro |
+| Photo / Video | Litrato / Video |
+| Camera styles | Film, Instant, Disposable, B&W, Golden, Chrome |
+| Recap templates | Golden Hour, Mabilis, Film roll, Polaroid |
+| Invite code / Join | code / Sumali |
+| Archive / Hide / Block / Report | I-archive / Itago / I-block / I-report ang litrato |
+| Date stamp | Date stamp |
+| Watermark | Alisin ang watermark gamit ang Pro |
+| Get Pro (button) | Mag-Pro |
+| Tagline | Isang roll para sa buong barkada |
+| Group Pro rule | Isang Pro sa grupo = Pro para sa lahat sa grupong iyon |

@@ -3,8 +3,9 @@ import { Types } from 'mongoose';
 import { Group, Photo, CAMERA_STYLES, FREE_STYLES, type GroupDoc } from '@/lib/models';
 import { body, handler, HttpError, json, type Params } from '@/lib/http';
 import { requireUser } from '@/lib/auth';
-import { computeDeleteAfter, deleteGroupEverywhere, requireAdmin, requireMember, serializeGroup } from '@/lib/groups';
+import { computeDeleteAfter, deleteGroupEverywhere, refuseForPersonalRoll, requireAdmin, requireMember, serializeGroup } from '@/lib/groups';
 import { groupIsPro } from '@/lib/pro';
+import { isPersonalRoll, personalPatchAllowed } from '@/lib/personal-roll';
 
 type P = Params<{ id: string }>;
 
@@ -29,6 +30,10 @@ export const PATCH = handler<P>(async (req, { params }) => {
   const user = await requireUser(req);
   const group = await requireAdmin((await params).id, user._id);
   const input = await body(req, Patch);
+  // Mijn rolletje: only its camera style and cover can change (no name, dates or closing).
+  if (isPersonalRoll(group) && !personalPatchAllowed(input)) {
+    throw new HttpError(400, 'Dit kan niet met je eigen rolletje', 'personal_roll');
+  }
   if (input.endNow) {
     if (group.type === 'permanent') throw new HttpError(400, 'Een groep die altijd open is heeft geen einddatum');
     const now = new Date();
@@ -66,6 +71,7 @@ export const PATCH = handler<P>(async (req, { params }) => {
 export const DELETE = handler<P>(async (req, { params }) => {
   const user = await requireUser(req);
   const group = await requireAdmin((await params).id, user._id);
+  refuseForPersonalRoll(group);
   // Everything goes for everyone, R2 files included. Nobody is notified.
   const deletedPhotos = await deleteGroupEverywhere(group);
   return json({ ok: true, deletedPhotos });

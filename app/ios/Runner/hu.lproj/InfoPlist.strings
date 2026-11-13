@@ -1,0 +1,6 @@
+/* Permission texts shown by iOS. Keep in sync with Info.plist (English) and lib/l10n/GLOSSARY.md. */
+"NSCameraUsageDescription" = "A CamTrip a kamerádat használja, hogy fotókat és videókat készíts a csoportodnak.";
+"NSMicrophoneUsageDescription" = "A CamTrip a mikrofonodat használja, hogy hangot rögzítsen a videókhoz.";
+"NSPhotoLibraryAddUsageDescription" = "A CamTrip a fotókönyvtáradba menti a fotóidat, egy csoportodról elnevezett albumba.";
+"NSPhotoLibraryUsageDescription" = "Válassz fotókat a könyvtáradból, hogy megoszd őket a csoportoddal.";
+"NSLocationWhenInUseUsageDescription" = "A CamTrip a tartózkodási helyedet csak egy csoport útitérképéhez használja, ha beleegyezel: kb. 100 m-re kerekítve, és csak az adott csoport látja.";

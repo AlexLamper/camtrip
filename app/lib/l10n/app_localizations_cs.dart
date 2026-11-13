@@ -2181,4 +2181,305 @@ class AppLocalizationsCs extends AppLocalizations {
   @override
   String get styleFlashDescription =>
       'Přímý blesk na teplém filmu: jantarový nádech, zrno, sytě červená';
+
+  @override
+  String cameraTimerButton(String state) {
+    return 'Samospoušť: $state';
+  }
+
+  @override
+  String get cameraTimerCycleHint => 'Klepnutím přepínáš mezi vyp., 3 s a 10 s';
+
+  @override
+  String get cameraLastShotOpen => 'Poslední fotka, otevře album';
+
+  @override
+  String get cameraLastShotEmpty => 'Zatím žádné fotky, otevře album';
+
+  @override
+  String get deleteOnlyOwnOrAdmin => 'Smazat to může jen autor nebo správce';
+
+  @override
+  String get videoPlay => 'Přehrát';
+
+  @override
+  String get videoPause => 'Pozastavit';
+
+  @override
+  String get language => 'Jazyk';
+
+  @override
+  String get languageSystem => 'Jazyk systému';
+
+  @override
+  String languageSystemCurrent(String language) {
+    return 'Systém ($language)';
+  }
+
+  @override
+  String get languageSearchHint => 'Hledat jazyk';
+
+  @override
+  String get languageNoResults => 'Žádný jazyk nenalezen';
+
+  @override
+  String get personalRollTitle => 'Můj film';
+
+  @override
+  String get personalRollSubtitle => 'Jen pro tebe';
+
+  @override
+  String get personalRollPickerSubtitle => 'Volné fotky, jen pro tebe';
+
+  @override
+  String get personalRollMove => 'Do alba';
+
+  @override
+  String get personalRollMoveTitle => 'Přesunout do alba';
+
+  @override
+  String get personalRollMoveNoAlbums =>
+      'Nejdřív vytvoř album nebo se k nějakému připoj kódem.';
+
+  @override
+  String personalRollMoved(int count, String album) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count fotek přesunuto do $album',
+      few: '$count fotky přesunuty do $album',
+      one: '1 fotka přesunuta do $album',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get personalRollPrivateNote =>
+      'Tyto fotky vidíš jen ty. Přesuň je do alba a sdílej je.';
+
+  @override
+  String get paywallTripPassSub => 'Jen tento výlet, pro celou skupinu';
+
+  @override
+  String get paywallOneTime => 'jednorázově';
+
+  @override
+  String get paywallBestValue => 'Nejvýhodnější';
+
+  @override
+  String paywallRollFullTitle(int used, int limit) {
+    return 'Tvůj film je plný - $used/$limit fotek';
+  }
+
+  @override
+  String get paywallRollFullSub => 'Foť dál s Trip Passem nebo Pro.';
+
+  @override
+  String get paywallCameraTitle => 'Tento fotoaparát patří k Pro';
+
+  @override
+  String paywallCameraSub(int count) {
+    return 'Odemkni všech $count fotoaparátů.';
+  }
+
+  @override
+  String get paywallWatermarkTitle => 'Recap bez vodoznaku';
+
+  @override
+  String get paywallWatermarkSub => 'Sdílej recap bez loga CamTrip.';
+
+  @override
+  String get paywallDeletionTitle => 'Uchovej si výlet';
+
+  @override
+  String paywallDeletionSub(String date) {
+    return 'Bezplatné výlety se mažou $date. S Trip Passem nebo Pro zůstane navždy.';
+  }
+
+  @override
+  String paywallTripPassTerms(String price) {
+    return 'Jednorázový nákup za $price pro tento výlet. Není to předplatné.';
+  }
+
+  @override
+  String get buyTripPass => 'Koupit Trip Pass';
+
+  @override
+  String get tripPassActive => 'Trip Pass aktivní: výlet je Pro pro všechny';
+
+  @override
+  String get tripPassActivating =>
+      'Platba přijata. Trip Pass bude za chvíli aktivní.';
+
+  @override
+  String proViaTripPass(String name) {
+    return 'Trip Pass od $name';
+  }
+
+  @override
+  String rollCounterSemantics(int used, int limit) {
+    return '$used z $limit snímků na tvém filmu';
+  }
+
+  @override
+  String rollHeldTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Počet fotek, které se nevejdou: $count',
+      one: '1 fotka se už na film nevejde',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get rollHeldBody => 'Uchovej je s Pro nebo Trip Passem';
+
+  @override
+  String deletionBannerTitle(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Uchovej si výlet - zbývá dní: $days',
+      one: 'Uchovej si výlet - zbývá 1 den',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get deletionBannerBody =>
+      'Bezplatné výlety se mažou 30 dní po konci. S Trip Passem nebo Pro zůstane navždy.';
+
+  @override
+  String apiRollFull(int limit) {
+    return 'Tvůj film je plný ($limit snímků). Pořiď si Trip Pass nebo Pro a foť dál.';
+  }
+
+  @override
+  String get apiTripPassFailed =>
+      'Trip Pass se nepodařilo aktivovat. Napiš na support@camtrip.app.';
+
+  @override
+  String get apiTripPassExists => 'Tento výlet už má Trip Pass.';
+
+  @override
+  String get tripPassUnavailable =>
+      'Trip Pass teď není dostupný. Zkus to později.';
+
+  @override
+  String get tripMapTitle => 'Mapa cesty';
+
+  @override
+  String get tripMapOpen => 'Mapa a statistiky';
+
+  @override
+  String get tripMapLoadFailed => 'Mapu se nepodařilo načíst';
+
+  @override
+  String get tripMapStatDays => 'Dny';
+
+  @override
+  String get tripMapStatPhotos => 'Fotky';
+
+  @override
+  String get tripMapStatVideos => 'Videa';
+
+  @override
+  String get tripMapStatMembers => 'Členové';
+
+  @override
+  String get tripMapStatDistance => 'km ujeto';
+
+  @override
+  String get tripMapStatCountries => 'Země';
+
+  @override
+  String get tripMapStatPlaces => 'Místa';
+
+  @override
+  String tripMapBusiestDay(String day, int count) {
+    return 'Nejvíc fotek: $day ($count)';
+  }
+
+  @override
+  String tripMapTopPhotographer(String name, int count) {
+    return 'Nejlepší fotograf: $name ($count)';
+  }
+
+  @override
+  String get tripMapOffTitle => 'Mapa cesty je vypnutá';
+
+  @override
+  String get tripMapOffMessage =>
+      'Správce může mapu zapnout v nastavení skupiny. Statistiky vidíš vždy.';
+
+  @override
+  String get tripMapOffMessageAdmin =>
+      'Zapni mapu a uvidíte, kde vznikly vaše fotky. Každý se sám rozhodne, jestli se přidá.';
+
+  @override
+  String get tripMapEnable => 'Zapnout mapu';
+
+  @override
+  String get tripMapEmptyTitle => 'Na mapě zatím nejsou žádná místa';
+
+  @override
+  String get tripMapEmptyMessage =>
+      'Nové fotky členů, kteří sdílejí polohu, se tu zobrazí, zaokrouhlené na asi 100 m.';
+
+  @override
+  String get tripMapConsentTitle => 'Mapa cesty';
+
+  @override
+  String get tripMapConsentQuestion =>
+      'Sdílet, kde vznikly tvoje fotky, na mapě této skupiny?';
+
+  @override
+  String get tripMapConsentDetail =>
+      'Uvidí to jen členové skupiny, zaokrouhlené na asi 100 m. Poloha se nikdy neuloží do samotné fotky a kdykoli to můžeš vypnout v nastavení skupiny.';
+
+  @override
+  String get tripMapConsentYes => 'Ano, sdílet';
+
+  @override
+  String get tripMapConsentNo => 'Ne';
+
+  @override
+  String get tripMapLocationDenied =>
+      'Bez přístupu k poloze. Můžeš ho povolit v nastavení telefonu.';
+
+  @override
+  String get tripMapSettingSubtitle =>
+      'Ukázat na mapě, kde vznikly fotky. Členové se sami rozhodnou, jestli sdílet.';
+
+  @override
+  String get tripMapDisableTitle => 'Vypnout mapu?';
+
+  @override
+  String get tripMapDisableMessage =>
+      'Všechny polohy v této skupině se smažou. Když mapu později znovu zapneš, zeptáme se všech znovu.';
+
+  @override
+  String get tripMapDisable => 'Vypnout';
+
+  @override
+  String get tripMapMySharing => 'Sdílet mou polohu';
+
+  @override
+  String get tripMapMySharingOn =>
+      'Tvoje nové fotky se zobrazují na mapě (zaokrouhlené na asi 100 m).';
+
+  @override
+  String get tripMapMySharingOff =>
+      'Vypnuto. Tvoje fotky se na mapě nezobrazují.';
+
+  @override
+  String get tripMapStopSharingTitle => 'Přestat sdílet polohu?';
+
+  @override
+  String get tripMapStopSharingMessage =>
+      'Polohy všech tvých fotek v této skupině se smažou.';
+
+  @override
+  String get tripMapStopSharing => 'Přestat sdílet';
 }

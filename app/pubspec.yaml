@@ -49,6 +49,11 @@ dependencies:
   connectivity_plus: ^7.3.2
   cached_network_image: ^4.0.7
 
+  # trip map (Reiskaart): OSM-based map + opt-in coarse location
+  flutter_map: ^8.3.2
+  latlong2: ^0.10.1
+  geolocator: ^14.0.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

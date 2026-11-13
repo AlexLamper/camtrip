@@ -47,7 +47,7 @@ export function parseMyPhotosQuery(params: URLSearchParams): MyPhotosQuery {
 
 /**
  * Own, finished photos and videos in the given groups (the ones the user is
- * still a member of), minus the ones they hid for themselves, older than the
+ * still a member of, their personal roll included), minus the ones they hid for themselves, older than the
  * cursor. Sort with MY_PHOTOS_SORT; served by the (userId, takenAt, _id) index.
  * [oid] turns an id string into an ObjectId (injected to keep this pure).
  */
@@ -75,7 +75,15 @@ export function pageOf<T extends { _id: unknown; takenAt: Date | string }>(rows:
   return { page, nextCursor: rows.length > limit && last ? encodeCursor(last.takenAt, String(last._id)) : null };
 }
 
-/** A serialized group photo plus the name of its group ("Mallorca"). */
-export function withGroupName<T extends { groupId: string }>(photo: T, groupNames: Map<string, string>): T & { groupName: string } {
-  return { ...photo, groupName: groupNames.get(photo.groupId) ?? '' };
+/**
+ * A serialized group photo plus the name of its group ("Mallorca"), and
+ * whether that group is the user's personal roll ("Mijn rolletje"; the app
+ * shows its own localized label for it).
+ */
+export function withGroupName<T extends { groupId: string }>(
+  photo: T,
+  groupNames: Map<string, string>,
+  personalGroupIds: Set<string> = new Set(),
+): T & { groupName: string; groupPersonal: boolean } {
+  return { ...photo, groupName: groupNames.get(photo.groupId) ?? '', groupPersonal: personalGroupIds.has(photo.groupId) };
 }

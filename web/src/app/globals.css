@@ -170,7 +170,7 @@ section p.sub { color: var(--muted); font-size: 18px; max-width: 620px; margin-t
 .lab-video h3 { font-size: 20px; margin-bottom: var(--stack-gap); }
 .lab-video p { color: var(--muted); }
 
-.pricing { display: grid; grid-template-columns: 1fr 1fr; gap: var(--grid-gap); }
+.pricing { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--grid-gap); }
 .plan { background: var(--paper); border: 1px solid var(--line); border-radius: 22px; padding: var(--card-pad); }
 .plan.pro { border: 2px solid var(--ink); }
 .plan h3 { font-size: 22px; }

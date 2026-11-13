@@ -46,7 +46,12 @@ final pushOpenProvider = Provider((ref) => StreamController<PushOpen>.broadcast(
 final pushProvider = Provider((ref) => PushService(ref));
 
 /// The app language as the server wants it for push texts ("nl", "pt_BR" ...).
-String pushLocaleTag(Locale l) => l.countryCode == null || l.countryCode!.isEmpty ? l.languageCode : '${l.languageCode}_${l.countryCode}';
+/// Traditional Chinese is "zh_Hant".
+String pushLocaleTag(Locale l) => [
+      l.languageCode,
+      if (l.scriptCode?.isNotEmpty ?? false) l.scriptCode!,
+      if (l.countryCode?.isNotEmpty ?? false) l.countryCode!,
+    ].join('_');
 
 /// Push notifications straight through Apple (APNs) - see AppDelegate.swift.
 /// The server sends to the device token stored here, in the app's language.
@@ -73,9 +78,19 @@ class PushService {
     if (open.data.isNotEmpty) ref.read(pushOpenProvider).add(open);
   }
 
-  Future<void> _upload(String token) async {
+  Future<void> _upload(String token, {Locale? locale}) async {
     _token = token;
-    await ref.read(apiProvider).post('/me/push-token', {'token': token, 'platform': 'ios', 'locale': pushLocaleTag(L10n.locale)});
+    await ref.read(apiProvider).post('/me/push-token', {'token': token, 'platform': 'ios', 'locale': pushLocaleTag(locale ?? L10n.locale)});
+  }
+
+  /// After a language change in Settings: the server sends pushes in [locale]
+  /// from now on. Nothing to do when this device has no push token.
+  Future<void> updateLocale(Locale locale) async {
+    final t = _token;
+    if (t == null) return;
+    try {
+      await _upload(t, locale: locale);
+    } catch (_) {}
   }
 
   /// Asks permission (once) and registers this device with the server.

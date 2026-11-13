@@ -5,6 +5,8 @@ import {
   grantActive,
   grantUntil,
   groupPro,
+  groupProSource,
+  tripPassActive,
   hasPro,
   isBootstrapAdmin,
   parseAdminEmails,
@@ -81,8 +83,8 @@ test('banned accounts never have Pro', () => {
 });
 
 test('groupPro: nobody Pro -> free group', () => {
-  assert.deepEqual(groupPro([free, lapsedSub, expiredGift], { now: NOW }), { isPro: false, proBy: null });
-  assert.deepEqual(groupPro([], { now: NOW }), { isPro: false, proBy: null });
+  assert.deepEqual(groupPro([free, lapsedSub, expiredGift], { now: NOW }), { isPro: false, proBy: null, tripPass: false });
+  assert.deepEqual(groupPro([], { now: NOW }), { isPro: false, proBy: null, tripPass: false });
 });
 
 test('groupPro: one Pro member makes the group Pro (any source)', () => {
@@ -140,4 +142,51 @@ test('grantUntil durations', () => {
   assert.equal(grantUntil('custom', NOW, custom), custom);
   assert.throws(() => grantUntil('custom', NOW, past), RangeError);
   assert.throws(() => grantUntil('custom', NOW, null), RangeError);
+});
+
+// ---------------------------------------------------------------- Trip Pass
+
+const pass = { transactionId: 'tx-1', purchasedBy: 'u-free', purchasedAt: NOW };
+
+test('tripPassActive: only with a transaction', () => {
+  assert.equal(tripPassActive(pass), true);
+  assert.equal(tripPassActive(null), false);
+  assert.equal(tripPassActive(undefined), false);
+  assert.equal(tripPassActive({ transactionId: '' }), false);
+});
+
+test('groupPro: a Trip Pass makes a group of free members Pro, for good', () => {
+  const g = groupPro([free, lapsedSub], { now: NOW, tripPass: pass });
+  assert.deepEqual(g, { isPro: true, proBy: null, tripPass: true });
+  // years later, nobody subscribed: still Pro
+  assert.equal(groupPro([free], { now: new Date('2040-01-01'), tripPass: pass }).isPro, true);
+  // an empty group with a pass is still Pro
+  assert.equal(groupPro([], { now: NOW, tripPass: pass }).isPro, true);
+  // refunded = field removed
+  assert.equal(groupPro([free], { now: NOW, tripPass: null }).isPro, false);
+});
+
+test('groupPro: Trip Pass plus a Pro member keeps crediting the member', () => {
+  const g = groupPro([free, subscriber], { now: NOW, tripPass: pass });
+  assert.equal(g.isPro, true);
+  assert.equal(g.tripPass, true);
+  assert.equal(g.proBy.id, 'u-sub');
+});
+
+test('groupProSource: self, then Trip Pass, then another member', () => {
+  const both = groupPro([free, subscriber], { now: NOW, tripPass: pass });
+  assert.equal(groupProSource(both, 'u-sub'), 'self');
+  assert.equal(groupProSource(both, 'u-free'), 'tripPass');
+  const memberOnly = groupPro([free, subscriber], { now: NOW });
+  assert.equal(groupProSource(memberOnly, 'u-free'), 'group');
+  assert.equal(groupProSource(memberOnly, 'u-sub'), 'self');
+  const passOnly = groupPro([free], { now: NOW, tripPass: pass });
+  assert.equal(groupProSource(passOnly, 'u-free'), 'tripPass');
+  assert.equal(groupProSource(groupPro([free], { now: NOW }), 'u-free'), null);
+});
+
+test('proInGroup: a Trip Pass group gives source tripPass', () => {
+  const g = groupPro([free], { now: NOW, tripPass: pass });
+  assert.deepEqual(proInGroup(userPro(free, NOW), g), { isPro: true, source: 'tripPass' });
+  assert.deepEqual(proInGroup(userPro(subscriber, NOW), g), { isPro: true, source: 'subscription' });
 });
