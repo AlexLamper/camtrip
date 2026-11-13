@@ -102,12 +102,16 @@ jobs:
           INPUT_BUILD_NAME: ${{ github.event.inputs.build_name }}
           INPUT_BUILD_NUMBER: ${{ github.event.inputs.build_number }}
           PUBSPEC_PATH: app/pubspec.yaml
+          APP_BUNDLE_ID: app.camtrip.camtrip
         run: |
           # macOS runners ship a Homebrew python that refuses system-wide pip
           # installs (PEP 668), so install into a throwaway virtualenv.
           python3 -m venv "$RUNNER_TEMP/versionvenv"
           "$RUNNER_TEMP/versionvenv/bin/python" -m pip install --quiet --disable-pip-version-check pyjwt cryptography
           "$RUNNER_TEMP/versionvenv/bin/python" .github/workflows/scripts/resolve_version.py
+          # Revoke the throwaway development certificates earlier CI runs left
+          # behind, so automatic signing never hits Apple's certificate limit.
+          "$RUNNER_TEMP/versionvenv/bin/python" .github/workflows/scripts/cleanup_dev_certs.py
 
       # ── 4. ExportOptions ─────────────────────────────────────────────────────
       - name: Create ExportOptions.plist
