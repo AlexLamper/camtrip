@@ -10,7 +10,8 @@ import '../../core/theme.dart';
 /// Why not tile.openstreetmap.org: the OSMF tile usage policy forbids heavy
 /// use such as a distributed app without permission. CARTO terms
 /// (carto.com/legal/basemap-terms, docs.carto.com/faqs/carto-basemaps):
-/// - a free API key is required (dart-define CARTO_BASEMAPS_KEY); without one
+/// - a free API key is required (dart-define CARTO_BASEMAPS_KEY, set as the
+///   GitHub Actions variable of the same name); without one
 ///   CARTO serves "API KEY REQUIRED" tiles;
 /// - commercial use is free up to 1 million tile requests per calendar
 ///   month (counted per customer); above that a paid plan is needed;
