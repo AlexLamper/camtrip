@@ -1855,4 +1855,200 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get googleSignInUnavailable => 'Googleでのログインはまだ利用できません';
+
+  @override
+  String get cameraPickerTitle => 'カメラを選ぶ';
+
+  @override
+  String get cameraPickerSubtitle => 'カメラごとに写真の雰囲気が変わります';
+
+  @override
+  String get cameraPickerChange => 'カメラを切り替え';
+
+  @override
+  String get cameraPickerUnlock => 'Proでロック解除';
+
+  @override
+  String get cameraPickerSelected => '選択中';
+
+  @override
+  String get cameraPickerStyleSummer => 'サマー';
+
+  @override
+  String get cameraPickerStyleSummerDescription => '90年代のスナップのような、あたたかく色あせた色';
+
+  @override
+  String get cameraPickerStyleNight => 'ナイト800';
+
+  @override
+  String get cameraPickerStyleNightDescription => '映画フィルム風: 青緑の影、あたたかい光、強い粒子感';
+
+  @override
+  String get cameraPickerStyleSepia => 'セピア';
+
+  @override
+  String get cameraPickerStyleSepiaDescription => '靴箱から出てきた古い茶色のプリント';
+
+  @override
+  String get cameraPickerStyleLomo => 'ロモ';
+
+  @override
+  String get cameraPickerStyleLomoDescription => '鮮やかな色、暗い四隅、大胆な色かぶり';
+
+  @override
+  String get cameraPickerStyleMint => 'ミント';
+
+  @override
+  String get cameraPickerStyleMintDescription => 'グリーンがかった、やわらかくさわやかな色';
+
+  @override
+  String get cameraPickerStylePastel => 'ピンク';
+
+  @override
+  String get cameraPickerStylePastelDescription => 'ピンクに輝くパステルカラーと白いフチ';
+
+  @override
+  String get cameraPickerStyleSuper8 => 'スーパー8';
+
+  @override
+  String get cameraPickerStyleSuper8Description => '古いホームビデオのような、粒子感のあるやわらかな映像';
+
+  @override
+  String get paywallBenefitGroup => '1人がProならグループ全員がPro';
+
+  @override
+  String get paywallBenefitUnlimited => 'メンバー無制限、写真はずっと保存';
+
+  @override
+  String get paywallBenefitQuality => 'ウォーターマークなし、オリジナル画質';
+
+  @override
+  String paywallFreeTrial(String period) {
+    return '$period無料';
+  }
+
+  @override
+  String paywallPriceYear(String price) {
+    return '1年あたり$price。';
+  }
+
+  @override
+  String paywallPriceYearTrial(String period, String price) {
+    return '$period無料、その後1年あたり$price。';
+  }
+
+  @override
+  String paywallPriceMonth(String price) {
+    return '1か月あたり$price。';
+  }
+
+  @override
+  String paywallPriceMonthTrial(String period, String price) {
+    return '$period無料、その後1か月あたり$price。';
+  }
+
+  @override
+  String paywallAutoRenew(String store) {
+    return '自動更新されます。更新の24時間前までに$storeで解約できます。';
+  }
+
+  @override
+  String get paywallDetailsTitle => 'Proでできること';
+
+  @override
+  String get paywallBenefitStyles => 'すべてのカメラスタイル';
+
+  @override
+  String get allPhotosTitle => 'すべての写真';
+
+  @override
+  String get allPhotosSubtitle => 'すべてのアルバムから、自分で撮った写真';
+
+  @override
+  String get allPhotosEmptyTitle => 'まだ写真がありません';
+
+  @override
+  String get allPhotosEmptyMessage => 'カメラを開いて、最初の1枚を撮りましょう。';
+
+  @override
+  String get allPhotosOpenCamera => 'カメラを開く';
+
+  @override
+  String get allPhotosChooseAlbum => 'アルバムを選択';
+
+  @override
+  String get allPhotosLoadFailed => '写真を読み込めませんでした';
+
+  @override
+  String get cameraSettingsTitle => 'カメラ設定';
+
+  @override
+  String get cameraSettingsMore => 'その他の設定';
+
+  @override
+  String get cameraSettingsGrid => 'グリッド';
+
+  @override
+  String get cameraSettingsHaptics => '撮影時に振動';
+
+  @override
+  String get cameraSettingsDateStamp => '右下に日付';
+
+  @override
+  String get cameraSettingsSound => 'シャッター音';
+
+  @override
+  String get cameraSettingsSoundHint => 'マナーモード中は鳴りません';
+
+  @override
+  String get cameraSettingsTimer => 'セルフタイマー';
+
+  @override
+  String get cameraSettingsTimerOff => 'オフ';
+
+  @override
+  String cameraSettingsTimerSeconds(int seconds) {
+    return '$seconds秒';
+  }
+
+  @override
+  String get cameraSettingsTimerCancelHint => 'シャッターをタップでキャンセル';
+
+  @override
+  String get cameraSettingsMirror => 'セルフィーを反転';
+
+  @override
+  String get cameraSettingsSaveToRoll => 'カメラロールに保存';
+
+  @override
+  String get cameraSettingsQuality => '画質';
+
+  @override
+  String get cameraSettingsQualityStandard => '標準';
+
+  @override
+  String get cameraSettingsQualityHigh => '高画質';
+
+  @override
+  String get cameraLowLightHint => '暗いです - フラッシュをオンにしましょう';
+
+  @override
+  String get cameraFlashUnavailable => 'このカメラにはフラッシュがありません';
+
+  @override
+  String get cameraFlashScreen => '画面フラッシュ';
+
+  @override
+  String get cameraFlashCycleHint => 'タップでオフ・オン・自動を切り替え';
+
+  @override
+  String cameraPickerPaywallStyles(int count, String styles) {
+    return '全$count種類のカメラ（$stylesなど）';
+  }
+
+  @override
+  String get styleFlash => 'フラッシュ400';
+
+  @override
+  String get styleFlashDescription => '暖かいフィルムに直接フラッシュ：琥珀色の光、粒子、鮮やかな赤';
 }

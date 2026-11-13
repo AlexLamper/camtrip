@@ -205,7 +205,7 @@ class Group {
         type: GroupType.values.firstWhere((t) => t.name == j['type'], orElse: () => GroupType.vacation),
         startDate: _date(j['startDate']),
         endDate: _date(j['endDate']),
-        defaultStyle: (j['defaultStyle'] as String?) ?? 'instant',
+        defaultStyle: (j['defaultStyle'] as String?) ?? 'flash',
         code: (j['code'] as String?) ?? '',
         status: (j['status'] as String?) ?? 'active',
         photoCount: (j['photoCount'] as num?)?.toInt() ?? 0,

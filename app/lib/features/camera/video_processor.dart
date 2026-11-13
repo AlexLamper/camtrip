@@ -12,7 +12,14 @@ import 'styles.dart';
 class VideoProcessor {
   static String _encoder() => Platform.isIOS ? 'h264_videotoolbox' : 'h264_mediacodec';
 
+  @visibleForTesting
+  static String filterFor(CameraStyle s) => _filter(s);
+
   static String _filter(CameraStyle s) {
+    // Curve-based looks (Flash 400) get their own chain: curves, hue-selective
+    // saturation, vignette and luminance grain.
+    final look = s.look;
+    if (look != null) return '${look.ffmpegFilter(vignette: s.vignette)},format=yuv420p';
     final m = s.matrix.m;
     String f(double v) => v.toStringAsFixed(3);
     // colorchannelmixer has no offsets; approximate the matrix offsets with eq brightness.

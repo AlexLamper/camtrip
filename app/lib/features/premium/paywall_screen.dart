@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -12,8 +11,17 @@ import '../../core/config.dart';
 import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../l10n/l10n.dart';
+import '../auth/onboarding_slides.dart' show OnboardingPhotos;
+import '../camera/styles.dart';
+import 'paywall_widgets.dart';
 import 'premium_controller.dart';
 
+export 'paywall_widgets.dart' show GroupProNote;
+
+/// The Pro paywall. At the default text size everything needed to buy
+/// (benefits, both prices, the button, the renewal terms and the legal links)
+/// fits on an iPhone SE without scrolling; the details below the plans and
+/// large accessibility text scroll.
 class PaywallScreen extends ConsumerStatefulWidget {
   const PaywallScreen({super.key});
   @override
@@ -73,6 +81,13 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     };
   }
 
+  /// What the year saves against twelve months, from the store's prices.
+  static int _savePercent(Package? annual, Package? monthly) {
+    final y = annual?.storeProduct.price, m = monthly?.storeProduct.price;
+    if (y == null || m == null || m <= 0) return 48; // 49,99 vs 12 x 7,99
+    return ((1 - y / (m * 12)) * 100).round().clamp(0, 99);
+  }
+
   void _open(String url) => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 
   @override
@@ -80,148 +95,136 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     final s = ref.watch(premiumProvider);
     final isPro = ref.watch(isProProvider);
     final annual = s.annual, monthly = s.monthly;
-    final selected = _annual ? annual : monthly;
     final l = context.l10n;
-    final trial = _trialText(l, selected);
+    final trial = _trialText(l, _annual ? annual : monthly);
+    final annualTrial = _trialText(l, annual), monthlyTrial = _trialText(l, monthly);
     final annualPrice = _price(annual, 49.99), monthlyPrice = _price(monthly, 7.99);
     final unavailable = s.configured && s.offering == null;
+    final store = defaultTargetPlatform == TargetPlatform.iOS ? 'App Store' : 'Google Play';
 
-    Widget plan({required bool selected, required String title, required String price, required String sub, String? badge, required VoidCallback onTap}) {
-      return Expanded(
-        child: GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: CT.paper,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: selected ? CT.ink : CT.line, width: selected ? 2.5 : 1.5),
-            ),
-            child: Stack(clipBehavior: Clip.none, children: [
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(title, style: CT.text(13, weight: FontWeight.w600)),
-                const SizedBox(height: 2),
-                Text(price, style: CT.text(20, weight: FontWeight.w700)),
-                Text(sub, style: CT.text(11, color: CT.muted)),
-              ]),
-              if (badge != null)
-                Positioned(
-                  top: -22,
-                  left: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: CT.accent, borderRadius: BorderRadius.circular(8)),
-                    child: Text(badge, style: CT.text(10, color: Colors.white, weight: FontWeight.w700)),
-                  ),
-                ),
-            ]),
-          ),
-        ),
-      );
-    }
+    final renew = [
+      switch ((_annual, trial)) {
+        (true, null) => l.paywallPriceYear(annualPrice),
+        (true, final t?) => l.paywallPriceYearTrial(t, annualPrice),
+        (false, null) => l.paywallPriceMonth(monthlyPrice),
+        (false, final t?) => l.paywallPriceMonthTrial(t, monthlyPrice),
+      },
+      l.paywallAutoRenew(store),
+    ].join(' ');
+
+    final benefits = [
+      (Icons.auto_awesome_rounded, l.paywallBenefitStyles),
+      (Icons.all_inclusive_rounded, l.paywallBenefitUnlimited),
+      (Icons.hd_rounded, l.paywallBenefitQuality),
+      (Icons.groups_rounded, l.paywallBenefitGroup),
+    ];
 
     return Scaffold(
       body: SafeArea(
         child: Column(children: [
-          Align(alignment: Alignment.topRight, child: IconButton(tooltip: l.close, onPressed: () => context.pop(), icon: const Icon(Icons.close, color: CT.muted))),
           Expanded(
-            child: ListView(padding: const EdgeInsets.symmetric(horizontal: 26), children: [
-              SizedBox(
-                height: 190,
-                child: Stack(children: [
-                  Positioned(left: 30, top: 6, width: 120, child: InstantPrint(rotation: -7, child: Container(color: const Color(0xFF6FB7DD)))),
-                  Positioned(right: 30, top: 14, width: 112, child: InstantPrint(rotation: 6, child: Container(color: const Color(0xFF3B2F5C)))),
-                  Positioned(left: 0, right: 0, top: 40, child: Center(child: SizedBox(width: 124, child: InstantPrint(rotation: -1, child: Image.asset('assets/images/app_icon.png', fit: BoxFit.cover))))),
-                ]),
+            child: Stack(children: [
+              LayoutBuilder(builder: (context, box) {
+                // The hero gets what the essentials leave over, so the plans
+                // stay on screen on small phones.
+                final hero = (box.maxHeight - 330 * MediaQuery.textScalerOf(context).scale(1)).clamp(0.0, 200.0);
+                return ListView(padding: const EdgeInsets.fromLTRB(24, 0, 24, 24), children: [
+                  if (hero >= 90) PaywallHero(height: hero, photos: const [OnboardingPhotos.sunset, OnboardingPhotos.friends]) else const SizedBox(height: 44),
+                  Text(isPro ? l.paywallHavePro : 'CamTrip Pro', style: CT.title(28)),
+                  const SizedBox(height: 2),
+                  Text(l.paywallSubtitle, style: CT.text(14, color: CT.muted)),
+                  const SizedBox(height: 12),
+                  for (final (icon, text) in benefits) BenefitLine(icon: icon, text: text),
+                  if (!isPro) ...[
+                    const SizedBox(height: 20),
+                    IntrinsicHeight(
+                      child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                        Expanded(
+                          child: PlanCard(
+                            key: const ValueKey('plan-annual'),
+                            selected: _annual,
+                            title: l.planYear,
+                            price: annualPrice,
+                            highlight: annualTrial != null ? l.paywallFreeTrial(annualTrial) : null,
+                            sub: l.pricePerMonth(annual?.storeProduct.pricePerMonthString ?? _price(null, 4.17)),
+                            badge: l.paywallSaveBadge(_savePercent(annual, monthly)),
+                            onTap: () => setState(() => _annual = true),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: PlanCard(
+                            key: const ValueKey('plan-monthly'),
+                            selected: !_annual,
+                            title: l.planMonth,
+                            price: monthlyPrice,
+                            highlight: monthlyTrial != null ? l.paywallFreeTrial(monthlyTrial) : null,
+                            sub: l.planMonthCancelAnytime,
+                            onTap: () => setState(() => _annual = false),
+                          ),
+                        ),
+                      ]),
+                    ),
+                  ],
+                  // Below the fold: the long version, for whoever scrolls.
+                  const SizedBox(height: 36),
+                  Text(l.paywallDetailsTitle.toUpperCase(), style: CT.label),
+                  const SizedBox(height: 10),
+                  for (final f in [
+                    l.cameraPickerPaywallStyles(CameraStyle.all.length, paywallStyleHighlights().join(', ')),
+                    l.paywallFeatureUnlimited,
+                    l.paywallFeatureNoWatermark,
+                    l.paywallFeatureOriginal,
+                  ])
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        const Padding(padding: EdgeInsets.only(top: 2), child: Icon(Icons.check, size: 16, color: CT.accent)),
+                        const SizedBox(width: 10),
+                        Expanded(child: Text(f, style: CT.text(14))),
+                      ]),
+                    ),
+                  const SizedBox(height: 8),
+                  const GroupProNote(),
+                ]);
+              }),
+              Positioned(
+                top: 4,
+                right: 8,
+                child: CloseCircle(tooltip: l.close, onTap: () => context.pop()),
               ),
-              const SizedBox(height: 10),
-              Text(isPro ? l.paywallHavePro : 'CamTrip Pro', style: CT.title(30)),
-              const SizedBox(height: 6),
-              Text(l.paywallSubtitle, style: CT.text(15, color: CT.muted)),
-              const SizedBox(height: 16),
-              for (final f in [
-                l.paywallFeatureStyles('${l.styleBw}, ${l.styleGolden}, ${l.styleChrome}'),
-                l.paywallFeatureUnlimited,
-                l.paywallFeatureNoWatermark,
-                l.paywallFeatureOriginal,
-              ])
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 9),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Icon(Icons.check, size: 18, color: CT.accent),
-                    const SizedBox(width: 10),
-                    Expanded(child: Text(f, style: CT.text(15))),
-                  ]),
-                ),
-              const SizedBox(height: 8),
-              const GroupProNote(),
-              if (!isPro) ...[
-                const SizedBox(height: 22),
-                Row(children: [
-                  plan(
-                    selected: _annual,
-                    title: l.planYear,
-                    price: annualPrice,
-                    sub: l.pricePerMonth(annual?.storeProduct.pricePerMonthString ?? _price(null, 4.17)),
-                    badge: l.paywallSaveBadge(48),
-                    onTap: () => setState(() => _annual = true),
-                  ),
-                  const SizedBox(width: 10),
-                  plan(
-                    selected: !_annual,
-                    title: l.planMonth,
-                    price: monthlyPrice,
-                    sub: l.planMonthCancelAnytime,
-                    onTap: () => setState(() => _annual = false),
-                  ),
-                ]),
-              ],
             ]),
           ),
-          if (!isPro)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 8, 22, 4),
-              child: CTButton(
-                trial != null ? l.tryFree(trial) : l.becomePro,
-                kind: CTButtonKind.primary,
-                loading: s.busy,
-                onTap: () => _buy(_annual ? annual : monthly),
-              ),
-            ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(22, 6, 22, 10),
-            child: Column(children: [
-              if (unavailable)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Text(l.subscriptionsLoadFailed,
-                      textAlign: TextAlign.center, style: CT.text(12, color: CT.accent)),
-                ),
-              if (!isPro)
-                Text(
-                  [
-                    switch ((_annual, trial)) {
-                      (true, null) => l.legalAnnual(annualPrice),
-                      (true, final t?) => l.legalAnnualTrial(t, annualPrice),
-                      (false, null) => l.legalMonthly(monthlyPrice),
-                      (false, final t?) => l.legalMonthlyTrial(t, monthlyPrice),
-                    },
-                    Platform.isIOS ? l.legalBillingApple : l.legalBillingGoogle,
-                  ].join(' '),
-                  textAlign: TextAlign.center,
-                  style: CT.text(11, color: CT.muted),
-                ),
-              const SizedBox(height: 6),
-              Wrap(alignment: WrapAlignment.center, crossAxisAlignment: WrapCrossAlignment.center, children: [
-                TextButton(onPressed: s.busy ? null : _restore, child: Text(l.restorePurchases, style: CT.text(12, color: CT.muted))),
-                Text('·', style: CT.text(12, color: CT.muted)),
-                TextButton(onPressed: () => _open(AppConfig.termsUrl), child: Text(l.terms, style: CT.text(12, color: CT.muted))),
-                Text('·', style: CT.text(12, color: CT.muted)),
-                TextButton(onPressed: () => _open(AppConfig.appleEulaUrl), child: Text('EULA', style: CT.text(12, color: CT.muted))),
-                Text('·', style: CT.text(12, color: CT.muted)),
-                TextButton(onPressed: () => _open(AppConfig.privacyUrl), child: Text(l.privacy, style: CT.text(12, color: CT.muted))),
+          // Fixed footer: always on screen.
+          DecoratedBox(
+            decoration: const BoxDecoration(color: CT.bg, border: Border(top: BorderSide(color: CT.line, width: 0.5))),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 4),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                if (unavailable)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(l.subscriptionsLoadFailed, textAlign: TextAlign.center, style: CT.text(12, color: CT.accent, height: 1.3)),
+                  ),
+                if (!isPro) ...[
+                  CTButton(
+                    trial != null ? l.tryFree(trial) : l.becomePro,
+                    key: const ValueKey('paywall-cta'),
+                    kind: CTButtonKind.dark,
+                    loading: s.busy,
+                    onTap: () => _buy(_annual ? annual : monthly),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(renew, textAlign: TextAlign.center, style: CT.text(11, color: CT.muted, height: 1.3)),
+                ],
+                LegalLinks(links: [
+                  (l.restorePurchases, s.busy ? null : _restore),
+                  (l.terms, () => _open(AppConfig.termsUrl)),
+                  (l.privacy, () => _open(AppConfig.privacyUrl)),
+                  ('EULA', () => _open(AppConfig.appleEulaUrl)),
+                ]),
               ]),
-            ]),
+            ),
           ),
         ]),
       ),
@@ -229,27 +232,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   }
 }
 
-/// "Eén Pro in de groep = Pro voor iedereen in die groep."
-class GroupProNote extends StatelessWidget {
-  const GroupProNote({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final l = context.l10n;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: CT.cream, borderRadius: BorderRadius.circular(14)),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Icon(Icons.groups_rounded, size: 22, color: CT.accent),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(l.groupProTitle, style: CT.text(14, weight: FontWeight.w700)),
-            const SizedBox(height: 3),
-            Text(l.groupProBody, style: CT.text(13, color: CT.muted)),
-          ]),
-        ),
-      ]),
-    );
-  }
-}
+/// A few Pro cameras named in the paywall's benefit line (the rest is "all N").
+List<String> paywallStyleHighlights() =>
+    [for (final id in const ['bw', 'golden', 'night', 'super8']) CameraStyle.all.where((s) => s.id == id && s.pro).firstOrNull?.name]
+        .whereType<String>()
+        .toList();

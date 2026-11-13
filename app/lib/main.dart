@@ -9,7 +9,9 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'core/router.dart';
 import 'core/storage.dart';
 import 'core/theme.dart';
+import 'core/api.dart';
 import 'features/auth/auth_controller.dart';
+import 'features/auth/onboarding_slides.dart';
 import 'features/groups/join_sheet.dart';
 import 'features/notifications/push.dart';
 import 'features/premium/premium_controller.dart';
@@ -22,14 +24,39 @@ final prefsProvider = Provider<Prefs>((ref) => throw UnimplementedError('overrid
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting(); // date names for every app language
   SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
-  final prefs = await Prefs.load();
 
-  final container = ProviderContainer(overrides: [prefsProvider.overrideWithValue(prefs)]);
-  unawaited(container.read(premiumProvider.notifier).configure());
+  // Only local, fast reads before the first frame (all in parallel): prefs
+  // (cached profile + groups), the session token from the keychain and the
+  // date names. Never the network - the start screen is decided from these.
+  final session = SessionStorage();
+  final (prefs, _, _) = await (
+    Prefs.load(),
+    session.token().timeout(const Duration(seconds: 2), onTimeout: () => null).catchError((Object _) => null),
+    initializeDateFormatting(), // date names for every app language (in-memory)
+  ).wait;
+
+  final container = ProviderContainer(overrides: [
+    prefsProvider.overrideWithValue(prefs),
+    sessionStorageProvider.overrideWithValue(session),
+  ]);
 
   runApp(UncontrolledProviderScope(container: container, child: const CamTripApp()));
+
+  // Everything else waits until the first frame is on screen.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(container.read(premiumProvider.notifier).configure());
+    if (container.read(authProvider).value == null) _precacheOnboarding();
+  });
+}
+
+/// The first onboarding slide's photos, so they don't pop in.
+void _precacheOnboarding() {
+  final ctx = rootNavigatorKey.currentContext;
+  if (ctx == null) return;
+  for (final a in const [OnboardingPhotos.beach, OnboardingPhotos.campfire, OnboardingPhotos.friends]) {
+    unawaited(precacheImage(AssetImage(a), ctx));
+  }
 }
 
 class CamTripApp extends ConsumerStatefulWidget {
@@ -83,7 +110,15 @@ class _CamTripAppState extends ConsumerState<CamTripApp> {
 
   void _openJoin(String code) {
     final ctx = rootNavigatorKey.currentContext;
-    if (ctx != null) showJoinSheet(ctx, code: code);
+    if (ctx != null) {
+      showJoinSheet(ctx, code: code);
+    } else {
+      // A launch link can arrive before the first frame.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = rootNavigatorKey.currentContext;
+        if (ctx != null) showJoinSheet(ctx, code: code);
+      });
+    }
   }
 
   @override

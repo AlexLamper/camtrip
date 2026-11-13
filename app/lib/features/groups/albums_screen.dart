@@ -8,6 +8,8 @@ import '../../core/widgets.dart';
 import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 import '../auth/auth_controller.dart';
+import '../gallery/all_photos_controller.dart';
+import '../gallery/all_photos_screen.dart';
 import '../upload/upload_queue.dart';
 import 'group_actions.dart';
 import 'groups_controller.dart';
@@ -44,7 +46,10 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
     return Scaffold(
       body: RefreshIndicator(
         color: CT.ink,
-        onRefresh: () => ref.read(groupsProvider.notifier).reload(),
+        onRefresh: () => Future.wait([
+          ref.read(groupsProvider.notifier).reload(),
+          ref.read(allPhotosProvider.notifier).refresh(),
+        ]),
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
@@ -96,6 +101,11 @@ class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
                 ),
               )
             else ...[
+              // "Alle foto's": every photo you made, from every album.
+              const SliverPadding(
+                padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+                sliver: SliverToBoxAdapter(child: AllPhotosEntryCard()),
+              ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
                 sliver: _grid(context, ref, [...active, null], activeId),

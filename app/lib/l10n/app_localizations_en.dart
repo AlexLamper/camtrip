@@ -1935,4 +1935,212 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get googleSignInUnavailable =>
       'Signing in with Google isn\'t available yet';
+
+  @override
+  String get cameraPickerTitle => 'Choose your camera';
+
+  @override
+  String get cameraPickerSubtitle =>
+      'Every camera gives your photos its own look';
+
+  @override
+  String get cameraPickerChange => 'Switch camera';
+
+  @override
+  String get cameraPickerUnlock => 'Unlock with Pro';
+
+  @override
+  String get cameraPickerSelected => 'Selected';
+
+  @override
+  String get cameraPickerStyleSummer => 'Summer';
+
+  @override
+  String get cameraPickerStyleSummerDescription =>
+      'Warm, faded colours of a 90s snapshot';
+
+  @override
+  String get cameraPickerStyleNight => 'Night 800';
+
+  @override
+  String get cameraPickerStyleNightDescription =>
+      'Cinema film: teal shadows, warm light, lots of grain';
+
+  @override
+  String get cameraPickerStyleSepia => 'Sepia';
+
+  @override
+  String get cameraPickerStyleSepiaDescription =>
+      'An old brown print from the shoebox';
+
+  @override
+  String get cameraPickerStyleLomo => 'Lomo';
+
+  @override
+  String get cameraPickerStyleLomoDescription =>
+      'Bold colours, dark corners and a wild colour cast';
+
+  @override
+  String get cameraPickerStyleMint => 'Mint';
+
+  @override
+  String get cameraPickerStyleMintDescription =>
+      'Soft and fresh with a green tint';
+
+  @override
+  String get cameraPickerStylePastel => 'Pink';
+
+  @override
+  String get cameraPickerStylePastelDescription =>
+      'Pastel colours with a pink glow and a white border';
+
+  @override
+  String get cameraPickerStyleSuper8 => 'Super 8';
+
+  @override
+  String get cameraPickerStyleSuper8Description =>
+      'Grainy and soft, like an old home movie';
+
+  @override
+  String get paywallBenefitGroup => 'One Pro = Pro for the whole group';
+
+  @override
+  String get paywallBenefitUnlimited =>
+      'Unlimited members, photos kept forever';
+
+  @override
+  String get paywallBenefitQuality => 'No watermark, original quality';
+
+  @override
+  String paywallFreeTrial(String period) {
+    return '$period free';
+  }
+
+  @override
+  String paywallPriceYear(String price) {
+    return '$price per year.';
+  }
+
+  @override
+  String paywallPriceYearTrial(String period, String price) {
+    return '$period free, then $price per year.';
+  }
+
+  @override
+  String paywallPriceMonth(String price) {
+    return '$price per month.';
+  }
+
+  @override
+  String paywallPriceMonthTrial(String period, String price) {
+    return '$period free, then $price per month.';
+  }
+
+  @override
+  String paywallAutoRenew(String store) {
+    return 'Renews automatically. Cancel at least 24 hours before renewal in $store.';
+  }
+
+  @override
+  String get paywallDetailsTitle => 'Everything in Pro';
+
+  @override
+  String get paywallBenefitStyles => 'All camera styles';
+
+  @override
+  String get allPhotosTitle => 'All photos';
+
+  @override
+  String get allPhotosSubtitle =>
+      'Everything you shot yourself, from every album';
+
+  @override
+  String get allPhotosEmptyTitle => 'No photos yet';
+
+  @override
+  String get allPhotosEmptyMessage =>
+      'Open the camera and take your first photo.';
+
+  @override
+  String get allPhotosOpenCamera => 'Open the camera';
+
+  @override
+  String get allPhotosChooseAlbum => 'Choose album';
+
+  @override
+  String get allPhotosLoadFailed => 'Your photos couldn\'t be loaded';
+
+  @override
+  String get cameraSettingsTitle => 'Camera settings';
+
+  @override
+  String get cameraSettingsMore => 'More settings';
+
+  @override
+  String get cameraSettingsGrid => 'Grid';
+
+  @override
+  String get cameraSettingsHaptics => 'Vibrate on capture';
+
+  @override
+  String get cameraSettingsDateStamp => 'Date stamp bottom right';
+
+  @override
+  String get cameraSettingsSound => 'Shutter sound';
+
+  @override
+  String get cameraSettingsSoundHint => 'Silent when your phone is on silent';
+
+  @override
+  String get cameraSettingsTimer => 'Self-timer';
+
+  @override
+  String get cameraSettingsTimerOff => 'Off';
+
+  @override
+  String cameraSettingsTimerSeconds(int seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String get cameraSettingsTimerCancelHint => 'Tap the shutter to cancel';
+
+  @override
+  String get cameraSettingsMirror => 'Mirror selfies';
+
+  @override
+  String get cameraSettingsSaveToRoll => 'Save to camera roll';
+
+  @override
+  String get cameraSettingsQuality => 'Quality';
+
+  @override
+  String get cameraSettingsQualityStandard => 'Standard';
+
+  @override
+  String get cameraSettingsQualityHigh => 'High';
+
+  @override
+  String get cameraLowLightHint => 'Low light - turn on the flash';
+
+  @override
+  String get cameraFlashUnavailable => 'This camera has no flash';
+
+  @override
+  String get cameraFlashScreen => 'Screen flash';
+
+  @override
+  String get cameraFlashCycleHint => 'Tap to switch between off, on and auto';
+
+  @override
+  String cameraPickerPaywallStyles(int count, String styles) {
+    return 'All $count cameras, including $styles';
+  }
+
+  @override
+  String get styleFlash => 'Flash 400';
+
+  @override
+  String get styleFlashDescription =>
+      'Direct flash on warm film: amber glow, grain, rich reds';
 }

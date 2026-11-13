@@ -17,10 +17,17 @@ import '../../models/models.dart';
 import '../groups/groups_controller.dart';
 import '../premium/pro_gate.dart';
 import '../upload/upload_queue.dart';
+import 'camera_picker_sheet.dart';
+import 'camera_settings.dart';
+import 'camera_settings_sheet.dart';
+import 'flash_control.dart';
+import 'low_light.dart';
 import 'processor.dart';
 import 'shutter_button.dart';
+import 'shutter_feedback.dart';
 import 'styles.dart';
 import 'video_processor.dart';
+import 'viewfinder_overlays.dart';
 
 /// Album on the phone; the same name in every language, so it never splits.
 String albumName(Group g) => 'CamTrip - ${g.name}';
@@ -36,8 +43,27 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
   CameraController? _controller;
   int _cameraIndex = 0;
   late CameraStyle _style;
-  late bool _stamp;
-  FlashMode _flash = FlashMode.auto;
+
+  /// The "..." sheet's settings; persisted per device by [_settingsStore].
+  CameraSettings _settings = const CameraSettings();
+  CameraSettingsStore? _settingsStore;
+
+  /// Quality the running controller was started with.
+  CaptureQuality? _activeQuality;
+  late FlashSetting _flash;
+
+  /// Hardware flash on the current (back) camera. Front cameras use the
+  /// white screen flash instead.
+  bool _hasFlash = true;
+  bool _lowLight = false;
+  bool _screenFlash = false;
+  int? _countdown;
+  Timer? _countdownTimer;
+  late final LowLightMonitor _lowLightMonitor = LowLightMonitor(onChanged: (low) {
+    if (mounted) setState(() => _lowLight = low);
+  });
+  final _feedback = ShutterFeedback();
+
   /// Always starts in photo mode and is never persisted: video is a
   /// deliberate per-session choice.
   bool _videoMode = false;
@@ -57,10 +83,31 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     _style = CameraStyle.byId(prefs.cameraStyle);
     // A Pro style left over from a lapsed subscription (or another group's
     // Pro) would fail on upload. Group Pro counts: one Pro member = Pro for all.
-    if (!ref.read(activeProGateProvider).canUseStyle(styleIsPro: _style.pro)) _style = CameraStyle.instant;
-    _stamp = prefs.dateStamp;
-    _flash = switch (prefs.flashMode) { 'on' => FlashMode.always, 'off' => FlashMode.off, _ => FlashMode.auto };
+    if (!ref.read(activeProGateProvider).canUseStyle(styleIsPro: _style.pro)) _style = CameraStyle.defaultStyle;
+    // Until the full settings are read: the two that also live in Prefs.
+    _settings = CameraSettings(dateStamp: prefs.dateStamp, saveToRoll: prefs.saveOwnToAlbum);
+    _flash = FlashSession.current ?? (_style.forceFlash ? FlashSetting.on : FlashSetting.auto);
+    CameraSettingsStore.load().then((store) {
+      if (!mounted) return;
+      _settingsStore = store;
+      _onSettingsChanged(store.read());
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) => _initAfterTransition());
+  }
+
+  void _onSettingsChanged(CameraSettings next) {
+    final prev = _settings;
+    setState(() => _settings = next);
+    if (next.sound && !prev.sound) _feedback.prepare();
+    if (next.timer == ShutterTimer.off) _cancelCountdown();
+    // A different resolution needs a new controller.
+    if (_controller != null && _activeQuality != null && next.quality != _activeQuality && !_recording && !_busy) _start(_cameraIndex);
+  }
+
+  Future<void> _openSettings() async {
+    final store = _settingsStore ??= await CameraSettingsStore.load();
+    if (!mounted) return;
+    await showCameraSettingsSheet(context, store: store, settings: _settings, onChanged: _onSettingsChanged);
   }
 
   /// Starting the camera is heavy on the platform side; wait for the slide-up
@@ -85,6 +132,9 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _recordTimer?.cancel();
+    _countdownTimer?.cancel();
+    _lowLightMonitor.dispose();
+    _feedback.dispose();
     _controller?.dispose();
     super.dispose();
   }
@@ -99,20 +149,27 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     if (state != AppLifecycleState.inactive || !mounted) return;
     final live = c != null && c.value.isInitialized;
     _recordTimer?.cancel();
+    _countdownTimer?.cancel();
+    // No brightness sampling in the background.
+    final paused = _lowLightMonitor.pause();
     // Coming back from the background always lands in photo mode. Also drop
     // the preview from the tree before the controller goes away.
     setState(() {
       _recording = false;
       _videoMode = false;
+      _countdown = null;
+      _screenFlash = false;
       if (live) _controller = null;
     });
-    if (live) c.dispose();
+    if (live) paused.whenComplete(c.dispose);
   }
 
   void _setVideoMode(bool video) {
     if (_recording || video == _videoMode) return;
     HapticFeedback.selectionClick();
+    _cancelCountdown();
     setState(() => _videoMode = video);
+    _applyFlash();
   }
 
   Future<void> _init() async {
@@ -134,16 +191,28 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
       : context.l10n.cameraStartFailed;
 
   Future<void> _start(int index) async {
+    await _lowLightMonitor.pause();
     final old = _controller;
     _controller = null;
     await old?.dispose();
-    final c = CameraController(_cameras[index], ResolutionPreset.max, enableAudio: true, imageFormatGroup: ImageFormatGroup.jpeg);
+    final quality = _settings.quality;
+    final c = CameraController(_cameras[index], quality.preset, enableAudio: true, imageFormatGroup: ImageFormatGroup.jpeg);
     try {
       await c.initialize();
+      // Front cameras have no flash (iOS throws, Android silently ignores
+      // it); they get the screen flash. A back camera that refuses a photo
+      // flash mode has none either.
+      final front = _cameras[index].lensDirection == CameraLensDirection.front;
+      var hasFlash = !front;
       try {
-        await c.setFlashMode(_style.forceFlash ? FlashMode.always : _flash);
+        await c.setFlashMode(hasFlash ? _flash.controllerMode(video: false) : FlashMode.off);
       } on CameraException catch (_) {
-        // front cameras often have no flash
+        hasFlash = false;
+      }
+      if (hasFlash && _videoMode) {
+        try {
+          await c.setFlashMode(_flash.controllerMode(video: true));
+        } on CameraException catch (_) {}
       }
       if (!mounted) {
         await c.dispose();
@@ -152,8 +221,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
       setState(() {
         _controller = c;
         _cameraIndex = index;
+        _activeQuality = quality;
+        _hasFlash = hasFlash;
+        _lowLight = false;
         _error = null;
       });
+      _lowLightMonitor.start(c);
     } on CameraException catch (e) {
       await c.dispose();
       if (mounted) setState(() => _error = _cameraError(e));
@@ -170,19 +243,32 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     HapticFeedback.selectionClick();
     setState(() => _style = s);
     ref.read(prefsProvider).cameraStyle = s.id;
-    try {
-      await _controller?.setFlashMode(s.forceFlash ? FlashMode.always : _flash);
-    } on CameraException catch (_) {}
+    // The disposable look is made with flash: switch it on, but leave the
+    // button free so it can still be turned off.
+    if (s.forceFlash) {
+      await _setFlash(FlashSetting.on);
+    } else {
+      await _applyFlash();
+    }
   }
 
-  Future<void> _cycleFlash() async {
-    final next = switch (_flash) { FlashMode.auto => FlashMode.always, FlashMode.always => FlashMode.off, _ => FlashMode.auto };
+  Future<void> _cycleFlash() => _setFlash(_flash.next);
+
+  Future<void> _setFlash(FlashSetting next) async {
+    if (next != _flash) HapticFeedback.selectionClick();
+    FlashSession.current = next;
     setState(() => _flash = next);
-    ref.read(prefsProvider).flashMode = switch (next) { FlashMode.always => 'on', FlashMode.off => 'off', _ => 'auto' };
-    if (!_style.forceFlash) {
-      try {
-        await _controller?.setFlashMode(next);
-      } on CameraException catch (_) {}
+    await _applyFlash();
+  }
+
+  /// Pushes the flash choice to the controller (torch in video mode).
+  Future<void> _applyFlash() async {
+    final c = _controller;
+    if (c == null || !c.value.isInitialized || !_hasFlash) return;
+    try {
+      await c.setFlashMode(_flash.controllerMode(video: _videoMode));
+    } on CameraException catch (e) {
+      debugPrint('flash failed: $e');
     }
   }
 
@@ -205,27 +291,77 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     if (c == null || _busy || !c.value.isInitialized) return;
     if (!ref.read(activeProGateProvider).canUseStyle(styleIsPro: _style.pro)) {
       // Switched to a group without Pro while a Pro style was picked.
-      setState(() => _style = CameraStyle.instant);
-      showMessage(context, context.l10n.styleProFallback(CameraStyle.instant.name));
+      setState(() => _style = CameraStyle.defaultStyle);
+      showMessage(context, context.l10n.styleProFallback(CameraStyle.defaultStyle.name));
       return;
     }
     if (_videoMode) return _toggleRecording(group);
-    HapticFeedback.mediumImpact();
-    setState(() {
-      _busy = true;
-      _flashAnim = true;
+    // Self-timer: a second tap cancels the countdown.
+    if (_countdown != null) return _cancelCountdown();
+    if (_settings.timer != ShutterTimer.off) return _startCountdown(group, _settings.timer.seconds);
+    return _capture(group);
+  }
+
+  void _startCountdown(Group group, int seconds) {
+    _countdownTimer?.cancel();
+    if (_settings.haptics) HapticFeedback.selectionClick();
+    setState(() => _countdown = seconds);
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return t.cancel();
+      final left = (_countdown ?? 1) - 1;
+      if (left <= 0) {
+        t.cancel();
+        setState(() => _countdown = null);
+        _capture(group);
+        return;
+      }
+      if (_settings.haptics) HapticFeedback.selectionClick();
+      setState(() => _countdown = left);
     });
+  }
+
+  void _cancelCountdown() {
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
+    if (_countdown != null && mounted) setState(() => _countdown = null);
+  }
+
+  Future<void> _capture(Group group) async {
+    final c = _controller;
+    if (c == null || _busy || !c.value.isInitialized) return;
+    setState(() => _busy = true);
+    // Free the camera: no brightness sample may run during the capture.
+    await _lowLightMonitor.pause();
+    // Selfie in the dark: light the face with a white screen.
+    final screenFlash = _front && _flash.wantsScreenFlash(lowLight: _lowLight);
+    if (screenFlash && mounted) {
+      setState(() => _screenFlash = true);
+      // give auto-exposure a moment to adapt to the white light
+      await Future<void>.delayed(const Duration(milliseconds: 350));
+    }
+    if (!mounted) return;
+    if (_settings.haptics) HapticFeedback.mediumImpact();
+    if (_settings.sound) unawaited(_feedback.click());
+    setState(() => _flashAnim = true);
     Future.delayed(const Duration(milliseconds: 140), () => mounted ? setState(() => _flashAnim = false) : null);
     try {
       final shot = await c.takePicture();
       final takenAt = DateTime.now();
+      if (mounted) {
+        setState(() {
+          _screenFlash = false;
+          _busy = false; // ready for the next shot while this one develops
+        });
+        if (identical(_controller, c)) _lowLightMonitor.start(c);
+      }
       final bytes = await shot.readAsBytes();
-      setState(() => _busy = false); // ready for the next shot while this one develops
+      final opts = PhotoProcessOptions.from(_settings, frontCamera: _front, stampText: Fmt.stamp(takenAt));
       final processed = await processPhoto(
         bytes,
         styleId: _style.id,
-        dateStamp: _stamp ? Fmt.stamp(takenAt) : null,
-        mirror: _front,
+        dateStamp: opts.dateStamp,
+        showDateStamp: opts.showDateStamp,
+        mirror: opts.mirror,
       );
       if (mounted) setState(() => _lastThumb = processed.thumb);
       await ref.read(uploadQueueProvider.notifier).enqueue(
@@ -241,7 +377,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
             display: processed.display,
             thumb: processed.thumb,
           );
-      if (ref.read(prefsProvider).saveOwnToAlbum) {
+      if (_settings.saveToRoll) {
         await _saveToAlbum(
             () => Gal.putImageBytes(processed.original, album: albumName(group), name: 'camtrip_${takenAt.millisecondsSinceEpoch}'));
       }
@@ -252,19 +388,29 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
       debugPrint('shoot failed: $e');
       if (mounted) showMessage(context, context.l10n.photoFailed);
     } finally {
-      if (mounted && _busy) setState(() => _busy = false);
+      if (mounted && (_busy || _screenFlash)) {
+        setState(() {
+          _busy = false;
+          _screenFlash = false;
+        });
+        // capture failed before the sampler was restarted
+        if (identical(_controller, c) && !_lowLightMonitor.running) _lowLightMonitor.start(c);
+      }
     }
   }
 
   Future<void> _toggleRecording(Group group) async {
     final c = _controller!;
     if (!_recording) {
-      HapticFeedback.mediumImpact();
+      if (_settings.haptics) HapticFeedback.mediumImpact();
+      // The image stream and a recording cannot run together.
+      await _lowLightMonitor.pause();
       try {
         await c.startVideoRecording();
       } on CameraException catch (e) {
         debugPrint('record failed: $e');
         if (mounted) showMessage(context, context.l10n.recordingFailed);
+        if (identical(_controller, c)) _lowLightMonitor.start(c);
         return;
       }
       _recordStart = DateTime.now();
@@ -287,6 +433,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     try {
       final file = await c.stopVideoRecording();
       if (mounted) setState(() => _busy = false);
+      if (mounted && identical(_controller, c)) _lowLightMonitor.start(c);
       final styled = await VideoProcessor.applyStyle(File(file.path), _style);
       final thumbFile = await VideoProcessor.thumbnail(styled);
       final thumbBytes = thumbFile != null ? await thumbFile.readAsBytes() : placeholderJpeg();
@@ -308,7 +455,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
             thumb: thumbs?.thumb ?? thumbBytes,
             originalExt: 'mp4',
           );
-      if (ref.read(prefsProvider).saveOwnToAlbum) {
+      if (_settings.saveToRoll) {
         await _saveToAlbum(() => Gal.putVideo(styled.path, album: albumName(group)));
       }
     } catch (e) {
@@ -316,6 +463,7 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
       if (mounted) showMessage(context, context.l10n.videoFailed);
     } finally {
       if (mounted) setState(() => _busy = false);
+      if (mounted && identical(_controller, c) && !_recording && !_lowLightMonitor.running) _lowLightMonitor.start(c);
     }
   }
 
@@ -350,11 +498,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
     final group = ref.watch(activeGroupProvider);
     final groups = ref.watch(groupsProvider).value ?? const <Group>[];
     final gate = ref.watch(activeProGateProvider);
-    final isPro = gate.unlocked;
     // Pro style picked but this group has no Pro (e.g. after switching groups).
     if (group != null && !gate.canUseStyle(styleIsPro: _style.pro)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _style.pro && !ref.read(activeProGateProvider).unlocked) setState(() => _style = CameraStyle.instant);
+        if (mounted && _style.pro && !ref.read(activeProGateProvider).unlocked) setState(() => _style = CameraStyle.defaultStyle);
       });
     }
     final pending = ref.watch(uploadQueueProvider).length;
@@ -362,24 +509,20 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
 
     return Scaffold(
       backgroundColor: CT.bg,
-      body: SafeArea(
-        child: Column(children: [
+      body: Stack(children: [
+        SafeArea(
+          child: Column(children: [
           // top bar
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
             child: Row(children: [
               IconButton(tooltip: l.close, onPressed: _recording ? null : () => context.pop(), icon: const Icon(Icons.close)),
-              TextButton.icon(
-                onPressed: _style.forceFlash ? null : _cycleFlash,
-                icon: Icon(
-                  _style.forceFlash || _flash == FlashMode.always
-                      ? Icons.flash_on
-                      : (_flash == FlashMode.off ? Icons.flash_off : Icons.flash_auto),
-                  color: CT.ink,
-                  size: 20,
-                ),
-                label: Text(_style.forceFlash ? l.flash : (_flash == FlashMode.always ? l.flashOn : _flash == FlashMode.off ? l.flashOff : l.flashAuto),
-                    maxLines: 1, style: CT.text(14, weight: FontWeight.w600)),
+              FlashButton(
+                setting: _flash,
+                // front camera: screen flash, photos only
+                hasFlash: _front ? !_videoMode : _hasFlash,
+                screenFlash: _front,
+                onPressed: _recording ? null : _cycleFlash,
               ),
               // Centred between the two buttons; shrinks (with an ellipsis)
               // when a long group name or flash label leaves less room.
@@ -417,28 +560,27 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
                 onPressed: _cameras.length > 1 && !_recording ? () => _start((_cameraIndex + 1) % _cameras.length) : null,
                 icon: const Icon(Icons.cameraswitch_outlined),
               ),
+              IconButton(
+                key: const ValueKey('camera-settings-button'),
+                tooltip: l.cameraSettingsMore,
+                onPressed: _recording ? null : _openSettings,
+                icon: const Icon(Icons.more_horiz_rounded),
+              ),
             ]),
           ),
           // viewfinder
           Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: _viewfinder())),
-          // styles
-          SizedBox(
-            height: 58,
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              scrollDirection: Axis.horizontal,
-              itemCount: CameraStyle.all.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (_, i) {
-                final s = CameraStyle.all[i];
-                return CTChip(
-                  s.name,
-                  selected: s.id == _style.id,
-                  dashed: s.pro && !isPro,
-                  icon: s.pro && !isPro ? Icons.star_rounded : null,
-                  onTap: () => _selectStyle(s),
-                );
-              },
+          // current camera; opens the camera picker (camera_picker_sheet.dart)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
+            child: CameraPickerButton(
+              style: _style,
+              onTap: _recording
+                  ? null
+                  : () async {
+                      final s = await showCameraPicker(context, current: _style, gate: ref.read(activeProGateProvider));
+                      if (s != null && mounted) await _selectStyle(s);
+                    },
             ),
           ),
           // Pro styles unlocked by someone else in this group ("Pro via Sanne").
@@ -496,10 +638,17 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
               const SizedBox(width: 56),
             ]),
           ),
-        ]),
-      ),
+          ]),
+        ),
+        // Front-camera "flash": the whole screen turns white for the shot.
+        if (_screenFlash) const Positioned.fill(child: IgnorePointer(child: ColoredBox(key: ValueKey('screen-flash'), color: Colors.white))),
+      ]),
     );
   }
+
+  /// Dark scene, flash not on, and something the flash can do about it.
+  bool get _showLowLightPill =>
+      _lowLight && _flash != FlashSetting.on && !_recording && _countdown == null && (_front ? !_videoMode : _hasFlash);
 
   Widget _shutter(Group? group) {
     return ShutterButton(
@@ -556,15 +705,18 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
               child: Image.asset('assets/images/grain.png', repeat: ImageRepeat.repeat, fit: BoxFit.none),
             ),
           ),
-        if (_stamp && !_videoMode)
+        if (_settings.grid) const GridOverlay(),
+        if (_settings.dateStamp && !_videoMode)
           Positioned(
             right: 12,
             bottom: 10,
             child: GestureDetector(
-              onTap: () => setState(() {
-                _stamp = false;
+              onTap: () {
+                final next = _settings.copyWith(dateStamp: false);
+                _settingsStore?.write(next);
                 ref.read(prefsProvider).dateStamp = false;
-              }),
+                _onSettingsChanged(next);
+              },
               child: Text(Fmt.stamp(DateTime.now()),
                   style: const TextStyle(
                     fontFamily: 'Courier',
@@ -575,6 +727,14 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
                     shadows: [Shadow(color: Color(0xE6FF781E), blurRadius: 6)],
                   )),
             ),
+          ),
+        if (_countdown != null) CountdownOverlay(seconds: _countdown!),
+        if (_showLowLightPill)
+          Positioned(
+            top: 6,
+            left: 12,
+            right: 12,
+            child: Center(child: LowLightPill(onTap: () => _setFlash(FlashSetting.on))),
           ),
         if (_flashAnim) Container(color: Colors.white),
       ]);

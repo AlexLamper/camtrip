@@ -1945,4 +1945,212 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get googleSignInUnavailable =>
       'Inloggen met Google is nog niet beschikbaar';
+
+  @override
+  String get cameraPickerTitle => 'Kies je camera';
+
+  @override
+  String get cameraPickerSubtitle =>
+      'Elke camera geeft je foto\'s een eigen look';
+
+  @override
+  String get cameraPickerChange => 'Camera wisselen';
+
+  @override
+  String get cameraPickerUnlock => 'Ontgrendel met Pro';
+
+  @override
+  String get cameraPickerSelected => 'Gekozen';
+
+  @override
+  String get cameraPickerStyleSummer => 'Zomer';
+
+  @override
+  String get cameraPickerStyleSummerDescription =>
+      'Warme, vervaagde kleuren van een jaren-90 kiekje';
+
+  @override
+  String get cameraPickerStyleNight => 'Nacht 800';
+
+  @override
+  String get cameraPickerStyleNightDescription =>
+      'Bioscoopfilm: blauwgroene schaduwen, warm licht, veel korrel';
+
+  @override
+  String get cameraPickerStyleSepia => 'Sepia';
+
+  @override
+  String get cameraPickerStyleSepiaDescription =>
+      'Een oude bruine afdruk uit de schoenendoos';
+
+  @override
+  String get cameraPickerStyleLomo => 'Lomo';
+
+  @override
+  String get cameraPickerStyleLomoDescription =>
+      'Felle kleuren, donkere hoeken en een gekke kleurzweem';
+
+  @override
+  String get cameraPickerStyleMint => 'Mint';
+
+  @override
+  String get cameraPickerStyleMintDescription =>
+      'Zacht en fris met een groene tint';
+
+  @override
+  String get cameraPickerStylePastel => 'Roze';
+
+  @override
+  String get cameraPickerStylePastelDescription =>
+      'Pastelkleuren met een roze gloed en een witte rand';
+
+  @override
+  String get cameraPickerStyleSuper8 => 'Super 8';
+
+  @override
+  String get cameraPickerStyleSuper8Description =>
+      'Korrelig en zacht, als een oude homevideo';
+
+  @override
+  String get paywallBenefitGroup => 'Eén Pro = Pro voor de hele groep';
+
+  @override
+  String get paywallBenefitUnlimited =>
+      'Onbeperkt leden, foto\'s blijven bewaard';
+
+  @override
+  String get paywallBenefitQuality => 'Geen watermerk, originele kwaliteit';
+
+  @override
+  String paywallFreeTrial(String period) {
+    return '$period gratis';
+  }
+
+  @override
+  String paywallPriceYear(String price) {
+    return '$price per jaar.';
+  }
+
+  @override
+  String paywallPriceYearTrial(String period, String price) {
+    return '$period gratis, daarna $price per jaar.';
+  }
+
+  @override
+  String paywallPriceMonth(String price) {
+    return '$price per maand.';
+  }
+
+  @override
+  String paywallPriceMonthTrial(String period, String price) {
+    return '$period gratis, daarna $price per maand.';
+  }
+
+  @override
+  String paywallAutoRenew(String store) {
+    return 'Verlengt automatisch. Opzeggen kan tot 24 uur voor verlenging in $store.';
+  }
+
+  @override
+  String get paywallDetailsTitle => 'Alles in Pro';
+
+  @override
+  String get paywallBenefitStyles => 'Alle camerastijlen';
+
+  @override
+  String get allPhotosTitle => 'Alle foto\'s';
+
+  @override
+  String get allPhotosSubtitle =>
+      'Alles wat je zelf hebt gemaakt, uit elk album';
+
+  @override
+  String get allPhotosEmptyTitle => 'Nog geen foto\'s';
+
+  @override
+  String get allPhotosEmptyMessage => 'Open de camera en maak je eerste foto.';
+
+  @override
+  String get allPhotosOpenCamera => 'Open de camera';
+
+  @override
+  String get allPhotosChooseAlbum => 'Kies album';
+
+  @override
+  String get allPhotosLoadFailed => 'Je foto\'s konden niet geladen worden';
+
+  @override
+  String get cameraSettingsTitle => 'Camera-instellingen';
+
+  @override
+  String get cameraSettingsMore => 'Meer instellingen';
+
+  @override
+  String get cameraSettingsGrid => 'Raster';
+
+  @override
+  String get cameraSettingsHaptics => 'Trillen bij afdrukken';
+
+  @override
+  String get cameraSettingsDateStamp => 'Tijdstempel rechtsonder';
+
+  @override
+  String get cameraSettingsSound => 'Sluitergeluid';
+
+  @override
+  String get cameraSettingsSoundHint => 'Stil als je telefoon op stil staat';
+
+  @override
+  String get cameraSettingsTimer => 'Zelfontspanner';
+
+  @override
+  String get cameraSettingsTimerOff => 'Uit';
+
+  @override
+  String cameraSettingsTimerSeconds(int seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String get cameraSettingsTimerCancelHint => 'Tik op de sluiter om te stoppen';
+
+  @override
+  String get cameraSettingsMirror => 'Spiegel selfies';
+
+  @override
+  String get cameraSettingsSaveToRoll => 'Opslaan in fotorol';
+
+  @override
+  String get cameraSettingsQuality => 'Kwaliteit';
+
+  @override
+  String get cameraSettingsQualityStandard => 'Standaard';
+
+  @override
+  String get cameraSettingsQualityHigh => 'Hoog';
+
+  @override
+  String get cameraLowLightHint => 'Weinig licht - zet de flits aan';
+
+  @override
+  String get cameraFlashUnavailable => 'Deze camera heeft geen flits';
+
+  @override
+  String get cameraFlashScreen => 'Schermflits';
+
+  @override
+  String get cameraFlashCycleHint =>
+      'Tik om te wisselen tussen uit, aan en auto';
+
+  @override
+  String cameraPickerPaywallStyles(int count, String styles) {
+    return 'Alle $count camera\'s, waaronder $styles';
+  }
+
+  @override
+  String get styleFlash => 'Flits 400';
+
+  @override
+  String get styleFlashDescription =>
+      'Directe flits op warme film: amber gloed, korrel, rijk rood';
 }

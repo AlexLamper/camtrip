@@ -8,8 +8,10 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../../l10n/l10n.dart';
 import '../../models/models.dart';
+import '../camera/camera_picker_sheet.dart';
 import '../camera/styles.dart';
 import '../premium/premium_controller.dart';
+import '../premium/pro_gate.dart';
 import 'groups_controller.dart';
 
 class CreateGroupScreen extends ConsumerStatefulWidget {
@@ -23,7 +25,7 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
   GroupType _type = GroupType.vacation;
   DateTimeRange? _range;
   DateTime _eventDay = DateTime.now();
-  String _style = 'instant';
+  String _style = CameraStyle.defaultId;
   bool _busy = false;
 
   @override
@@ -147,16 +149,19 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                 GestureDetector(onTap: _pickDay, child: _dateBox(Fmt.shortYear(_eventDay))),
               ],
               SectionLabel(l.defaultCameraStyle),
-              Wrap(spacing: 8, runSpacing: 8, children: [
-                for (final s in CameraStyle.all)
-                  CTChip(
-                    s.name,
-                    selected: _style == s.id,
-                    dashed: s.pro && !isPro,
-                    icon: s.pro && !isPro ? Icons.star_rounded : null,
-                    onTap: () => s.pro && !isPro ? context.push('/pro') : setState(() => _style = s.id),
-                  ),
-              ]),
+              CameraSelectRow(
+                style: CameraStyle.byId(_style),
+                onTap: () async {
+                  // a new group has no group Pro yet: only my own Pro counts
+                  final s = await showCameraPicker(context, current: CameraStyle.byId(_style), gate: ProGate(personal: isPro));
+                  if (s == null || !context.mounted) return;
+                  if (s.pro && !isPro) {
+                    context.push('/pro');
+                  } else {
+                    setState(() => _style = s.id);
+                  }
+                },
+              ),
               if (!isPro) ...[
                 const SizedBox(height: 18),
                 Text(

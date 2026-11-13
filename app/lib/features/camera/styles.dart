@@ -1,6 +1,9 @@
 import 'dart:math' as math;
 
 import '../../l10n/l10n.dart';
+import 'film_look.dart';
+
+export 'film_look.dart' show FilmLook;
 
 /// 4x5 colour matrix in Flutter's ColorFilter.matrix layout (offsets in 0..255).
 class ColorMatrix {
@@ -66,6 +69,7 @@ class CameraStyle {
     this.frame = FrameKind.none,
     this.forceFlash = false,
     this.blur = 0.0,
+    this.look,
   });
 
   final String id;
@@ -83,6 +87,14 @@ class CameraStyle {
         'bw' => l.styleBw,
         'golden' => l.styleGolden,
         'chrome' => l.styleChrome,
+        'summer' => l.cameraPickerStyleSummer,
+        'night' => l.cameraPickerStyleNight,
+        'sepia' => l.cameraPickerStyleSepia,
+        'lomo' => l.cameraPickerStyleLomo,
+        'mint' => l.cameraPickerStyleMint,
+        'pastel' => l.cameraPickerStylePastel,
+        'super8' => l.cameraPickerStyleSuper8,
+        'flash' => l.styleFlash,
         _ => id,
       };
 
@@ -93,8 +105,19 @@ class CameraStyle {
         'bw' => l.styleBwDescription,
         'golden' => l.styleGoldenDescription,
         'chrome' => l.styleChromeDescription,
+        'summer' => l.cameraPickerStyleSummerDescription,
+        'night' => l.cameraPickerStyleNightDescription,
+        'sepia' => l.cameraPickerStyleSepiaDescription,
+        'lomo' => l.cameraPickerStyleLomoDescription,
+        'mint' => l.cameraPickerStyleMintDescription,
+        'pastel' => l.cameraPickerStylePastelDescription,
+        'super8' => l.cameraPickerStyleSuper8Description,
+        'flash' => l.styleFlashDescription,
         _ => '',
       };
+  /// Product shot of the camera that makes this look, for the camera picker.
+  String get art => 'assets/images/cameras/$id.png';
+
   final ColorMatrix matrix;
   final bool pro;
   final double grain; // 0..1
@@ -103,6 +126,32 @@ class CameraStyle {
   final FrameKind frame;
   final bool forceFlash;
   final double blur; // slight softness, 0..1
+
+  /// Curve/LUT based grade used instead of [matrix] for the final photo; the
+  /// matrix is then only the live-preview approximation.
+  final FilmLook? look;
+
+  /// Default look: compact camera with direct flash on consumer 400 film.
+  /// Strong amber cast, warm lifted blacks, cream highlights, punchy
+  /// reds/oranges, muted greens/blues, fine grain. Fitted on reference prints
+  /// (see README, "Tweaking the Flash look"). Free for everyone.
+  static final flash = CameraStyle(
+    id: 'flash',
+    // live-preview approximation of the look (least-squares fit of the LUT at
+    // indoor strength); the saved photo uses [look].
+    matrix: const ColorMatrix([0.581, 0.456, -0.115, 0, 10.6, 0.106, 0.501, 0.094, 0, 4.5, 0.117, -0.148, 0.539, 0, 2.4, 0, 0, 0, 1, 0]),
+    grain: 0.3,
+    vignette: 0.3,
+    look: const FilmLook(curves: [
+      [17, 25, 34, 46, 60, 75, 91, 107, 123, 139, 153, 165, 177, 190, 203, 219, 240],
+      [15, 22, 28, 36, 46, 57, 68, 80, 91, 100, 109, 118, 129, 142, 158, 192, 232],
+      [10, 16, 21, 26, 33, 41, 47, 53, 59, 66, 72, 79, 87, 96, 111, 149, 190],
+    ]),
+  );
+
+  /// Style for new users, and the fallback when a Pro style is not allowed.
+  static CameraStyle get defaultStyle => flash;
+  static const defaultId = 'flash';
 
   static final film = CameraStyle(
     id: 'film',
@@ -177,9 +226,116 @@ class CameraStyle {
     vignette: 0.35,
   );
 
-  static final List<CameraStyle> all = [film, instant, disposable, bw, golden, chrome];
+  // ---- more looks (all Pro) ----
 
-  static CameraStyle byId(String id) => all.firstWhere((s) => s.id == id, orElse: () => instant);
+  /// Warm, faded 90s point-and-shoot: summer holiday prints.
+  static final summer = CameraStyle(
+    id: 'summer',
+    pro: true,
+    matrix: ColorMatrix.compose([
+      ColorMatrix.saturation(1.1),
+      ColorMatrix.contrast(0.94),
+      ColorMatrix.channels(r: 1.08, g: 1.03, b: 0.88, ro: 14, go: 10, bo: 4),
+      ColorMatrix.fade(0.12),
+    ]),
+    grain: 0.3,
+    vignette: 0.3,
+    leak: 0.22,
+  );
+
+  /// Tungsten cinema stock: teal shadows, warm highlights, lots of grain.
+  static final night = CameraStyle(
+    id: 'night',
+    pro: true,
+    matrix: ColorMatrix.compose([
+      ColorMatrix.saturation(0.92),
+      ColorMatrix.contrast(1.12),
+      // red gain > 1 with a negative offset: shadows lose red (teal), highlights gain it (warm)
+      ColorMatrix.channels(r: 1.2, g: 1.04, b: 0.9, ro: -22, go: 0, bo: 18),
+      ColorMatrix.fade(0.05),
+    ]),
+    grain: 0.55,
+    vignette: 0.5,
+  );
+
+  /// Old brown print from a shoebox.
+  static final sepia = CameraStyle(
+    id: 'sepia',
+    pro: true,
+    matrix: ColorMatrix.compose([
+      ColorMatrix.saturation(0),
+      ColorMatrix.contrast(1.08),
+      ColorMatrix.channels(r: 1.07, g: 0.95, b: 0.76, ro: 20, go: 10, bo: 0),
+      ColorMatrix.fade(0.14),
+    ]),
+    grain: 0.4,
+    vignette: 0.55,
+    blur: 0.1,
+  );
+
+  /// Toy camera, cross-processed: punchy colours, yellow-green cast, dark corners.
+  static final lomo = CameraStyle(
+    id: 'lomo',
+    pro: true,
+    matrix: ColorMatrix.compose([
+      ColorMatrix.saturation(1.45),
+      ColorMatrix.contrast(1.25),
+      ColorMatrix.channels(r: 1.04, g: 1.08, b: 0.8, ro: 0, go: 4, bo: 22),
+    ]),
+    grain: 0.32,
+    vignette: 0.85,
+    leak: 0.15,
+  );
+
+  /// Soft green-tinted consumer film, gentle on skin.
+  static final mint = CameraStyle(
+    id: 'mint',
+    pro: true,
+    matrix: ColorMatrix.compose([
+      ColorMatrix.saturation(0.88),
+      ColorMatrix.contrast(0.96),
+      ColorMatrix.channels(r: 0.95, g: 1.04, b: 0.98, ro: 2, go: 10, bo: 6),
+      ColorMatrix.fade(0.1),
+    ]),
+    grain: 0.28,
+    vignette: 0.3,
+  );
+
+  /// Pastel instant print with pink highlights.
+  static final pastel = CameraStyle(
+    id: 'pastel',
+    pro: true,
+    matrix: ColorMatrix.compose([
+      ColorMatrix.saturation(0.78),
+      ColorMatrix.contrast(0.86),
+      ColorMatrix.channels(r: 1.04, g: 0.97, b: 1.0, ro: 18, go: 8, bo: 16),
+      ColorMatrix.fade(0.12),
+    ]),
+    grain: 0.16,
+    vignette: 0.2,
+    frame: FrameKind.instant,
+    blur: 0.18,
+  );
+
+  /// Home-movie cine film: warm, soft and grainy with heavy corners.
+  static final super8 = CameraStyle(
+    id: 'super8',
+    pro: true,
+    matrix: ColorMatrix.compose([
+      ColorMatrix.saturation(1.05),
+      ColorMatrix.contrast(1.1),
+      ColorMatrix.channels(r: 1.1, g: 1.0, b: 0.82, ro: 10, go: 2, bo: -4),
+      ColorMatrix.fade(0.1),
+    ]),
+    grain: 0.6,
+    vignette: 0.8,
+    leak: 0.3,
+    blur: 0.3,
+  );
+
+  static final List<CameraStyle> all = [flash, film, instant, disposable, bw, golden, chrome, summer, night, sepia, lomo, mint, pastel, super8];
+
+  static CameraStyle byId(String id) => all.firstWhere((s) => s.id == id, orElse: () => defaultStyle);
 }
 
 /// Vignette falloff for a normalised distance from the centre (0..~1.41).

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api.dart';
+import '../../core/storage.dart';
 import '../../main.dart';
 import '../../models/models.dart';
 import '../auth/auth_controller.dart';
@@ -11,15 +14,52 @@ class GroupsController extends AsyncNotifier<List<Group>> {
   Api get _api => ref.read(apiProvider);
 
   @override
-  Future<List<Group>> build() async {
+  FutureOr<List<Group>> build() {
     // Refetch for a different account or a Pro change (member limits and
     // retention change with it), not for every profile edit or block.
     final (userId, _) = ref.watch(authProvider.select((a) => (a.value?.id, a.value?.isPro)));
     if (userId == null) return const [];
+    // Cold start: show the last known list at once and refresh in the background.
+    final cached = _cached(userId);
+    if (cached != null) {
+      Timer.run(() async {
+        if (ref.mounted) _ensureActive(cached); // not during build: it writes another provider
+        try {
+          final fresh = await _fetch(userId);
+          if (ref.mounted) state = AsyncData(fresh);
+        } catch (_) {} // offline: keep the cached list
+      });
+      return cached;
+    }
+    return _fetch(userId);
+  }
+
+  Future<List<Group>> _fetch(String userId) async {
     final res = await _api.get('/groups');
-    final groups = ((res['groups'] as List?) ?? const []).map((g) => Group.fromJson(g as Map<String, dynamic>)).toList();
+    final list = (res['groups'] as List?) ?? const [];
+    final groups = list.map((g) => Group.fromJson(g as Map<String, dynamic>)).toList();
+    if (userId.isNotEmpty) _prefsOrNull?.cachedGroups = {'userId': userId, 'groups': list};
     _ensureActive(groups);
     return groups;
+  }
+
+  /// The groups cached for [userId] (or for the offline placeholder, id '').
+  List<Group>? _cached(String userId) {
+    final c = _prefsOrNull?.cachedGroups;
+    if (c == null || (userId.isNotEmpty && c['userId'] != userId)) return null;
+    try {
+      return ((c['groups'] as List?) ?? const []).map((g) => Group.fromJson(g as Map<String, dynamic>)).toList();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Prefs? get _prefsOrNull {
+    try {
+      return ref.read(prefsProvider);
+    } catch (_) {
+      return null;
+    }
   }
 
   /// Groups the camera can shoot into: not closed, not archived by me.
@@ -35,7 +75,9 @@ class GroupsController extends AsyncNotifier<List<Group>> {
   }
 
   Future<void> reload() async {
-    state = await AsyncValue.guard(build);
+    final userId = ref.read(authProvider).value?.id;
+    if (userId == null) return;
+    state = await AsyncValue.guard(() => _fetch(userId));
   }
 
   /// Takes a group the server sent back (e.g. after deleting photos, so the

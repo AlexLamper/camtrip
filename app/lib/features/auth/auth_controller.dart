@@ -7,6 +7,8 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../core/api.dart';
 import '../../core/config.dart';
+import '../../core/storage.dart';
+import '../../main.dart';
 import '../../models/models.dart';
 import '../premium/premium_controller.dart';
 import '../gallery/gallery_controller.dart';
@@ -23,53 +25,100 @@ class AuthController extends AsyncNotifier<AppUser?> {
   Api get _api => ref.read(apiProvider);
 
   @override
-  Future<AppUser?> build() async {
+  FutureOr<AppUser?> build() {
     ref.read(unauthorizedHandlerProvider).callback = () {
       if (state.value != null) unawaited(signOut());
     };
-    return _restore();
+    // main() reads the keychain before the first frame, so the start screen is
+    // known synchronously: no splash, and never waiting for the network.
+    final storage = ref.read(sessionStorageProvider);
+    if (storage.loaded) return _startFrom(storage.cachedToken);
+    return storage.token().then(_startFrom);
   }
 
-  Future<AppUser?> _restore() async {
-    final token = await ref.read(sessionStorageProvider).token();
+  Prefs? get _prefs {
+    try {
+      return ref.read(prefsProvider);
+    } catch (_) {
+      return null; // tests without prefs
+    }
+  }
+
+  /// Signed in: the last known profile (or a placeholder) right away, and
+  /// `/me` in the background. Signed out: null, so onboarding shows at once.
+  AppUser? _startFrom(String? token) {
     if (token == null) return null;
+    final json = _prefs?.cachedUser;
+    AppUser? cached;
+    if (json != null) {
+      try {
+        cached = AppUser.fromJson(json);
+      } catch (_) {}
+    }
+    Timer.run(() => unawaited(_revalidate()));
+    // Offline without a cached profile: keep the session, show what we have.
+    // The camera and upload queue work without a profile.
+    return cached ??
+        AppUser(
+          id: '',
+          name: '',
+          email: '',
+          avatarColor: '#d9472b',
+          isPro: false,
+          notifyNewPhotos: true,
+          notifyRecap: true,
+        );
+  }
+
+  /// Background `/me` after a cached start. A 401 / ban signs out through the
+  /// unauthorized handler; offline keeps the cached session.
+  Future<void> _revalidate() async {
     try {
       final res = await _api.get('/me');
-      final user = AppUser.fromJson(res['user'] as Map<String, dynamic>);
+      if (!ref.mounted) return;
+      final user = _userFrom(res);
+      state = AsyncData(user);
       unawaited(_afterSignIn(user));
-      return user;
-    } on ApiException catch (e) {
-      if (e.isUnauthorized || e.isBanned) {
-        await ref.read(sessionStorageProvider).clear();
-        return null;
-      }
-      // Offline at launch: keep the session, show what we have. The camera and
-      // upload queue work without a profile.
-      return AppUser(
-        id: '',
-        name: '',
-        email: '',
-        avatarColor: '#d9472b',
-        isPro: false,
-        notifyNewPhotos: true,
-        notifyRecap: true,
-      );
-    }
+    } catch (_) {}
+  }
+
+  /// Parses `res['user']` and remembers it for the next cold start.
+  AppUser _userFrom(Map<String, dynamic> res) {
+    final json = res['user'] as Map<String, dynamic>;
+    final user = AppUser.fromJson(json);
+    _prefs?.cachedUser = json;
+    return user;
   }
 
   Future<void> _afterSignIn(AppUser user) async {
     if (user.id.isEmpty) return;
     try {
-      await ref.read(premiumProvider.notifier).onSignedIn(user.id);
-    } catch (_) {}
-    try {
       await ref.read(pushProvider).register();
     } catch (_) {}
+    try {
+      await _premiumConfigured();
+      await ref.read(premiumProvider.notifier).onSignedIn(user.id);
+    } catch (_) {}
+  }
+
+  /// RevenueCat is configured after the first frame; wait for it (bounded).
+  Future<void> _premiumConfigured() async {
+    if (ref.read(premiumProvider).configured) return;
+    final done = Completer<void>();
+    final sub = ref.listen(premiumProvider.select((s) => s.configured), (_, ok) {
+      if (ok && !done.isCompleted) done.complete();
+    });
+    try {
+      await done.future.timeout(const Duration(seconds: 10));
+    } catch (_) {
+    } finally {
+      sub.close();
+    }
   }
 
   Future<void> _accept(Map<String, dynamic> res) async {
     await ref.read(sessionStorageProvider).save(res['token'] as String);
-    final user = AppUser.fromJson(res['user'] as Map<String, dynamic>);
+    final user = _userFrom(res);
     state = AsyncData(user);
     unawaited(_afterSignIn(user));
   }
@@ -140,7 +189,7 @@ class AuthController extends AsyncNotifier<AppUser?> {
   Future<void> refresh() async {
     try {
       final res = await _api.get('/me');
-      state = AsyncData(AppUser.fromJson(res['user'] as Map<String, dynamic>));
+      state = AsyncData(_userFrom(res));
     } catch (_) {}
   }
 
@@ -150,7 +199,7 @@ class AuthController extends AsyncNotifier<AppUser?> {
       if (notifyNewPhotos != null || notifyRecap != null)
         'settings': {'notifyNewPhotos': ?notifyNewPhotos, 'notifyRecap': ?notifyRecap},
     });
-    state = AsyncData(AppUser.fromJson(res['user'] as Map<String, dynamic>));
+    state = AsyncData(_userFrom(res));
   }
 
   Future<void> signOut() async {
@@ -166,6 +215,9 @@ class AuthController extends AsyncNotifier<AppUser?> {
       } catch (_) {}
     }
     await ref.read(sessionStorageProvider).clear();
+    _prefs
+      ?..cachedUser = null
+      ..cachedGroups = null;
     state = const AsyncData(null);
   }
 
@@ -179,13 +231,13 @@ class AuthController extends AsyncNotifier<AppUser?> {
   /// "Lid blokkeren": hides every photo of [userId] for this account.
   Future<void> block(String userId) async {
     final res = await _api.post('/me/blocks', {'userId': userId});
-    state = AsyncData(AppUser.fromJson(res['user'] as Map<String, dynamic>));
+    state = AsyncData(_userFrom(res));
     ref.invalidate(galleryProvider); // every gallery reloads without their photos
   }
 
   Future<void> unblock(String userId) async {
     final res = await _api.delete('/me/blocks/$userId');
-    state = AsyncData(AppUser.fromJson(res['user'] as Map<String, dynamic>));
+    state = AsyncData(_userFrom(res));
     ref.invalidate(galleryProvider);
   }
 

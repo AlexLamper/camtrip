@@ -1851,4 +1851,200 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get googleSignInUnavailable => '暂不支持通过 Google 登录';
+
+  @override
+  String get cameraPickerTitle => '选择你的相机';
+
+  @override
+  String get cameraPickerSubtitle => '每台相机都会给照片带来独特的风格';
+
+  @override
+  String get cameraPickerChange => '切换相机';
+
+  @override
+  String get cameraPickerUnlock => '用 Pro 解锁';
+
+  @override
+  String get cameraPickerSelected => '已选择';
+
+  @override
+  String get cameraPickerStyleSummer => '夏日';
+
+  @override
+  String get cameraPickerStyleSummerDescription => '像 90 年代快照一样温暖、褪色的色彩';
+
+  @override
+  String get cameraPickerStyleNight => '夜色 800';
+
+  @override
+  String get cameraPickerStyleNightDescription => '电影胶片：青色阴影、暖色光线、颗粒感强';
+
+  @override
+  String get cameraPickerStyleSepia => '棕褐';
+
+  @override
+  String get cameraPickerStyleSepiaDescription => '鞋盒里翻出的老旧棕色照片';
+
+  @override
+  String get cameraPickerStyleLomo => 'LOMO';
+
+  @override
+  String get cameraPickerStyleLomoDescription => '浓烈的色彩、暗角和大胆的偏色';
+
+  @override
+  String get cameraPickerStyleMint => '薄荷';
+
+  @override
+  String get cameraPickerStyleMintDescription => '带绿色调的柔和清新色彩';
+
+  @override
+  String get cameraPickerStylePastel => '粉色';
+
+  @override
+  String get cameraPickerStylePastelDescription => '粉色光晕的马卡龙色调和白色边框';
+
+  @override
+  String get cameraPickerStyleSuper8 => '超8';
+
+  @override
+  String get cameraPickerStyleSuper8Description => '颗粒感十足、柔和，像老式家庭录像';
+
+  @override
+  String get paywallBenefitGroup => '一人 Pro，全组 Pro';
+
+  @override
+  String get paywallBenefitUnlimited => '成员不限，照片永久保留';
+
+  @override
+  String get paywallBenefitQuality => '无水印，原图画质';
+
+  @override
+  String paywallFreeTrial(String period) {
+    return '免费 $period';
+  }
+
+  @override
+  String paywallPriceYear(String price) {
+    return '每年 $price。';
+  }
+
+  @override
+  String paywallPriceYearTrial(String period, String price) {
+    return '免费 $period，之后每年 $price。';
+  }
+
+  @override
+  String paywallPriceMonth(String price) {
+    return '每月 $price。';
+  }
+
+  @override
+  String paywallPriceMonthTrial(String period, String price) {
+    return '免费 $period，之后每月 $price。';
+  }
+
+  @override
+  String paywallAutoRenew(String store) {
+    return '自动续订。请在续订前至少 24 小时在 $store 中取消。';
+  }
+
+  @override
+  String get paywallDetailsTitle => 'Pro 全部权益';
+
+  @override
+  String get paywallBenefitStyles => '所有相机风格';
+
+  @override
+  String get allPhotosTitle => '所有照片';
+
+  @override
+  String get allPhotosSubtitle => '你在每个相册里亲自拍的所有照片';
+
+  @override
+  String get allPhotosEmptyTitle => '还没有照片';
+
+  @override
+  String get allPhotosEmptyMessage => '打开相机，拍下你的第一张照片。';
+
+  @override
+  String get allPhotosOpenCamera => '打开相机';
+
+  @override
+  String get allPhotosChooseAlbum => '选择相册';
+
+  @override
+  String get allPhotosLoadFailed => '无法加载你的照片';
+
+  @override
+  String get cameraSettingsTitle => '相机设置';
+
+  @override
+  String get cameraSettingsMore => '更多设置';
+
+  @override
+  String get cameraSettingsGrid => '网格';
+
+  @override
+  String get cameraSettingsHaptics => '拍摄时振动';
+
+  @override
+  String get cameraSettingsDateStamp => '右下角日期';
+
+  @override
+  String get cameraSettingsSound => '快门声';
+
+  @override
+  String get cameraSettingsSoundHint => '手机静音时不发声';
+
+  @override
+  String get cameraSettingsTimer => '自拍定时';
+
+  @override
+  String get cameraSettingsTimerOff => '关';
+
+  @override
+  String cameraSettingsTimerSeconds(int seconds) {
+    return '$seconds 秒';
+  }
+
+  @override
+  String get cameraSettingsTimerCancelHint => '轻点快门可取消';
+
+  @override
+  String get cameraSettingsMirror => '镜像自拍';
+
+  @override
+  String get cameraSettingsSaveToRoll => '保存到相册';
+
+  @override
+  String get cameraSettingsQuality => '画质';
+
+  @override
+  String get cameraSettingsQualityStandard => '标准';
+
+  @override
+  String get cameraSettingsQualityHigh => '高';
+
+  @override
+  String get cameraLowLightHint => '光线不足 - 打开闪光灯吧';
+
+  @override
+  String get cameraFlashUnavailable => '这个相机没有闪光灯';
+
+  @override
+  String get cameraFlashScreen => '屏幕闪光';
+
+  @override
+  String get cameraFlashCycleHint => '轻点可在关、开和自动之间切换';
+
+  @override
+  String cameraPickerPaywallStyles(int count, String styles) {
+    return '全部 $count 款相机（包括 $styles）';
+  }
+
+  @override
+  String get styleFlash => '闪光 400';
+
+  @override
+  String get styleFlashDescription => '暖调胶片直闪：琥珀色调、颗粒感、浓郁红色';
 }

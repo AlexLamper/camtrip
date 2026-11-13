@@ -114,7 +114,7 @@ void main() {
 
   group('styles', () {
     test('free styles match the server', () {
-      expect(CameraStyle.all.where((s) => !s.pro).map((s) => s.id), ['film', 'instant', 'disposable']);
+      expect(CameraStyle.all.where((s) => !s.pro).map((s) => s.id), ['flash', 'film', 'instant', 'disposable']);
     });
   });
 

@@ -1933,4 +1933,212 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get googleSignInUnavailable => 'Google ile giriş henüz kullanılamıyor';
+
+  @override
+  String get cameraPickerTitle => 'Kameranı seç';
+
+  @override
+  String get cameraPickerSubtitle =>
+      'Her kamera fotoğraflarına kendi tarzını verir';
+
+  @override
+  String get cameraPickerChange => 'Kamerayı değiştir';
+
+  @override
+  String get cameraPickerUnlock => 'Pro ile aç';
+
+  @override
+  String get cameraPickerSelected => 'Seçildi';
+
+  @override
+  String get cameraPickerStyleSummer => 'Yaz';
+
+  @override
+  String get cameraPickerStyleSummerDescription =>
+      '90\'lar fotoğrafının sıcak, solgun renkleri';
+
+  @override
+  String get cameraPickerStyleNight => 'Gece 800';
+
+  @override
+  String get cameraPickerStyleNightDescription =>
+      'Sinema filmi: camgöbeği gölgeler, sıcak ışık, bol gren';
+
+  @override
+  String get cameraPickerStyleSepia => 'Sepya';
+
+  @override
+  String get cameraPickerStyleSepiaDescription =>
+      'Ayakkabı kutusundan eski kahverengi bir baskı';
+
+  @override
+  String get cameraPickerStyleLomo => 'Lomo';
+
+  @override
+  String get cameraPickerStyleLomoDescription =>
+      'Canlı renkler, karanlık köşeler ve çılgın bir renk tonu';
+
+  @override
+  String get cameraPickerStyleMint => 'Nane';
+
+  @override
+  String get cameraPickerStyleMintDescription =>
+      'Yeşil tonlu, yumuşak ve ferah';
+
+  @override
+  String get cameraPickerStylePastel => 'Pembe';
+
+  @override
+  String get cameraPickerStylePastelDescription =>
+      'Pembe ışıltılı ve beyaz çerçeveli pastel renkler';
+
+  @override
+  String get cameraPickerStyleSuper8 => 'Super 8';
+
+  @override
+  String get cameraPickerStyleSuper8Description =>
+      'Eski bir ev videosu gibi grenli ve yumuşak';
+
+  @override
+  String get paywallBenefitGroup => 'Bir Pro = tüm gruba Pro';
+
+  @override
+  String get paywallBenefitUnlimited =>
+      'Sınırsız üye, fotoğraflar hep saklanır';
+
+  @override
+  String get paywallBenefitQuality => 'Filigransız, orijinal kalite';
+
+  @override
+  String paywallFreeTrial(String period) {
+    return '$period ücretsiz';
+  }
+
+  @override
+  String paywallPriceYear(String price) {
+    return 'Yılda $price.';
+  }
+
+  @override
+  String paywallPriceYearTrial(String period, String price) {
+    return '$period ücretsiz, ardından yılda $price.';
+  }
+
+  @override
+  String paywallPriceMonth(String price) {
+    return 'Ayda $price.';
+  }
+
+  @override
+  String paywallPriceMonthTrial(String period, String price) {
+    return '$period ücretsiz, ardından ayda $price.';
+  }
+
+  @override
+  String paywallAutoRenew(String store) {
+    return 'Otomatik olarak yenilenir. Yenilemeden en az 24 saat önce $store üzerinden iptal et.';
+  }
+
+  @override
+  String get paywallDetailsTitle => 'Pro\'daki her şey';
+
+  @override
+  String get paywallBenefitStyles => 'Tüm kamera stilleri';
+
+  @override
+  String get allPhotosTitle => 'Tüm fotoğraflar';
+
+  @override
+  String get allPhotosSubtitle => 'Her albümden kendi çektiğin her şey';
+
+  @override
+  String get allPhotosEmptyTitle => 'Henüz fotoğraf yok';
+
+  @override
+  String get allPhotosEmptyMessage => 'Kamerayı aç ve ilk fotoğrafını çek.';
+
+  @override
+  String get allPhotosOpenCamera => 'Kamerayı aç';
+
+  @override
+  String get allPhotosChooseAlbum => 'Albüm seç';
+
+  @override
+  String get allPhotosLoadFailed => 'Fotoğrafların yüklenemedi';
+
+  @override
+  String get cameraSettingsTitle => 'Kamera ayarları';
+
+  @override
+  String get cameraSettingsMore => 'Diğer ayarlar';
+
+  @override
+  String get cameraSettingsGrid => 'Izgara';
+
+  @override
+  String get cameraSettingsHaptics => 'Çekimde titreşim';
+
+  @override
+  String get cameraSettingsDateStamp => 'Sağ altta tarih damgası';
+
+  @override
+  String get cameraSettingsSound => 'Deklanşör sesi';
+
+  @override
+  String get cameraSettingsSoundHint => 'Telefonun sessizdeyken sessiz';
+
+  @override
+  String get cameraSettingsTimer => 'Zamanlayıcı';
+
+  @override
+  String get cameraSettingsTimerOff => 'Kapalı';
+
+  @override
+  String cameraSettingsTimerSeconds(int seconds) {
+    return '$seconds sn';
+  }
+
+  @override
+  String get cameraSettingsTimerCancelHint =>
+      'İptal etmek için deklanşöre dokun';
+
+  @override
+  String get cameraSettingsMirror => 'Selfie\'leri aynala';
+
+  @override
+  String get cameraSettingsSaveToRoll => 'Film rulosuna kaydet';
+
+  @override
+  String get cameraSettingsQuality => 'Kalite';
+
+  @override
+  String get cameraSettingsQualityStandard => 'Standart';
+
+  @override
+  String get cameraSettingsQualityHigh => 'Yüksek';
+
+  @override
+  String get cameraLowLightHint => 'Az ışık - flaşı aç';
+
+  @override
+  String get cameraFlashUnavailable => 'Bu kamerada flaş yok';
+
+  @override
+  String get cameraFlashScreen => 'Ekran flaşı';
+
+  @override
+  String get cameraFlashCycleHint =>
+      'Kapalı, açık ve otomatik arasında geçmek için dokun';
+
+  @override
+  String cameraPickerPaywallStyles(int count, String styles) {
+    return '$styles dahil $count kameranın tümü';
+  }
+
+  @override
+  String get styleFlash => 'Flaş 400';
+
+  @override
+  String get styleFlashDescription =>
+      'Sıcak filmde doğrudan flaş: kehribar ışıltı, gren, canlı kırmızılar';
 }

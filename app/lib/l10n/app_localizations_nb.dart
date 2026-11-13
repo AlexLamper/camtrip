@@ -1932,4 +1932,211 @@ class AppLocalizationsNb extends AppLocalizations {
   @override
   String get googleSignInUnavailable =>
       'Innlogging med Google er ikke tilgjengelig ennå';
+
+  @override
+  String get cameraPickerTitle => 'Velg kameraet ditt';
+
+  @override
+  String get cameraPickerSubtitle =>
+      'Hvert kamera gir bildene dine sitt eget preg';
+
+  @override
+  String get cameraPickerChange => 'Bytt kamera';
+
+  @override
+  String get cameraPickerUnlock => 'Lås opp med Pro';
+
+  @override
+  String get cameraPickerSelected => 'Valgt';
+
+  @override
+  String get cameraPickerStyleSummer => 'Sommer';
+
+  @override
+  String get cameraPickerStyleSummerDescription =>
+      'Varme, falmede farger fra et 90-tallsbilde';
+
+  @override
+  String get cameraPickerStyleNight => 'Natt 800';
+
+  @override
+  String get cameraPickerStyleNightDescription =>
+      'Kinofilm: blågrønne skygger, varmt lys, mye korn';
+
+  @override
+  String get cameraPickerStyleSepia => 'Sepia';
+
+  @override
+  String get cameraPickerStyleSepiaDescription =>
+      'Et gammelt brunt bilde fra skoesken';
+
+  @override
+  String get cameraPickerStyleLomo => 'Lomo';
+
+  @override
+  String get cameraPickerStyleLomoDescription =>
+      'Sterke farger, mørke hjørner og et vilt fargestikk';
+
+  @override
+  String get cameraPickerStyleMint => 'Mint';
+
+  @override
+  String get cameraPickerStyleMintDescription =>
+      'Mykt og friskt med et grønt skjær';
+
+  @override
+  String get cameraPickerStylePastel => 'Rosa';
+
+  @override
+  String get cameraPickerStylePastelDescription =>
+      'Pastellfarger med et rosa skjær og hvit kant';
+
+  @override
+  String get cameraPickerStyleSuper8 => 'Super 8';
+
+  @override
+  String get cameraPickerStyleSuper8Description =>
+      'Kornete og mykt, som en gammel hjemmevideo';
+
+  @override
+  String get paywallBenefitGroup => 'Én Pro = Pro for hele gruppen';
+
+  @override
+  String get paywallBenefitUnlimited =>
+      'Ubegrenset med medlemmer, bilder for alltid';
+
+  @override
+  String get paywallBenefitQuality => 'Uten vannmerke, originalkvalitet';
+
+  @override
+  String paywallFreeTrial(String period) {
+    return '$period gratis';
+  }
+
+  @override
+  String paywallPriceYear(String price) {
+    return '$price per år.';
+  }
+
+  @override
+  String paywallPriceYearTrial(String period, String price) {
+    return '$period gratis, deretter $price per år.';
+  }
+
+  @override
+  String paywallPriceMonth(String price) {
+    return '$price per måned.';
+  }
+
+  @override
+  String paywallPriceMonthTrial(String period, String price) {
+    return '$period gratis, deretter $price per måned.';
+  }
+
+  @override
+  String paywallAutoRenew(String store) {
+    return 'Fornyes automatisk. Si opp senest 24 timer før fornyelsen i $store.';
+  }
+
+  @override
+  String get paywallDetailsTitle => 'Alt i Pro';
+
+  @override
+  String get paywallBenefitStyles => 'Alle kamerastiler';
+
+  @override
+  String get allPhotosTitle => 'Alle bilder';
+
+  @override
+  String get allPhotosSubtitle => 'Alt du selv har tatt, fra hvert album';
+
+  @override
+  String get allPhotosEmptyTitle => 'Ingen bilder ennå';
+
+  @override
+  String get allPhotosEmptyMessage => 'Åpne kameraet og ta ditt første bilde.';
+
+  @override
+  String get allPhotosOpenCamera => 'Åpne kameraet';
+
+  @override
+  String get allPhotosChooseAlbum => 'Velg album';
+
+  @override
+  String get allPhotosLoadFailed => 'Bildene dine kunne ikke lastes inn';
+
+  @override
+  String get cameraSettingsTitle => 'Kamerainnstillinger';
+
+  @override
+  String get cameraSettingsMore => 'Flere innstillinger';
+
+  @override
+  String get cameraSettingsGrid => 'Rutenett';
+
+  @override
+  String get cameraSettingsHaptics => 'Vibrer ved fotografering';
+
+  @override
+  String get cameraSettingsDateStamp => 'Datostempel nede til høyre';
+
+  @override
+  String get cameraSettingsSound => 'Lukkerlyd';
+
+  @override
+  String get cameraSettingsSoundHint => 'Stille når telefonen er på lydløs';
+
+  @override
+  String get cameraSettingsTimer => 'Selvutløser';
+
+  @override
+  String get cameraSettingsTimerOff => 'Av';
+
+  @override
+  String cameraSettingsTimerSeconds(int seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String get cameraSettingsTimerCancelHint =>
+      'Trykk på utløseren for å avbryte';
+
+  @override
+  String get cameraSettingsMirror => 'Speilvend selfier';
+
+  @override
+  String get cameraSettingsSaveToRoll => 'Lagre i kamerarullen';
+
+  @override
+  String get cameraSettingsQuality => 'Kvalitet';
+
+  @override
+  String get cameraSettingsQualityStandard => 'Standard';
+
+  @override
+  String get cameraSettingsQualityHigh => 'Høy';
+
+  @override
+  String get cameraLowLightHint => 'Lite lys - slå på blitsen';
+
+  @override
+  String get cameraFlashUnavailable => 'Dette kameraet har ingen blits';
+
+  @override
+  String get cameraFlashScreen => 'Skjermblits';
+
+  @override
+  String get cameraFlashCycleHint => 'Trykk for å bytte mellom av, på og auto';
+
+  @override
+  String cameraPickerPaywallStyles(int count, String styles) {
+    return 'Alle $count kameraer, blant annet $styles';
+  }
+
+  @override
+  String get styleFlash => 'Blits 400';
+
+  @override
+  String get styleFlashDescription =>
+      'Direkte blits på varm film: ravgul glød, korn, dype røde';
 }

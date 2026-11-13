@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -7,8 +9,15 @@ class SessionStorage {
   final _secure = const FlutterSecureStorage();
   String? _cache;
 
+  /// Whether the keychain has been read (main() does this before the first
+  /// frame, so the auth controller can decide the start screen synchronously).
+  bool get loaded => _cache != null;
+
+  /// The token without touching the keychain; only meaningful when [loaded].
+  String? get cachedToken => (_cache?.isEmpty ?? true) ? null : _cache;
+
   Future<String?> token() async {
-    _cache ??= await _secure.read(key: _key);
+    _cache ??= await _secure.read(key: _key) ?? '';
     return (_cache?.isEmpty ?? true) ? null : _cache;
   }
 
@@ -30,13 +39,35 @@ class Prefs {
 
   static Future<Prefs> load() async => Prefs(await SharedPreferences.getInstance());
 
+  /// Last `/me` user JSON, so a signed-in launch shows the albums at once and
+  /// refreshes in the background. Cleared on sign-out.
+  Map<String, dynamic>? get cachedUser => _json('cache_me');
+  set cachedUser(Map<String, dynamic>? v) => _setJson('cache_me', v);
+
+  /// Last `/groups` list, as `{userId, groups: [...]}`.
+  Map<String, dynamic>? get cachedGroups => _json('cache_groups');
+  set cachedGroups(Map<String, dynamic>? v) => _setJson('cache_groups', v);
+
+  Map<String, dynamic>? _json(String key) {
+    final raw = _p.getString(key);
+    if (raw == null) return null;
+    try {
+      final v = jsonDecode(raw);
+      return v is Map<String, dynamic> ? v : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _setJson(String key, Map<String, dynamic>? v) => v == null ? _p.remove(key) : _p.setString(key, jsonEncode(v));
+
   bool get onboarded => _p.getBool('onboarded') ?? false;
   set onboarded(bool v) => _p.setBool('onboarded', v);
 
   String? get activeGroupId => _p.getString('active_group');
   set activeGroupId(String? v) => v == null ? _p.remove('active_group') : _p.setString('active_group', v);
 
-  String get cameraStyle => _p.getString('camera_style') ?? 'instant';
+  String get cameraStyle => _p.getString('camera_style') ?? 'flash';
   set cameraStyle(String v) => _p.setString('camera_style', v);
 
   bool get dateStamp => _p.getBool('date_stamp') ?? true;

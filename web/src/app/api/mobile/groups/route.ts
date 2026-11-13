@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Group, CAMERA_STYLES, FREE_STYLES, GROUP_TYPES, type GroupDoc } from '@/lib/models';
+import { Group, CAMERA_STYLES, DEFAULT_STYLE, FREE_STYLES, GROUP_TYPES, type GroupDoc } from '@/lib/models';
 import { body, handler, HttpError, json } from '@/lib/http';
 import { requireUser } from '@/lib/auth';
 import { hasPro } from '@/lib/entitlements';
@@ -17,7 +17,7 @@ const Create = z
     type: z.enum(GROUP_TYPES),
     startDate: z.coerce.date().nullable().optional(),
     endDate: z.coerce.date().nullable().optional(),
-    defaultStyle: z.enum(CAMERA_STYLES).default('instant'),
+    defaultStyle: z.enum(CAMERA_STYLES).default(DEFAULT_STYLE),
   })
   .refine((v) => !v.startDate || !v.endDate || v.endDate >= v.startDate, {
     message: 'Einddatum ligt voor de begindatum',

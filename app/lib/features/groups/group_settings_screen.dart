@@ -9,7 +9,9 @@ import '../../core/widgets.dart';
 import '../../l10n/l10n.dart';
 import '../../models/models.dart';
 import '../auth/auth_controller.dart';
+import '../camera/camera_picker_sheet.dart';
 import '../camera/styles.dart';
+import '../premium/pro_gate.dart';
 import 'group_actions.dart';
 import 'groups_controller.dart';
 
@@ -83,22 +85,27 @@ class GroupSettingsScreen extends ConsumerWidget {
               trailing: const Icon(Icons.flag_outlined, color: CT.muted),
               onTap: () => GroupActions.finishTrip(context, ref, g),
             ),
-          SettingRow(
-            title: l.defaultCameraStyle,
-            subtitle: CameraStyle.byId(g.defaultStyle).name,
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () async {
-              final s = await showModalBottomSheet<String>(
-                context: context,
-                builder: (c) => SafeArea(
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    for (final s in CameraStyle.all.where((s) => !s.pro || g.isProGroup))
-                      ListTile(title: Text(s.name), subtitle: Text(s.description), onTap: () => Navigator.pop(c, s.id)),
-                  ]),
-                ),
-              );
-              if (s != null && context.mounted) await _run(context, () => ctrl.updateGroup(g.id, {'defaultStyle': s}));
-            },
+          // default camera for the group; group Pro counts here (one Pro member = Pro for all)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 13),
+            decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE)))),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text(l.defaultCameraStyle, style: CT.text(15, weight: FontWeight.w500)),
+              const SizedBox(height: 10),
+              CameraSelectRow(
+                style: CameraStyle.byId(g.defaultStyle),
+                onTap: () async {
+                  final gate = ref.read(proGateProvider(g.id));
+                  final s = await showCameraPicker(context, current: CameraStyle.byId(g.defaultStyle), gate: gate);
+                  if (s == null || !context.mounted) return;
+                  if (!gate.canUseStyle(styleIsPro: s.pro)) {
+                    context.push('/pro');
+                    return;
+                  }
+                  if (s.id != g.defaultStyle) await _run(context, () => ctrl.updateGroup(g.id, {'defaultStyle': s.id}));
+                },
+              ),
+            ]),
           ),
           SettingRow(
             title: g.isArchived ? l.reopenGroup : l.closeGroup,

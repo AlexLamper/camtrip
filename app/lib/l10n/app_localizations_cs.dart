@@ -1965,4 +1965,211 @@ class AppLocalizationsCs extends AppLocalizations {
   @override
   String get googleSignInUnavailable =>
       'Přihlášení přes Google zatím není k dispozici';
+
+  @override
+  String get cameraPickerTitle => 'Vyber si fotoaparát';
+
+  @override
+  String get cameraPickerSubtitle =>
+      'Každý fotoaparát dá tvým fotkám vlastní styl';
+
+  @override
+  String get cameraPickerChange => 'Přepnout fotoaparát';
+
+  @override
+  String get cameraPickerUnlock => 'Odemknout s Pro';
+
+  @override
+  String get cameraPickerSelected => 'Vybráno';
+
+  @override
+  String get cameraPickerStyleSummer => 'Léto';
+
+  @override
+  String get cameraPickerStyleSummerDescription =>
+      'Teplé, vybledlé barvy fotky z 90. let';
+
+  @override
+  String get cameraPickerStyleNight => 'Noc 800';
+
+  @override
+  String get cameraPickerStyleNightDescription =>
+      'Kinofilm: modrozelené stíny, teplé světlo, hodně zrna';
+
+  @override
+  String get cameraPickerStyleSepia => 'Sépie';
+
+  @override
+  String get cameraPickerStyleSepiaDescription =>
+      'Stará hnědá fotka z krabice od bot';
+
+  @override
+  String get cameraPickerStyleLomo => 'Lomo';
+
+  @override
+  String get cameraPickerStyleLomoDescription =>
+      'Výrazné barvy, tmavé rohy a šílený barevný nádech';
+
+  @override
+  String get cameraPickerStyleMint => 'Máta';
+
+  @override
+  String get cameraPickerStyleMintDescription =>
+      'Jemné a svěží se zeleným nádechem';
+
+  @override
+  String get cameraPickerStylePastel => 'Růžová';
+
+  @override
+  String get cameraPickerStylePastelDescription =>
+      'Pastelové barvy s růžovou září a bílým okrajem';
+
+  @override
+  String get cameraPickerStyleSuper8 => 'Super 8';
+
+  @override
+  String get cameraPickerStyleSuper8Description =>
+      'Zrnité a měkké jako staré domácí video';
+
+  @override
+  String get paywallBenefitGroup => 'Jedno Pro = Pro pro celou skupinu';
+
+  @override
+  String get paywallBenefitUnlimited => 'Neomezeně členů, fotky navždy';
+
+  @override
+  String get paywallBenefitQuality => 'Bez vodoznaku, původní kvalita';
+
+  @override
+  String paywallFreeTrial(String period) {
+    return '$period zdarma';
+  }
+
+  @override
+  String paywallPriceYear(String price) {
+    return '$price ročně.';
+  }
+
+  @override
+  String paywallPriceYearTrial(String period, String price) {
+    return '$period zdarma, pak $price ročně.';
+  }
+
+  @override
+  String paywallPriceMonth(String price) {
+    return '$price měsíčně.';
+  }
+
+  @override
+  String paywallPriceMonthTrial(String period, String price) {
+    return '$period zdarma, pak $price měsíčně.';
+  }
+
+  @override
+  String paywallAutoRenew(String store) {
+    return 'Obnovuje se automaticky. Zruš nejméně 24 hodin před obnovením v $store.';
+  }
+
+  @override
+  String get paywallDetailsTitle => 'Vše v Pro';
+
+  @override
+  String get paywallBenefitStyles => 'Všechny styly fotoaparátu';
+
+  @override
+  String get allPhotosTitle => 'Všechny fotky';
+
+  @override
+  String get allPhotosSubtitle => 'Vše, co jsi sám vyfotil, ze všech alb';
+
+  @override
+  String get allPhotosEmptyTitle => 'Zatím žádné fotky';
+
+  @override
+  String get allPhotosEmptyMessage =>
+      'Otevři fotoaparát a pořiď svou první fotku.';
+
+  @override
+  String get allPhotosOpenCamera => 'Otevřít fotoaparát';
+
+  @override
+  String get allPhotosChooseAlbum => 'Vybrat album';
+
+  @override
+  String get allPhotosLoadFailed => 'Tvoje fotky se nepodařilo načíst';
+
+  @override
+  String get cameraSettingsTitle => 'Nastavení fotoaparátu';
+
+  @override
+  String get cameraSettingsMore => 'Další nastavení';
+
+  @override
+  String get cameraSettingsGrid => 'Mřížka';
+
+  @override
+  String get cameraSettingsHaptics => 'Vibrovat při focení';
+
+  @override
+  String get cameraSettingsDateStamp => 'Datum vpravo dole';
+
+  @override
+  String get cameraSettingsSound => 'Zvuk závěrky';
+
+  @override
+  String get cameraSettingsSoundHint => 'Ticho, když je telefon ztlumený';
+
+  @override
+  String get cameraSettingsTimer => 'Samospoušť';
+
+  @override
+  String get cameraSettingsTimerOff => 'Vyp.';
+
+  @override
+  String cameraSettingsTimerSeconds(int seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String get cameraSettingsTimerCancelHint => 'Klepnutím na spoušť zrušíš';
+
+  @override
+  String get cameraSettingsMirror => 'Zrcadlit selfie';
+
+  @override
+  String get cameraSettingsSaveToRoll => 'Uložit do fotek';
+
+  @override
+  String get cameraSettingsQuality => 'Kvalita';
+
+  @override
+  String get cameraSettingsQualityStandard => 'Standardní';
+
+  @override
+  String get cameraSettingsQualityHigh => 'Vysoká';
+
+  @override
+  String get cameraLowLightHint => 'Málo světla - zapni blesk';
+
+  @override
+  String get cameraFlashUnavailable => 'Tento fotoaparát nemá blesk';
+
+  @override
+  String get cameraFlashScreen => 'Blesk displeje';
+
+  @override
+  String get cameraFlashCycleHint =>
+      'Klepnutím přepínáš mezi vyp., zap. a auto';
+
+  @override
+  String cameraPickerPaywallStyles(int count, String styles) {
+    return 'Všechny fotoaparáty ($count), mimo jiné $styles';
+  }
+
+  @override
+  String get styleFlash => 'Blesk 400';
+
+  @override
+  String get styleFlashDescription =>
+      'Přímý blesk na teplém filmu: jantarový nádech, zrno, sytě červená';
 }

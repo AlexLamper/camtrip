@@ -1931,4 +1931,211 @@ class AppLocalizationsFi extends AppLocalizations {
   @override
   String get googleSignInUnavailable =>
       'Kirjautuminen Googlella ei ole vielä käytettävissä';
+
+  @override
+  String get cameraPickerTitle => 'Valitse kamerasi';
+
+  @override
+  String get cameraPickerSubtitle =>
+      'Jokainen kamera antaa kuvillesi oman tyylinsä';
+
+  @override
+  String get cameraPickerChange => 'Vaihda kameraa';
+
+  @override
+  String get cameraPickerUnlock => 'Avaa Prolla';
+
+  @override
+  String get cameraPickerSelected => 'Valittu';
+
+  @override
+  String get cameraPickerStyleSummer => 'Kesä';
+
+  @override
+  String get cameraPickerStyleSummerDescription =>
+      'Lämpimät, haalistuneet värit kuin 90-luvun kuvassa';
+
+  @override
+  String get cameraPickerStyleNight => 'Yö 800';
+
+  @override
+  String get cameraPickerStyleNightDescription =>
+      'Elokuvafilmi: sinivihreät varjot, lämmin valo, paljon rakeita';
+
+  @override
+  String get cameraPickerStyleSepia => 'Seepia';
+
+  @override
+  String get cameraPickerStyleSepiaDescription =>
+      'Vanha ruskea vedos kenkälaatikosta';
+
+  @override
+  String get cameraPickerStyleLomo => 'Lomo';
+
+  @override
+  String get cameraPickerStyleLomoDescription =>
+      'Voimakkaat värit, tummat kulmat ja villi sävy';
+
+  @override
+  String get cameraPickerStyleMint => 'Minttu';
+
+  @override
+  String get cameraPickerStyleMintDescription =>
+      'Pehmeä ja raikas vihreällä sävyllä';
+
+  @override
+  String get cameraPickerStylePastel => 'Pinkki';
+
+  @override
+  String get cameraPickerStylePastelDescription =>
+      'Pastellivärit, pinkki hehku ja valkoinen reunus';
+
+  @override
+  String get cameraPickerStyleSuper8 => 'Super 8';
+
+  @override
+  String get cameraPickerStyleSuper8Description =>
+      'Rakeinen ja pehmeä kuin vanha kotivideo';
+
+  @override
+  String get paywallBenefitGroup => 'Yksi Pro = Pro koko ryhmälle';
+
+  @override
+  String get paywallBenefitUnlimited => 'Rajattomasti jäseniä, kuvat säilyvät';
+
+  @override
+  String get paywallBenefitQuality => 'Ei vesileimaa, alkuperäinen laatu';
+
+  @override
+  String paywallFreeTrial(String period) {
+    return '$period ilmaiseksi';
+  }
+
+  @override
+  String paywallPriceYear(String price) {
+    return '$price vuodessa.';
+  }
+
+  @override
+  String paywallPriceYearTrial(String period, String price) {
+    return '$period ilmaiseksi, sen jälkeen $price vuodessa.';
+  }
+
+  @override
+  String paywallPriceMonth(String price) {
+    return '$price kuukaudessa.';
+  }
+
+  @override
+  String paywallPriceMonthTrial(String period, String price) {
+    return '$period ilmaiseksi, sen jälkeen $price kuukaudessa.';
+  }
+
+  @override
+  String paywallAutoRenew(String store) {
+    return 'Uusiutuu automaattisesti. Peru viimeistään 24 tuntia ennen uusiutumista ($store).';
+  }
+
+  @override
+  String get paywallDetailsTitle => 'Kaikki Pro-edut';
+
+  @override
+  String get paywallBenefitStyles => 'Kaikki kameratyylit';
+
+  @override
+  String get allPhotosTitle => 'Kaikki kuvat';
+
+  @override
+  String get allPhotosSubtitle =>
+      'Kaikki itse ottamasi kuvat jokaisesta albumista';
+
+  @override
+  String get allPhotosEmptyTitle => 'Ei vielä kuvia';
+
+  @override
+  String get allPhotosEmptyMessage => 'Avaa kamera ja ota ensimmäinen kuvasi.';
+
+  @override
+  String get allPhotosOpenCamera => 'Avaa kamera';
+
+  @override
+  String get allPhotosChooseAlbum => 'Valitse albumi';
+
+  @override
+  String get allPhotosLoadFailed => 'Kuviasi ei voitu ladata';
+
+  @override
+  String get cameraSettingsTitle => 'Kameran asetukset';
+
+  @override
+  String get cameraSettingsMore => 'Lisää asetuksia';
+
+  @override
+  String get cameraSettingsGrid => 'Ruudukko';
+
+  @override
+  String get cameraSettingsHaptics => 'Värinä kuvatessa';
+
+  @override
+  String get cameraSettingsDateStamp => 'Päiväysleima oikeassa alakulmassa';
+
+  @override
+  String get cameraSettingsSound => 'Suljinääni';
+
+  @override
+  String get cameraSettingsSoundHint => 'Hiljaa, kun puhelin on äänettömällä';
+
+  @override
+  String get cameraSettingsTimer => 'Itselaukaisin';
+
+  @override
+  String get cameraSettingsTimerOff => 'Pois';
+
+  @override
+  String cameraSettingsTimerSeconds(int seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String get cameraSettingsTimerCancelHint => 'Peru napauttamalla laukaisinta';
+
+  @override
+  String get cameraSettingsMirror => 'Peilaa selfiet';
+
+  @override
+  String get cameraSettingsSaveToRoll => 'Tallenna kamerarullaan';
+
+  @override
+  String get cameraSettingsQuality => 'Laatu';
+
+  @override
+  String get cameraSettingsQualityStandard => 'Normaali';
+
+  @override
+  String get cameraSettingsQualityHigh => 'Korkea';
+
+  @override
+  String get cameraLowLightHint => 'Vähän valoa - laita salama päälle';
+
+  @override
+  String get cameraFlashUnavailable => 'Tässä kamerassa ei ole salamaa';
+
+  @override
+  String get cameraFlashScreen => 'Näyttösalama';
+
+  @override
+  String get cameraFlashCycleHint =>
+      'Napauta vaihtaaksesi: pois, päällä ja auto';
+
+  @override
+  String cameraPickerPaywallStyles(int count, String styles) {
+    return 'Kaikki $count kameraa, mm. $styles';
+  }
+
+  @override
+  String get styleFlash => 'Salama 400';
+
+  @override
+  String get styleFlashDescription =>
+      'Suora salama lämpimälle filmille: meripihkan hehku, rae, täyteläiset punaiset';
 }

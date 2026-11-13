@@ -110,8 +110,25 @@ export interface ProGrant {
 
 // ---------------------------------------------------------------- Group
 export const GROUP_TYPES = ['vacation', 'event', 'permanent'] as const;
-export const CAMERA_STYLES = ['film', 'instant', 'disposable', 'bw', 'golden', 'chrome'] as const;
-export const FREE_STYLES: readonly string[] = ['film', 'instant', 'disposable'];
+export const CAMERA_STYLES = [
+  'flash',
+  'film',
+  'instant',
+  'disposable',
+  'bw',
+  'golden',
+  'chrome',
+  'summer',
+  'night',
+  'sepia',
+  'lomo',
+  'mint',
+  'pastel',
+  'super8',
+] as const;
+export const FREE_STYLES: readonly string[] = ['flash', 'film', 'instant', 'disposable'];
+/** Camera style for new groups (the app's default look, free for everyone). */
+export const DEFAULT_STYLE = 'flash';
 /** Photos picked from the camera roll carry no camera style. */
 export const PHOTO_STYLES = [...CAMERA_STYLES, 'roll'] as const;
 
@@ -130,7 +147,7 @@ const groupSchema = new Schema(
     type: { type: String, enum: GROUP_TYPES, required: true },
     startDate: { type: Date, default: null },
     endDate: { type: Date, default: null },
-    defaultStyle: { type: String, enum: CAMERA_STYLES, default: 'instant' },
+    defaultStyle: { type: String, enum: CAMERA_STYLES, default: DEFAULT_STYLE },
     code: { type: String, required: true, unique: true, index: true },
     ownerId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
     members: { type: [memberSchema], default: [] },
@@ -211,6 +228,8 @@ const photoSchema = new Schema(
   { timestamps: true },
 );
 photoSchema.index({ groupId: 1, status: 1, takenAt: -1 });
+// "Alle foto's" (GET /me/photos): own photos across groups, newest first.
+photoSchema.index({ userId: 1, takenAt: -1, _id: -1 });
 
 export interface PhotoDoc {
   _id: Types.ObjectId;

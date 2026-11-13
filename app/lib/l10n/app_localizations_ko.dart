@@ -1861,4 +1861,201 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get googleSignInUnavailable => 'Google 로그인은 아직 이용할 수 없습니다';
+
+  @override
+  String get cameraPickerTitle => '카메라 선택';
+
+  @override
+  String get cameraPickerSubtitle => '카메라마다 사진의 분위기가 달라져요';
+
+  @override
+  String get cameraPickerChange => '카메라 바꾸기';
+
+  @override
+  String get cameraPickerUnlock => 'Pro로 잠금 해제';
+
+  @override
+  String get cameraPickerSelected => '선택됨';
+
+  @override
+  String get cameraPickerStyleSummer => '여름';
+
+  @override
+  String get cameraPickerStyleSummerDescription => '90년대 스냅 사진처럼 따뜻하고 바랜 색감';
+
+  @override
+  String get cameraPickerStyleNight => '나이트 800';
+
+  @override
+  String get cameraPickerStyleNightDescription =>
+      '영화 필름: 청록색 그림자, 따뜻한 빛, 거친 입자';
+
+  @override
+  String get cameraPickerStyleSepia => '세피아';
+
+  @override
+  String get cameraPickerStyleSepiaDescription => '신발 상자에서 꺼낸 오래된 갈색 사진';
+
+  @override
+  String get cameraPickerStyleLomo => '로모';
+
+  @override
+  String get cameraPickerStyleLomoDescription => '강렬한 색감, 어두운 모서리, 독특한 색 번짐';
+
+  @override
+  String get cameraPickerStyleMint => '민트';
+
+  @override
+  String get cameraPickerStyleMintDescription => '초록빛이 도는 부드럽고 상큼한 색감';
+
+  @override
+  String get cameraPickerStylePastel => '핑크';
+
+  @override
+  String get cameraPickerStylePastelDescription => '핑크빛 파스텔 색감과 하얀 테두리';
+
+  @override
+  String get cameraPickerStyleSuper8 => '슈퍼 8';
+
+  @override
+  String get cameraPickerStyleSuper8Description => '오래된 홈비디오처럼 거칠고 부드러운 느낌';
+
+  @override
+  String get paywallBenefitGroup => '한 명이 Pro면 그룹 전체가 Pro';
+
+  @override
+  String get paywallBenefitUnlimited => '멤버 무제한, 사진 영구 보관';
+
+  @override
+  String get paywallBenefitQuality => '워터마크 없음, 원본 화질';
+
+  @override
+  String paywallFreeTrial(String period) {
+    return '$period 무료';
+  }
+
+  @override
+  String paywallPriceYear(String price) {
+    return '연 $price.';
+  }
+
+  @override
+  String paywallPriceYearTrial(String period, String price) {
+    return '$period 무료, 이후 연 $price.';
+  }
+
+  @override
+  String paywallPriceMonth(String price) {
+    return '월 $price.';
+  }
+
+  @override
+  String paywallPriceMonthTrial(String period, String price) {
+    return '$period 무료, 이후 월 $price.';
+  }
+
+  @override
+  String paywallAutoRenew(String store) {
+    return '자동으로 갱신됩니다. 갱신 24시간 전까지 $store에서 해지하세요.';
+  }
+
+  @override
+  String get paywallDetailsTitle => 'Pro의 모든 기능';
+
+  @override
+  String get paywallBenefitStyles => '모든 카메라 스타일';
+
+  @override
+  String get allPhotosTitle => '모든 사진';
+
+  @override
+  String get allPhotosSubtitle => '모든 앨범에서 내가 직접 찍은 사진';
+
+  @override
+  String get allPhotosEmptyTitle => '아직 사진이 없습니다';
+
+  @override
+  String get allPhotosEmptyMessage => '카메라를 열고 첫 사진을 찍어 보세요.';
+
+  @override
+  String get allPhotosOpenCamera => '카메라 열기';
+
+  @override
+  String get allPhotosChooseAlbum => '앨범 선택';
+
+  @override
+  String get allPhotosLoadFailed => '사진을 불러오지 못했습니다';
+
+  @override
+  String get cameraSettingsTitle => '카메라 설정';
+
+  @override
+  String get cameraSettingsMore => '설정 더 보기';
+
+  @override
+  String get cameraSettingsGrid => '격자';
+
+  @override
+  String get cameraSettingsHaptics => '촬영 시 진동';
+
+  @override
+  String get cameraSettingsDateStamp => '오른쪽 아래 날짜';
+
+  @override
+  String get cameraSettingsSound => '셔터 소리';
+
+  @override
+  String get cameraSettingsSoundHint => '휴대폰이 무음일 때는 소리 없음';
+
+  @override
+  String get cameraSettingsTimer => '타이머';
+
+  @override
+  String get cameraSettingsTimerOff => '끔';
+
+  @override
+  String cameraSettingsTimerSeconds(int seconds) {
+    return '$seconds초';
+  }
+
+  @override
+  String get cameraSettingsTimerCancelHint => '셔터를 탭하면 취소';
+
+  @override
+  String get cameraSettingsMirror => '셀카 좌우 반전';
+
+  @override
+  String get cameraSettingsSaveToRoll => '카메라 롤에 저장';
+
+  @override
+  String get cameraSettingsQuality => '화질';
+
+  @override
+  String get cameraSettingsQualityStandard => '표준';
+
+  @override
+  String get cameraSettingsQualityHigh => '높음';
+
+  @override
+  String get cameraLowLightHint => '빛이 부족해요 - 플래시를 켜세요';
+
+  @override
+  String get cameraFlashUnavailable => '이 카메라에는 플래시가 없어요';
+
+  @override
+  String get cameraFlashScreen => '화면 플래시';
+
+  @override
+  String get cameraFlashCycleHint => '탭하여 끔, 켬, 자동 전환';
+
+  @override
+  String cameraPickerPaywallStyles(int count, String styles) {
+    return '카메라 $count종 전체($styles 등)';
+  }
+
+  @override
+  String get styleFlash => '플래시 400';
+
+  @override
+  String get styleFlashDescription => '따뜻한 필름에 직광 플래시: 호박빛, 그레인, 진한 빨강';
 }

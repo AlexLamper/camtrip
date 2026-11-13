@@ -3212,6 +3212,366 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Signing in with Google isn\'t available yet'**
   String get googleSignInUnavailable;
+
+  /// No description provided for @cameraPickerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your camera'**
+  String get cameraPickerTitle;
+
+  /// No description provided for @cameraPickerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Every camera gives your photos its own look'**
+  String get cameraPickerSubtitle;
+
+  /// No description provided for @cameraPickerChange.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch camera'**
+  String get cameraPickerChange;
+
+  /// No description provided for @cameraPickerUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock with Pro'**
+  String get cameraPickerUnlock;
+
+  /// No description provided for @cameraPickerSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get cameraPickerSelected;
+
+  /// No description provided for @cameraPickerStyleSummer.
+  ///
+  /// In en, this message translates to:
+  /// **'Summer'**
+  String get cameraPickerStyleSummer;
+
+  /// No description provided for @cameraPickerStyleSummerDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm, faded colours of a 90s snapshot'**
+  String get cameraPickerStyleSummerDescription;
+
+  /// No description provided for @cameraPickerStyleNight.
+  ///
+  /// In en, this message translates to:
+  /// **'Night 800'**
+  String get cameraPickerStyleNight;
+
+  /// No description provided for @cameraPickerStyleNightDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Cinema film: teal shadows, warm light, lots of grain'**
+  String get cameraPickerStyleNightDescription;
+
+  /// No description provided for @cameraPickerStyleSepia.
+  ///
+  /// In en, this message translates to:
+  /// **'Sepia'**
+  String get cameraPickerStyleSepia;
+
+  /// No description provided for @cameraPickerStyleSepiaDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'An old brown print from the shoebox'**
+  String get cameraPickerStyleSepiaDescription;
+
+  /// No description provided for @cameraPickerStyleLomo.
+  ///
+  /// In en, this message translates to:
+  /// **'Lomo'**
+  String get cameraPickerStyleLomo;
+
+  /// No description provided for @cameraPickerStyleLomoDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Bold colours, dark corners and a wild colour cast'**
+  String get cameraPickerStyleLomoDescription;
+
+  /// No description provided for @cameraPickerStyleMint.
+  ///
+  /// In en, this message translates to:
+  /// **'Mint'**
+  String get cameraPickerStyleMint;
+
+  /// No description provided for @cameraPickerStyleMintDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft and fresh with a green tint'**
+  String get cameraPickerStyleMintDescription;
+
+  /// No description provided for @cameraPickerStylePastel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pink'**
+  String get cameraPickerStylePastel;
+
+  /// No description provided for @cameraPickerStylePastelDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Pastel colours with a pink glow and a white border'**
+  String get cameraPickerStylePastelDescription;
+
+  /// No description provided for @cameraPickerStyleSuper8.
+  ///
+  /// In en, this message translates to:
+  /// **'Super 8'**
+  String get cameraPickerStyleSuper8;
+
+  /// No description provided for @cameraPickerStyleSuper8Description.
+  ///
+  /// In en, this message translates to:
+  /// **'Grainy and soft, like an old home movie'**
+  String get cameraPickerStyleSuper8Description;
+
+  /// No description provided for @paywallBenefitGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'One Pro = Pro for the whole group'**
+  String get paywallBenefitGroup;
+
+  /// No description provided for @paywallBenefitUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited members, photos kept forever'**
+  String get paywallBenefitUnlimited;
+
+  /// No description provided for @paywallBenefitQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'No watermark, original quality'**
+  String get paywallBenefitQuality;
+
+  /// No description provided for @paywallFreeTrial.
+  ///
+  /// In en, this message translates to:
+  /// **'{period} free'**
+  String paywallFreeTrial(String period);
+
+  /// No description provided for @paywallPriceYear.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} per year.'**
+  String paywallPriceYear(String price);
+
+  /// No description provided for @paywallPriceYearTrial.
+  ///
+  /// In en, this message translates to:
+  /// **'{period} free, then {price} per year.'**
+  String paywallPriceYearTrial(String period, String price);
+
+  /// No description provided for @paywallPriceMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} per month.'**
+  String paywallPriceMonth(String price);
+
+  /// No description provided for @paywallPriceMonthTrial.
+  ///
+  /// In en, this message translates to:
+  /// **'{period} free, then {price} per month.'**
+  String paywallPriceMonthTrial(String period, String price);
+
+  /// No description provided for @paywallAutoRenew.
+  ///
+  /// In en, this message translates to:
+  /// **'Renews automatically. Cancel at least 24 hours before renewal in {store}.'**
+  String paywallAutoRenew(String store);
+
+  /// No description provided for @paywallDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in Pro'**
+  String get paywallDetailsTitle;
+
+  /// No description provided for @paywallBenefitStyles.
+  ///
+  /// In en, this message translates to:
+  /// **'All camera styles'**
+  String get paywallBenefitStyles;
+
+  /// "Alle foto's" view: all photos the user made themselves, across every album
+  ///
+  /// In en, this message translates to:
+  /// **'All photos'**
+  String get allPhotosTitle;
+
+  /// No description provided for @allPhotosSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything you shot yourself, from every album'**
+  String get allPhotosSubtitle;
+
+  /// No description provided for @allPhotosEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos yet'**
+  String get allPhotosEmptyTitle;
+
+  /// No description provided for @allPhotosEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the camera and take your first photo.'**
+  String get allPhotosEmptyMessage;
+
+  /// No description provided for @allPhotosOpenCamera.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the camera'**
+  String get allPhotosOpenCamera;
+
+  /// Accessibility label of the album switcher pill on the Alle foto's screen
+  ///
+  /// In en, this message translates to:
+  /// **'Choose album'**
+  String get allPhotosChooseAlbum;
+
+  /// No description provided for @allPhotosLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Your photos couldn\'t be loaded'**
+  String get allPhotosLoadFailed;
+
+  /// No description provided for @cameraSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera settings'**
+  String get cameraSettingsTitle;
+
+  /// No description provided for @cameraSettingsMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More settings'**
+  String get cameraSettingsMore;
+
+  /// No description provided for @cameraSettingsGrid.
+  ///
+  /// In en, this message translates to:
+  /// **'Grid'**
+  String get cameraSettingsGrid;
+
+  /// No description provided for @cameraSettingsHaptics.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibrate on capture'**
+  String get cameraSettingsHaptics;
+
+  /// No description provided for @cameraSettingsDateStamp.
+  ///
+  /// In en, this message translates to:
+  /// **'Date stamp bottom right'**
+  String get cameraSettingsDateStamp;
+
+  /// No description provided for @cameraSettingsSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Shutter sound'**
+  String get cameraSettingsSound;
+
+  /// No description provided for @cameraSettingsSoundHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Silent when your phone is on silent'**
+  String get cameraSettingsSoundHint;
+
+  /// No description provided for @cameraSettingsTimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Self-timer'**
+  String get cameraSettingsTimer;
+
+  /// No description provided for @cameraSettingsTimerOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get cameraSettingsTimerOff;
+
+  /// No description provided for @cameraSettingsTimerSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s'**
+  String cameraSettingsTimerSeconds(int seconds);
+
+  /// No description provided for @cameraSettingsTimerCancelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the shutter to cancel'**
+  String get cameraSettingsTimerCancelHint;
+
+  /// No description provided for @cameraSettingsMirror.
+  ///
+  /// In en, this message translates to:
+  /// **'Mirror selfies'**
+  String get cameraSettingsMirror;
+
+  /// No description provided for @cameraSettingsSaveToRoll.
+  ///
+  /// In en, this message translates to:
+  /// **'Save to camera roll'**
+  String get cameraSettingsSaveToRoll;
+
+  /// No description provided for @cameraSettingsQuality.
+  ///
+  /// In en, this message translates to:
+  /// **'Quality'**
+  String get cameraSettingsQuality;
+
+  /// No description provided for @cameraSettingsQualityStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get cameraSettingsQualityStandard;
+
+  /// No description provided for @cameraSettingsQualityHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get cameraSettingsQualityHigh;
+
+  /// No description provided for @cameraLowLightHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Low light - turn on the flash'**
+  String get cameraLowLightHint;
+
+  /// No description provided for @cameraFlashUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This camera has no flash'**
+  String get cameraFlashUnavailable;
+
+  /// No description provided for @cameraFlashScreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen flash'**
+  String get cameraFlashScreen;
+
+  /// No description provided for @cameraFlashCycleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to switch between off, on and auto'**
+  String get cameraFlashCycleHint;
+
+  /// No description provided for @cameraPickerPaywallStyles.
+  ///
+  /// In en, this message translates to:
+  /// **'All {count} cameras, including {styles}'**
+  String cameraPickerPaywallStyles(int count, String styles);
+
+  /// Name of the default camera style: a compact camera with direct flash on warm ISO 400 film. Keep the number 400.
+  ///
+  /// In en, this message translates to:
+  /// **'Flash 400'**
+  String get styleFlash;
+
+  /// One-line description of the Flash 400 camera style.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct flash on warm film: amber glow, grain, rich reds'**
+  String get styleFlashDescription;
 }
 
 class _AppLocalizationsDelegate

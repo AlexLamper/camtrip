@@ -1162,5 +1162,142 @@
   "googleSignInUnavailable": "Signing in with Google isn't available yet",
   "@resetPushInfo": {
     "description": "Shown after \"Forgot password?\": neutral, never says whether the account exists. CamTrip sends no e-mail."
+  },
+  "cameraPickerTitle": "Choose your camera",
+  "cameraPickerSubtitle": "Every camera gives your photos its own look",
+  "cameraPickerChange": "Switch camera",
+  "cameraPickerUnlock": "Unlock with Pro",
+  "cameraPickerSelected": "Selected",
+  "cameraPickerStyleSummer": "Summer",
+  "cameraPickerStyleSummerDescription": "Warm, faded colours of a 90s snapshot",
+  "cameraPickerStyleNight": "Night 800",
+  "cameraPickerStyleNightDescription": "Cinema film: teal shadows, warm light, lots of grain",
+  "cameraPickerStyleSepia": "Sepia",
+  "cameraPickerStyleSepiaDescription": "An old brown print from the shoebox",
+  "cameraPickerStyleLomo": "Lomo",
+  "cameraPickerStyleLomoDescription": "Bold colours, dark corners and a wild colour cast",
+  "cameraPickerStyleMint": "Mint",
+  "cameraPickerStyleMintDescription": "Soft and fresh with a green tint",
+  "cameraPickerStylePastel": "Pink",
+  "cameraPickerStylePastelDescription": "Pastel colours with a pink glow and a white border",
+  "cameraPickerStyleSuper8": "Super 8",
+  "cameraPickerStyleSuper8Description": "Grainy and soft, like an old home movie",
+  "paywallBenefitGroup": "One Pro = Pro for the whole group",
+  "paywallBenefitUnlimited": "Unlimited members, photos kept forever",
+  "paywallBenefitQuality": "No watermark, original quality",
+  "paywallFreeTrial": "{period} free",
+  "@paywallFreeTrial": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallPriceYear": "{price} per year.",
+  "@paywallPriceYear": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallPriceYearTrial": "{period} free, then {price} per year.",
+  "@paywallPriceYearTrial": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallPriceMonth": "{price} per month.",
+  "@paywallPriceMonth": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallPriceMonthTrial": "{period} free, then {price} per month.",
+  "@paywallPriceMonthTrial": {
+    "placeholders": {
+      "period": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallAutoRenew": "Renews automatically. Cancel at least 24 hours before renewal in {store}.",
+  "@paywallAutoRenew": {
+    "placeholders": {
+      "store": {
+        "type": "String"
+      }
+    }
+  },
+  "paywallDetailsTitle": "Everything in Pro",
+  "paywallBenefitStyles": "All camera styles",
+  "allPhotosTitle": "All photos",
+  "@allPhotosTitle": {
+    "description": "\"Alle foto's\" view: all photos the user made themselves, across every album"
+  },
+  "allPhotosSubtitle": "Everything you shot yourself, from every album",
+  "allPhotosEmptyTitle": "No photos yet",
+  "allPhotosEmptyMessage": "Open the camera and take your first photo.",
+  "allPhotosOpenCamera": "Open the camera",
+  "allPhotosChooseAlbum": "Choose album",
+  "@allPhotosChooseAlbum": {
+    "description": "Accessibility label of the album switcher pill on the Alle foto's screen"
+  },
+  "allPhotosLoadFailed": "Your photos couldn't be loaded",
+  "cameraSettingsTitle": "Camera settings",
+  "cameraSettingsMore": "More settings",
+  "cameraSettingsGrid": "Grid",
+  "cameraSettingsHaptics": "Vibrate on capture",
+  "cameraSettingsDateStamp": "Date stamp bottom right",
+  "cameraSettingsSound": "Shutter sound",
+  "cameraSettingsSoundHint": "Silent when your phone is on silent",
+  "cameraSettingsTimer": "Self-timer",
+  "cameraSettingsTimerOff": "Off",
+  "cameraSettingsTimerSeconds": "{seconds} s",
+  "@cameraSettingsTimerSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "cameraSettingsTimerCancelHint": "Tap the shutter to cancel",
+  "cameraSettingsMirror": "Mirror selfies",
+  "cameraSettingsSaveToRoll": "Save to camera roll",
+  "cameraSettingsQuality": "Quality",
+  "cameraSettingsQualityStandard": "Standard",
+  "cameraSettingsQualityHigh": "High",
+  "cameraLowLightHint": "Low light - turn on the flash",
+  "cameraFlashUnavailable": "This camera has no flash",
+  "cameraFlashScreen": "Screen flash",
+  "cameraFlashCycleHint": "Tap to switch between off, on and auto",
+  "cameraPickerPaywallStyles": "All {count} cameras, including {styles}",
+  "@cameraPickerPaywallStyles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "styles": {
+        "type": "String"
+      }
+    }
+  },
+  "styleFlash": "Flash 400",
+  "styleFlashDescription": "Direct flash on warm film: amber glow, grain, rich reds",
+  "@styleFlash": {
+    "description": "Name of the default camera style: a compact camera with direct flash on warm ISO 400 film. Keep the number 400."
+  },
+  "@styleFlashDescription": {
+    "description": "One-line description of the Flash 400 camera style."
   }
 }

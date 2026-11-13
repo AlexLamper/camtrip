@@ -52,3 +52,29 @@ cd app && flutter run --dart-define=API_BASE_URL=http://localhost:3000/api/mobil
 **GitHub Actions variables**: `GOOGLE_IOS_CLIENT_ID`, `GOOGLE_SERVER_CLIENT_ID` (of vul de defaults in `app/lib/core/config.dart`; CI leest die ook voor `ios/Flutter/Secrets.xcconfig`).
 
 **App ID** `app.camtrip.camtrip` met Sign in with Apple, Push Notifications en Associated Domains (`applinks:camtrip.app`).
+
+## De Flash-look aanpassen ("Tweaking the Flash look")
+
+**Flits 400 / Flash 400** (`id: flash`) is de standaardstijl: gratis, de default voor nieuwe gebruikers en groepen, en de fallback als een Pro-stijl niet mag. Hij bootst een compactcamera met directe flits op warme 400-film na: sterke amber-zweem, opgetilde warme zwarten, crème hooglichten, krachtig rood/oranje, gedempt groen/blauw en fijne korrel.
+
+Waar het zit:
+
+- `app/lib/features/camera/styles.dart` - `CameraStyle.flash`: de 3 tooncurves (`look: FilmLook(curves: ...)`, 17 knopen per kanaal voor R, G, B, uitvoer 0-255 voor invoer 0, 1/16 ... 1), `vignette`, en de `matrix` (alleen voor de live preview: een least-squares benadering van de look).
+- `app/lib/features/camera/film_look.dart` - `FilmLook`: alle andere knoppen, plus het bakken van de 33³ LUT en de ffmpeg-keten voor video.
+- `app/lib/features/camera/processor.dart` - `applyFilmLook`: per foto statistiek, LUT, halation, vignet en korrel (op de ruwe bytes).
+
+Wat je kunt draaien (in `FilmLook`):
+
+| Knop | Effect |
+|---|---|
+| `curves` | De kern. Hoger in G/B = minder oranje; R-knopen 12-16 omlaag = zachtere hooglichten; knoop 0 = zwartpunt (nu 17/15/10: warm opgetild). |
+| `amberMin`, `amberFor()` | Sterkte per scène: donker/warm (binnen, flits) = 1 = volle look, helder/koel daglicht = `amberMin` (0.5). |
+| `satWarm` / `satCool` | Verzadiging van rood-oranje-geel vs. groen-cyaan-blauw, als (daglicht, flits). |
+| `yellowToOrange` | Trekt geel naar oranje (de referenties hebben bijna geen geel). |
+| `liftTarget`, `liftMax` | Belichtingslift voor donkere foto's zonder flits: onder gemiddelde luminantie 0.30 een gamma tot max 0.5. |
+| `halation` | Rood-oranje gloed rond hooglichten. |
+| `grain`, `chromaGrain` | Korrel-std in de middentonen (0.02 = ~4/255, gemeten als de scans) en kleurkorrel t.o.v. luminantiekorrel. |
+
+Na een wijziging: `flutter test test/flash_style_test.dart` (checkt o.a. warme zwarten, crème wit en de gemiddelde kleur van een fixture) en draai de visuele test met eigen foto's in `/tmp/filter/in` - de uitvoer komt in `/tmp/filter/dart_out`. De preview-`matrix` en de video-keten volgen de curves niet vanzelf exact: de video leest `curves` wel automatisch (bij sterkte 0.85), de matrix moet je opnieuw fitten (least squares van LUT-uitvoer op een set pixels) als je de curves flink verandert.
+
+Hoe de getallen tot stand kwamen: de curves zijn per kanaal gefit (CDF-matching) van "schone" telefoonversies van de referentiefoto's (de-graded: zwartpunt eraf, witte objecten neutraal met wat binnenwarmte, korrel weg) naar de referenties, daarna gladgestreken en de hooglichten van R/G/B iets afgerold. Resultaat op de drie flitsreferenties: gemiddelde kwantielfout 6.8/255 (A 6.7, B 11.0, C 2.8), korrel 3-5/255 met autocorrelatie 0.76/0.31 bij 1/2 px (scans: 0.76/0.34).

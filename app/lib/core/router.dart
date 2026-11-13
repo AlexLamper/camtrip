@@ -8,6 +8,7 @@ import '../features/auth/auth_controller.dart';
 import '../features/auth/email_auth_screen.dart';
 import '../features/auth/onboarding_screen.dart';
 import '../features/camera/camera_screen.dart';
+import '../features/gallery/all_photos_screen.dart';
 import '../features/gallery/gallery_screen.dart';
 import '../features/gallery/hidden_photos_screen.dart';
 import '../features/gallery/photo_screen.dart';
@@ -84,7 +85,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(path: '/splash', builder: (_, _) => const _Splash()),
+      GoRoute(path: '/splash', pageBuilder: (_, s) => NoTransitionPage(key: s.pageKey, child: const _Splash())),
       GoRoute(
         path: '/welcome',
         builder: (_, _) => const OnboardingScreen(),
@@ -109,6 +110,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/admin/user/:id', builder: (_, s) => AdminUserScreen(userId: s.pathParameters['id']!)),
       GoRoute(path: '/queue', builder: (_, _) => const QueueScreen()),
+      // "Alle foto's": every photo the user made, from every album.
+      GoRoute(path: '/photos', builder: (_, _) => const AllPhotosScreen()),
       GoRoute(path: '/group/:id', builder: (_, s) => GalleryScreen(groupId: s.pathParameters['id']!)),
       GoRoute(
         path: '/group/:id/invite',
@@ -133,13 +136,11 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
+/// Only shown in the rare case the keychain could not be read before the first
+/// frame (main() normally decides the start screen synchronously). A plain
+/// background that matches the native launch screen, so nothing flashes.
 class _Splash extends StatelessWidget {
   const _Splash();
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: CT.bg,
-        body: Center(
-          child: ClipRRect(borderRadius: BorderRadius.circular(26), child: Image.asset('assets/images/logo_icon.png', width: 110)),
-        ),
-      );
+  Widget build(BuildContext context) => const ColoredBox(color: CT.bg, child: SizedBox.expand());
 }
