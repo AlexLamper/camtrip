@@ -44,6 +44,8 @@ cd app && flutter run --dart-define=API_BASE_URL=http://localhost:3000/api/mobil
 
 **Vercel (web/)** - zie `web/.env.example`: `MONGODB_URI`, `JWT_SECRET`, `APPLE_CLIENT_IDS`, `GOOGLE_CLIENT_IDS` (kommalijst: web- + iOS-client id), `RESEND_API_KEY`, `MAIL_FROM` (optioneel), `R2_*`, `REVENUECAT_*`, `APNS_KEY_ID`, `APNS_KEY_P8`, `CRON_SECRET`, `APPLE_TEAM_ID`, `ANDROID_SHA256_FINGERPRINTS`.
 
+**Sign in with Apple token-intrekking (guideline 5.1.1(v))**: `APPLE_SIWA_KEY_ID` + `APPLE_SIWA_KEY_P8` (inhoud van een AuthKey_XXXX.p8 met "Sign in with Apple" aan voor `app.camtrip.camtrip`; ruwe PEM, met `\n` of base64), samen met `APPLE_TEAM_ID` (4K4D59MXKW). Optioneel: `APPLE_CLIENT_ID` (default `app.camtrip.camtrip`) en `APPLE_TOKEN_ENC_KEY` (default afgeleid van `JWT_SECRET`). Bij inloggen wisselt de API de `authorizationCode` in voor een refresh token (versleuteld opgeslagen als `appleRefreshToken`); bij account verwijderen wordt dat token ingetrokken bij Apple. Zonder key wordt dit overgeslagen (waarschuwing in de log), inloggen en verwijderen werken gewoon. `/api/health` toont `siwa: ok|missing`.
+
 **GitHub Actions secret**: alleen `APP_STORE_CONNECT_API_KEY_P8` (inhoud van AuthKey_QS5UXPB9HY.p8, API key "CamTrip CI", Admin). Signing gaat automatisch via die key (`-allowProvisioningUpdates`); Key ID, Issuer ID en de RevenueCat public key hebben defaults.
 
 **GitHub Actions variables**: `GOOGLE_IOS_CLIENT_ID`, `GOOGLE_SERVER_CLIENT_ID` (of vul de defaults in `app/lib/core/config.dart`; CI leest die ook voor `ios/Flutter/Secrets.xcconfig`).

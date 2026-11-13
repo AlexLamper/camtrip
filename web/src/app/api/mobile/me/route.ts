@@ -1,9 +1,10 @@
 import { z } from 'zod';
-import { Group, Photo, Report, User } from '@/lib/models';
+import { Group, Photo, Report, User, type UserDoc } from '@/lib/models';
 import { body, handler, json } from '@/lib/http';
 import { publicUser, requireUser, syncAdminRole } from '@/lib/auth';
 import { deleteKeys } from '@/lib/storage';
 import { refreshGroupRetention } from '@/lib/pro';
+import { revokeAppleForUser } from '@/lib/siwa';
 
 export const GET = handler(async (req) => {
   const user = await syncAdminRole(await requireUser(req));
@@ -37,6 +38,11 @@ export const PATCH = handler(async (req) => {
  */
 export const DELETE = handler(async (req) => {
   const user = await requireUser(req);
+
+  // Sign in with Apple: revoke the user's tokens at Apple (guideline 5.1.1(v)).
+  // Never throws, so deletion goes ahead even if Apple is unreachable.
+  const apple = await User.findById(user._id).select('+appleRefreshToken').lean<UserDoc>();
+  if (apple) await revokeAppleForUser(apple);
 
   const myPhotos = await Photo.find({ userId: user._id }, { originalKey: 1, displayKey: 1, thumbKey: 1, groupId: 1 }).lean();
   await deleteKeys(myPhotos.flatMap((p) => [p.originalKey, p.displayKey, p.thumbKey]));

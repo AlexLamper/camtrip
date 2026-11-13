@@ -34,6 +34,9 @@ const userSchema = new Schema(
     resetExpires: { type: Date, default: null },
     resetAttempts: { type: Number, default: 0 },
     appleId: { type: String, unique: true, sparse: true },
+    // Sign in with Apple refresh token, AES-256-GCM encrypted (lib/siwa.ts).
+    // Only used to revoke it at Apple when the account is deleted. Never selected by default.
+    appleRefreshToken: { type: String, default: null, select: false },
     googleId: { type: String, unique: true, sparse: true },
     avatarColor: { type: String, default: '#d9472b' },
     pushTokens: { type: [pushTokenSchema], default: [] },
@@ -76,6 +79,7 @@ export interface UserDoc {
   resetExpires?: Date | null;
   resetAttempts?: number;
   appleId?: string;
+  appleRefreshToken?: string | null;
   googleId?: string;
   avatarColor: string;
   pushTokens: { token: string; platform: 'ios' | 'android'; updatedAt: Date }[];

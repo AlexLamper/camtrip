@@ -4,9 +4,12 @@ import { connectDB } from '@/lib/db';
 import { User, type UserDoc } from '@/lib/models';
 import { body, handler, HttpError } from '@/lib/http';
 import { sessionResponse, signInWithProvider } from '@/lib/auth';
+import { exchangeAuthorizationCode } from '@/lib/siwa';
 
 const Body = z.object({
   identityToken: z.string().min(10),
+  // One-time code, exchanged for a refresh token so it can be revoked on account deletion.
+  authorizationCode: z.string().max(2000).optional(),
   givenName: z.string().optional(),
   familyName: z.string().optional(),
   email: z.string().optional(),
@@ -44,6 +47,13 @@ export const POST = handler(async (req) => {
   let u = user;
   if (!created && name && (!u.name || u.name === 'Fotograaf')) {
     u = (await User.findByIdAndUpdate(u._id, { $set: { name } }, { new: true }).lean<UserDoc>()) ?? u;
+  }
+  if (input.authorizationCode) {
+    // Never blocks sign-in: on failure a warning is logged and null comes back.
+    const refresh = await exchangeAuthorizationCode(input.authorizationCode);
+    if (refresh) await User.updateOne({ _id: u._id }, { $set: { appleRefreshToken: refresh } }).catch((e) => {
+      console.warn('[siwa] storing refresh token failed:', e instanceof Error ? e.message : e);
+    });
   }
   return sessionResponse(u, { isNew: !name && u.name === 'Fotograaf' });
 });

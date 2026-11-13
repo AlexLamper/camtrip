@@ -1,6 +1,7 @@
 import { HeadBucketCommand, S3Client } from '@aws-sdk/client-s3';
 import mongoose from 'mongoose';
 import { connectDB } from '@/lib/db';
+import { siwaStatus } from '@/lib/siwa';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +39,8 @@ export async function GET() {
   }
 
   result.push = process.env.APNS_KEY_P8 && process.env.APNS_KEY_ID ? 'ok' : 'missing';
+  // Sign in with Apple key (token exchange + revocation on account deletion).
+  result.siwa = siwaStatus();
   result.revenuecat = process.env.REVENUECAT_REST_API_KEY ? 'ok' : 'missing';
 
   const healthy = Object.values(result).every((v) => v === 'ok');
