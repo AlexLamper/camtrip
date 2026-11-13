@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
+import 'package:camtrip/core/theme.dart';
 import 'package:camtrip/features/camera/camera_settings.dart';
 import 'package:camtrip/features/camera/camera_settings_sheet.dart';
 import 'package:camtrip/features/camera/flash_control.dart';
@@ -158,21 +159,54 @@ void main() {
           ),
         ),
       ));
-      expect(find.text('Uit'), findsOneWidget);
+      final handle = t.ensureSemantics();
+      expect(find.bySemanticsLabel('Flits: Uit'), findsOneWidget);
       expect(find.byIcon(Icons.flash_off_rounded), findsOneWidget);
       await t.tap(find.byKey(const ValueKey('flash-button')));
       await t.pumpAndSettle();
       expect(setting, FlashSetting.on);
-      expect(find.text('Aan'), findsOneWidget);
+      expect(find.bySemanticsLabel('Flits: Aan'), findsOneWidget);
       expect(find.byIcon(Icons.flash_on_rounded), findsOneWidget);
+      expect(t.widget<Icon>(find.byIcon(Icons.flash_on_rounded)).color, FlashColors.on, reason: 'amber when on');
       await t.tap(find.byKey(const ValueKey('flash-button')));
       await t.pumpAndSettle();
-      expect(find.text('Auto'), findsOneWidget);
-      expect(find.byIcon(Icons.flash_auto_rounded), findsOneWidget);
+      expect(find.bySemanticsLabel('Flits: Auto'), findsOneWidget);
+      expect(find.byIcon(Icons.flash_auto_rounded), findsOneWidget, reason: 'bolt with a small A');
       await t.tap(find.byKey(const ValueKey('flash-button')));
       await t.pumpAndSettle();
       expect(setting, FlashSetting.off);
+      handle.dispose();
       expect(t.getSize(find.byKey(const ValueKey('flash-button'))).height, greaterThanOrEqualTo(44));
+      expect(t.getSize(find.byKey(const ValueKey('flash-button'))).width, greaterThanOrEqualTo(44));
+    });
+
+    testWidgets('borderless in every state: no outline, only a soft fill when on', (t) async {
+      for (final setting in FlashSetting.values) {
+        for (final hasFlash in [true, false]) {
+          await t.pumpWidget(localizedApp(
+            home: Scaffold(body: Center(child: FlashButton(setting: setting, hasFlash: hasFlash, onPressed: () {}))),
+          ));
+          await t.pumpAndSettle();
+          final boxes = find.descendant(of: find.byKey(const ValueKey('flash-button')), matching: find.byWidgetPredicate((w) {
+            final d = switch (w) {
+              Container(:final decoration) => decoration,
+              DecoratedBox(:final decoration) => decoration,
+              _ => null,
+            };
+            return d is BoxDecoration && d.border != null;
+          }));
+          expect(boxes, findsNothing, reason: '$setting hasFlash=$hasFlash');
+          final disc = t.widget<AnimatedContainer>(find.byKey(const ValueKey('flash-disc'))).decoration! as BoxDecoration;
+          expect(disc.color, setting == FlashSetting.on && hasFlash ? FlashColors.onFill : Colors.transparent);
+        }
+      }
+    });
+
+    testWidgets('front camera: tooltip says screen flash', (t) async {
+      await t.pumpWidget(localizedApp(
+        home: Scaffold(body: Center(child: FlashButton(setting: FlashSetting.auto, screenFlash: true, onPressed: () {}))),
+      ));
+      expect(find.byWidgetPredicate((w) => w is Tooltip && w.message == 'Schermflits'), findsOneWidget);
     });
 
     testWidgets('camera without flash: disabled, explains why', (t) async {
@@ -184,6 +218,9 @@ void main() {
       await t.pumpAndSettle();
       expect(taps, 0);
       expect(find.text('Deze camera heeft geen flits'), findsOneWidget, reason: 'tooltip on tap');
+      final icon = t.widget<Icon>(find.byIcon(Icons.flash_off_rounded));
+      expect(icon.color, isNot(CT.ink), reason: 'greyed out');
+      expect(icon.color, isNot(FlashColors.on));
     });
   });
 

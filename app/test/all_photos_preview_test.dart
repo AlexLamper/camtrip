@@ -9,7 +9,8 @@ import 'package:camtrip/core/storage.dart';
 import 'package:camtrip/core/theme.dart';
 import 'package:camtrip/features/auth/auth_controller.dart';
 import 'package:camtrip/features/auth/onboarding_slides.dart';
-import 'package:camtrip/features/gallery/all_photos_screen.dart';
+import 'package:camtrip/features/groups/albums_screen.dart';
+import 'package:camtrip/features/upload/upload_queue.dart';
 import 'package:camtrip/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -17,11 +18,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'all_photos_test.dart' show Me, PagedApi, photosJson;
+import 'all_photos_test.dart' show Me, NoQueue, PagedApi, photosJson;
 import 'support/l10n.dart';
 import 'support/real_fonts.dart';
 
-/// Renders "Alle foto's" with real fonts and photos to PNG.
+/// Renders the home ("Alle foto's" and "Albums" tabs) with real fonts and photos to PNG.
 /// Run with: CAMTRIP_PREVIEW=/tmp/allphotos flutter test test/all_photos_preview_test.dart
 void main() {
   final out = Platform.environment['CAMTRIP_PREVIEW'];
@@ -40,7 +41,7 @@ void main() {
     });
   }
 
-  testWidgets('preview', (tester) async {
+  Future<void> pumpHome(WidgetTester tester, GlobalKey key, HomeTab tab) async {
     const size = Size(390, 844);
     tester.view.physicalSize = size * 3;
     tester.view.devicePixelRatio = 3;
@@ -48,26 +49,26 @@ void main() {
     addTearDown(tester.view.reset);
     SharedPreferences.setMockInitialValues({});
     final prefs = Prefs(await SharedPreferences.getInstance());
-    final api = PagedApi([
+    final api = PreviewApi([
       {'photos': photosJson(24, videos: {2, 9}), 'nextCursor': null},
     ]);
     final photos = OnboardingPhotos.all;
-    final key = GlobalKey();
     await tester.pumpWidget(RepaintBoundary(
       key: key,
       child: ProviderScope(
-        overrides: [prefsProvider.overrideWithValue(prefs), apiProvider.overrideWithValue(api), authProvider.overrideWith(Me.new)],
+        overrides: [prefsProvider.overrideWithValue(prefs), apiProvider.overrideWithValue(api), authProvider.overrideWith(Me.new), uploadQueueProvider.overrideWith(NoQueue.new)],
         child: localizedApp(
           theme: CT.theme(),
           debugShowCheckedModeBanner: false,
-          home: AllPhotosScreen(
-            thumbBuilder: (p) => Image.asset(photos[int.parse(p.id.substring(1)) % photos.length], fit: BoxFit.cover, cacheWidth: 400),
+          home: AlbumsScreen(
+            initialTab: tab,
+            photoThumbBuilder: (p) => Image.asset(photos[int.parse(p.id.substring(1)) % photos.length], fit: BoxFit.cover, cacheWidth: 400),
           ),
         ),
       ),
     ));
     await tester.pump();
-    final context = tester.element(find.byType(AllPhotosScreen));
+    final context = tester.element(find.byType(AlbumsScreen));
     await tester.runAsync(() async {
       for (final p in photos) {
         await precacheImage(ResizeImage(AssetImage(p), width: 400), context);
@@ -77,11 +78,40 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
-    await shoot(tester, key, 'preview');
+  }
+
+  testWidgets('photos tab', (tester) async {
+    final key = GlobalKey();
+    await pumpHome(tester, key, HomeTab.photos);
+    await shoot(tester, key, 'preview_v2');
 
     await tester.longPress(find.byKey(const ValueKey('p0004')));
     await tester.tap(find.byKey(const ValueKey('p0005')));
     await tester.pumpAndSettle();
-    await shoot(tester, key, 'preview_select');
+    await shoot(tester, key, 'preview_v2_select');
   }, skip: out == null);
+
+  testWidgets('albums tab', (tester) async {
+    final key = GlobalKey();
+    await pumpHome(tester, key, HomeTab.albums);
+    await shoot(tester, key, 'albums_v2');
+  }, skip: out == null);
+}
+
+/// Two albums with covers, so the albums tab looks like a real home.
+class PreviewApi extends PagedApi {
+  PreviewApi(super.pages);
+
+  @override
+  Future<Map<String, dynamic>> get(String path, {Map<String, dynamic>? query}) async {
+    if (path == '/groups') {
+      return {
+        'groups': [
+          {'id': 'g1', 'name': 'Mallorca', 'type': 'vacation', 'code': 'ABC', 'status': 'active', 'ownerId': 'me', 'members': [], 'photoCount': 24},
+          {'id': 'g2', 'name': 'Bruiloft Sanne', 'type': 'event', 'code': 'DEF', 'status': 'active', 'ownerId': 'me', 'members': [], 'photoCount': 12},
+        ],
+      };
+    }
+    return super.get(path, query: query);
+  }
 }

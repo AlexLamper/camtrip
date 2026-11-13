@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme.dart';
 import '../../l10n/l10n.dart';
 
-/// The flash choice in the top bar. Cycles Off -> On -> Auto -> Off.
+/// The flash choice next to the camera selector. Cycles Off -> On -> Auto -> Off.
 enum FlashSetting {
   off,
   on,
@@ -33,8 +33,21 @@ class FlashSession {
   static FlashSetting? current;
 }
 
-/// Round 44pt flash button: icon plus short state label ("Aan" / "Uit" / "Auto").
-/// [hasFlash] false greys it out with a tooltip explaining why.
+/// Flash colours, public so tests can check them.
+class FlashColors {
+  FlashColors._();
+
+  /// Bolt when the flash is on: amber, dark enough to read on the cream page.
+  static const on = Color(0xFFE29A00);
+
+  /// Soft amber disc behind the bolt when on. A fill, never an outline.
+  static const onFill = Color(0x33FFC53D);
+}
+
+/// Borderless 48pt flash button next to the camera selector. The icon shows
+/// the state: a slashed bolt (off), an amber bolt on a soft amber disc (on),
+/// a bolt with an "A" (auto). [hasFlash] false greys it out with a tooltip
+/// explaining why.
 class FlashButton extends StatelessWidget {
   const FlashButton({super.key, required this.setting, required this.onPressed, this.hasFlash = true, this.screenFlash = false});
 
@@ -50,7 +63,7 @@ class FlashButton extends StatelessWidget {
     final l = context.l10n;
     final enabled = hasFlash && onPressed != null;
     final active = enabled && setting == FlashSetting.on;
-    final fg = enabled ? CT.ink : CT.muted;
+    final fg = active ? FlashColors.on : (enabled ? CT.ink : CT.muted.withValues(alpha: 0.6));
     final tooltip = !hasFlash ? l.cameraFlashUnavailable : (screenFlash ? l.cameraFlashScreen : l.flash);
     final state = hasFlash ? setting.label(l) : l.flashOff;
     return Tooltip(
@@ -66,29 +79,27 @@ class FlashButton extends StatelessWidget {
           key: const ValueKey('flash-button'),
           onTap: enabled ? onPressed : null,
           radius: 26,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+          child: SizedBox(
+            width: 48,
+            height: 48,
             child: Center(
               child: AnimatedContainer(
+                key: const ValueKey('flash-disc'),
                 duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                decoration: BoxDecoration(
-                  color: active ? const Color(0xFFFFD60A) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: active ? const Color(0xFFFFD60A) : fg.withValues(alpha: enabled ? 0.9 : 0.4), width: 1.5),
-                ),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(hasFlash ? setting.icon : Icons.flash_off_rounded, size: 18, color: fg),
-                  const SizedBox(width: 3),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 52),
-                    child: Text(state,
-                        key: const ValueKey('flash-label'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: CT.text(12, weight: FontWeight.w700, color: fg)),
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(color: active ? FlashColors.onFill : Colors.transparent, shape: BoxShape.circle),
+                alignment: Alignment.center,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 160),
+                  transitionBuilder: (child, a) => ScaleTransition(scale: Tween(begin: 0.7, end: 1.0).animate(a), child: FadeTransition(opacity: a, child: child)),
+                  child: Icon(
+                    hasFlash ? setting.icon : Icons.flash_off_rounded,
+                    key: ValueKey('flash-icon-${hasFlash ? setting.name : 'none'}'),
+                    size: 26,
+                    color: fg,
                   ),
-                ]),
+                ),
               ),
             ),
           ),

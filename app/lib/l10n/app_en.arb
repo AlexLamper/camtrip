@@ -1245,14 +1245,12 @@
   "@allPhotosTitle": {
     "description": "\"Alle foto's\" view: all photos the user made themselves, across every album"
   },
-  "allPhotosSubtitle": "Everything you shot yourself, from every album",
+  "homeTabAlbums": "Albums",
+  "@homeTabAlbums": {
+    "description": "Home screen segmented control: the albums tab (the other tab is \"Alle foto's\")"
+  },
   "allPhotosEmptyTitle": "No photos yet",
   "allPhotosEmptyMessage": "Open the camera and take your first photo.",
-  "allPhotosOpenCamera": "Open the camera",
-  "allPhotosChooseAlbum": "Choose album",
-  "@allPhotosChooseAlbum": {
-    "description": "Accessibility label of the album switcher pill on the Alle foto's screen"
-  },
   "allPhotosLoadFailed": "Your photos couldn't be loaded",
   "cameraSettingsTitle": "Camera settings",
   "cameraSettingsMore": "More settings",
@@ -1281,6 +1279,8 @@
   "cameraFlashUnavailable": "This camera has no flash",
   "cameraFlashScreen": "Screen flash",
   "cameraFlashCycleHint": "Tap to switch between off, on and auto",
+  "cameraFlip": "Switch between front and back camera",
+  "cameraFlipHint": "Double-tap the viewfinder to flip the camera",
   "cameraPickerPaywallStyles": "All {count} cameras, including {styles}",
   "@cameraPickerPaywallStyles": {
     "placeholders": {

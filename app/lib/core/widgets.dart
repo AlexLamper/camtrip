@@ -88,6 +88,69 @@ class CTChip extends StatelessWidget {
   }
 }
 
+/// Two or three equal segments with a sliding white thumb, e.g. the home
+/// switch "Albums | Alle foto's".
+class CTSegmented<T> extends StatelessWidget {
+  const CTSegmented({super.key, required this.segments, required this.selected, required this.onChanged});
+
+  /// Value, label and an optional key for each segment.
+  final List<(T, String, Key?)> segments;
+  final T selected;
+  final ValueChanged<T> onChanged;
+
+  static const track = Color(0xFFEFECE5);
+
+  @override
+  Widget build(BuildContext context) {
+    final n = segments.length;
+    final i = math.max(0, segments.indexWhere((s) => s.$1 == selected));
+    return Container(
+      height: 40,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(color: track, borderRadius: BorderRadius.circular(12)),
+      child: Stack(children: [
+        AnimatedAlign(
+          alignment: Alignment(n == 1 ? 0 : -1 + 2 * i / (n - 1), 0),
+          duration: const Duration(milliseconds: 220),
+          curve: CT.transitionCurve,
+          child: FractionallySizedBox(
+            widthFactor: 1 / n,
+            heightFactor: 1,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: CT.paper,
+                borderRadius: BorderRadius.circular(9),
+                boxShadow: const [BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 1))],
+              ),
+            ),
+          ),
+        ),
+        Row(children: [
+          for (final (value, label, key) in segments)
+            Expanded(
+              child: Semantics(
+                button: true,
+                selected: value == selected,
+                child: GestureDetector(
+                  key: key,
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onChanged(value),
+                  child: Center(
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 160),
+                      style: CT.text(14, color: value == selected ? CT.ink : CT.muted, weight: FontWeight.w600, height: 1.2),
+                      child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ]),
+      ]),
+    );
+  }
+}
+
 /// A photo shown as an instant print: white frame, wider bottom, soft shadow.
 class InstantPrint extends StatelessWidget {
   const InstantPrint({

@@ -2051,8 +2051,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allPhotosTitle => 'All photos';
 
   @override
-  String get allPhotosSubtitle =>
-      'Everything you shot yourself, from every album';
+  String get homeTabAlbums => 'Albums';
 
   @override
   String get allPhotosEmptyTitle => 'No photos yet';
@@ -2060,12 +2059,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get allPhotosEmptyMessage =>
       'Open the camera and take your first photo.';
-
-  @override
-  String get allPhotosOpenCamera => 'Open the camera';
-
-  @override
-  String get allPhotosChooseAlbum => 'Choose album';
 
   @override
   String get allPhotosLoadFailed => 'Your photos couldn\'t be loaded';
@@ -2131,6 +2124,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cameraFlashCycleHint => 'Tap to switch between off, on and auto';
+
+  @override
+  String get cameraFlip => 'Switch between front and back camera';
+
+  @override
+  String get cameraFlipHint => 'Double-tap the viewfinder to flip the camera';
 
   @override
   String cameraPickerPaywallStyles(int count, String styles) {

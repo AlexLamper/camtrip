@@ -17,6 +17,7 @@ import '../../models/models.dart';
 import '../groups/groups_controller.dart';
 import '../premium/pro_gate.dart';
 import '../upload/upload_queue.dart';
+import 'camera_layout.dart';
 import 'camera_picker_sheet.dart';
 import 'camera_settings.dart';
 import 'camera_settings_sheet.dart';
@@ -59,6 +60,12 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
   bool _screenFlash = false;
   int? _countdown;
   Timer? _countdownTimer;
+
+  /// Bumped on each front/back flip; drives the viewfinder's flip animation.
+  int _flips = 0;
+
+  /// A flip is starting the other camera; further flips wait for it.
+  bool _switching = false;
   late final LowLightMonitor _lowLightMonitor = LowLightMonitor(onChanged: (low) {
     if (mounted) setState(() => _lowLight = low);
   });
@@ -234,6 +241,26 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
   }
 
   bool get _front => _cameras.isNotEmpty && _cameras[_cameraIndex].lensDirection == CameraLensDirection.front;
+
+  bool get _canFlip =>
+      canFlipCamera(cameras: _cameras.length, recording: _recording, countingDown: _countdown != null, busy: _busy, switching: _switching);
+
+  /// Front <-> back, from the flip button or a double tap on the viewfinder.
+  Future<void> _flipCamera() async {
+    if (!_canFlip) return;
+    HapticFeedback.lightImpact();
+    setState(() {
+      _switching = true;
+      _flips++;
+    });
+    try {
+      // Let the card turn edge-on before the preview goes away.
+      await Future<void>.delayed(ViewfinderFlip.duration ~/ 2);
+      if (mounted) await _start(flipTargetIndex(_cameras, _cameraIndex));
+    } finally {
+      if (mounted) setState(() => _switching = false);
+    }
+  }
 
   Future<void> _selectStyle(CameraStyle s) async {
     if (!ref.read(activeProGateProvider).canUseStyle(styleIsPro: s.pro)) {
@@ -511,134 +538,59 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
       backgroundColor: CT.bg,
       body: Stack(children: [
         SafeArea(
-          child: Column(children: [
-          // top bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-            child: Row(children: [
-              IconButton(tooltip: l.close, onPressed: _recording ? null : () => context.pop(), icon: const Icon(Icons.close)),
-              FlashButton(
+          child: CameraScreenLayout(
+            topBar: CameraTopBar(
+              onClose: _recording ? null : () => context.pop(),
+              onSettings: _recording ? null : _openSettings,
+              groupPill: CameraGroupPill(
+                label: group == null ? l.chooseGroup : '${group.name} · ${group.members.length}',
+                onTap: () => _pickGroup(groups),
+              ),
+            ),
+            viewfinder: ViewfinderFlip(
+              flips: _flips,
+              onDoubleTap: _canFlip ? _flipCamera : null,
+              child: _viewfinder(),
+            ),
+            controls: CameraControlsRow(
+              flash: FlashButton(
                 setting: _flash,
                 // front camera: screen flash, photos only
                 hasFlash: _front ? !_videoMode : _hasFlash,
                 screenFlash: _front,
                 onPressed: _recording ? null : _cycleFlash,
               ),
-              // Centred between the two buttons; shrinks (with an ellipsis)
-              // when a long group name or flash label leaves less room.
-              Expanded(
-                child: Center(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => _pickGroup(groups),
-                    child: Container(
-                      // 44pt tall hit target around the visible pill
-                      constraints: const BoxConstraints(minHeight: 44),
-                      alignment: Alignment.center,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                        decoration: BoxDecoration(border: Border.all(color: CT.ink, width: 1.5), borderRadius: BorderRadius.circular(10)),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          const Icon(Icons.circle, size: 8, color: CT.accent),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 150),
-                              child: Text(group == null ? l.chooseGroup : '${group.name} · ${group.members.length}',
-                                  maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(13, weight: FontWeight.w600)),
-                            ),
-                          ),
-                          const Icon(Icons.expand_more, size: 18),
-                        ]),
-                      ),
-                    ),
-                  ),
-                ),
+              // current camera; opens the camera picker (camera_picker_sheet.dart)
+              selector: CameraPickerButton(
+                style: _style,
+                onTap: _recording
+                    ? null
+                    : () async {
+                        final s = await showCameraPicker(context, current: _style, gate: ref.read(activeProGateProvider));
+                        if (s != null && mounted) await _selectStyle(s);
+                      },
               ),
-              IconButton(
-                tooltip: l.switchCamera,
-                onPressed: _cameras.length > 1 && !_recording ? () => _start((_cameraIndex + 1) % _cameras.length) : null,
-                icon: const Icon(Icons.cameraswitch_outlined),
-              ),
-              IconButton(
-                key: const ValueKey('camera-settings-button'),
-                tooltip: l.cameraSettingsMore,
-                onPressed: _recording ? null : _openSettings,
-                icon: const Icon(Icons.more_horiz_rounded),
-              ),
-            ]),
-          ),
-          // viewfinder
-          Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 24), child: _viewfinder())),
-          // current camera; opens the camera picker (camera_picker_sheet.dart)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 8),
-            child: CameraPickerButton(
-              style: _style,
-              onTap: _recording
-                  ? null
-                  : () async {
-                      final s = await showCameraPicker(context, current: _style, gate: ref.read(activeProGateProvider));
-                      if (s != null && mounted) await _selectStyle(s);
-                    },
+              flip: CameraFlipButton(front: _front, onPressed: _canFlip ? _flipCamera : null),
             ),
-          ),
-          // Pro styles unlocked by someone else in this group ("Pro via Sanne").
-          if (gate.cameraHint != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 6),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Icon(Icons.star_rounded, size: 14, color: CT.accent),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(gate.cameraHint!,
-                      maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(12, color: CT.muted, weight: FontWeight.w500)),
-                ),
-              ]),
-            ),
-          // mode switch
-          CameraModeSwitch(videoMode: _videoMode, enabled: !_recording, onChanged: _setVideoMode),
-          // shutter row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(32, 0, 32, 8),
-            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: group == null ? null : () => context.push('/group/${group.id}'),
-                child: SizedBox(
-                  width: 56,
-                  child: Stack(clipBehavior: Clip.none, children: [
-                    Transform.rotate(
-                      angle: -0.1,
-                      child: Container(
-                        width: 48,
-                        height: 54,
-                        padding: const EdgeInsets.fromLTRB(3, 3, 3, 9),
-                        decoration: BoxDecoration(color: Colors.white, boxShadow: CT.printShadow, borderRadius: BorderRadius.circular(2)),
-                        child: _lastThumb == null
-                            ? Container(color: CT.cream, child: const Icon(Icons.photo_library_outlined, size: 18, color: CT.muted))
-                            : Image.memory(_lastThumb!, fit: BoxFit.cover),
-                      ),
+            // Pro styles unlocked by someone else in this group ("Pro via Sanne").
+            hint: gate.cameraHint == null
+                ? null
+                : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    const Icon(Icons.star_rounded, size: 14, color: CT.accent),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(gate.cameraHint!,
+                          maxLines: 1, overflow: TextOverflow.ellipsis, style: CT.text(12, color: CT.muted, weight: FontWeight.w500)),
                     ),
-                    if (pending > 0)
-                      Positioned(
-                        right: 0,
-                        top: -6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(color: CT.accent, borderRadius: BorderRadius.circular(10)),
-                          child: Text('$pending', style: CT.text(11, color: Colors.white, weight: FontWeight.w700)),
-                        ),
-                      ),
                   ]),
-                ),
-              ),
-              _shutter(group),
-              // keeps the shutter centred
-              const SizedBox(width: 56),
-            ]),
+            modeSwitch: CameraModeSwitch(videoMode: _videoMode, enabled: !_recording, onChanged: _setVideoMode),
+            lastShot: LastShotThumb(
+              thumb: _lastThumb,
+              pending: pending,
+              onTap: group == null ? null : () => context.push('/group/${group.id}'),
+            ),
+            shutter: _shutter(group),
           ),
-          ]),
         ),
         // Front-camera "flash": the whole screen turns white for the shot.
         if (_screenFlash) const Positioned.fill(child: IgnorePointer(child: ColoredBox(key: ValueKey('screen-flash'), color: Colors.white))),
@@ -740,46 +692,10 @@ class _CameraScreenState extends ConsumerState<CameraScreen> with WidgetsBinding
       ]);
     }
 
-    return LayoutBuilder(builder: (context, box) {
-      // 3:4 photo area, inside an instant print when that style is chosen
-      final printPadding = instant ? 12.0 : 0.0;
-      final bottomBand = instant ? 56.0 : 0.0;
-      final maxW = box.maxWidth;
-      final maxH = box.maxHeight;
-      var photoW = maxW - printPadding * 2;
-      var photoH = photoW * 4 / 3;
-      if (photoH + printPadding + bottomBand > maxH) {
-        photoH = maxH - printPadding - bottomBand;
-        photoW = photoH * 3 / 4;
-      }
-      return Center(
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          padding: EdgeInsets.fromLTRB(printPadding, printPadding, printPadding, bottomBand),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(instant ? 3 : 18),
-            boxShadow: instant ? CT.printShadow : null,
-          ),
-          child: Stack(clipBehavior: Clip.none, children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(instant ? 0 : 18),
-              child: SizedBox(
-                width: photoW,
-                height: photoH,
-                child: AnimatedSwitcher(duration: const Duration(milliseconds: 250), child: content),
-              ),
-            ),
-            if (instant)
-              Positioned(
-                left: 4,
-                bottom: -40,
-                child: Text('${Fmt.short(DateTime.now())} · ${ref.watch(activeGroupProvider)?.name ?? ''}',
-                    style: CT.text(14, color: CT.muted, weight: FontWeight.w500)),
-              ),
-          ]),
-        ),
-      );
-    });
+    return ViewfinderFrame(
+      instant: instant,
+      caption: '${Fmt.short(DateTime.now())} · ${ref.watch(activeGroupProvider)?.name ?? ''}',
+      child: AnimatedSwitcher(duration: const Duration(milliseconds: 250), child: content),
+    );
   }
 }

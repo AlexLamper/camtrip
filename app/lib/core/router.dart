@@ -8,7 +8,6 @@ import '../features/auth/auth_controller.dart';
 import '../features/auth/email_auth_screen.dart';
 import '../features/auth/onboarding_screen.dart';
 import '../features/camera/camera_screen.dart';
-import '../features/gallery/all_photos_screen.dart';
 import '../features/gallery/gallery_screen.dart';
 import '../features/gallery/hidden_photos_screen.dart';
 import '../features/gallery/photo_screen.dart';
@@ -97,7 +96,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      GoRoute(path: '/', builder: (_, _) => const AlbumsScreen()),
+      // Home. ?tab=photos opens it on "Alle foto's".
+      GoRoute(
+        path: '/',
+        builder: (_, s) => AlbumsScreen(initialTab: s.uri.queryParameters['tab'] == 'photos' ? HomeTab.photos : HomeTab.albums),
+      ),
       GoRoute(path: '/new', pageBuilder: (_, s) => modalPage(s, const CreateGroupScreen())),
       GoRoute(path: '/camera', pageBuilder: (_, s) => modalPage(s, const CameraScreen())),
       GoRoute(path: '/pro', pageBuilder: (_, s) => modalPage(s, const PaywallScreen())),
@@ -110,8 +113,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/admin/user/:id', builder: (_, s) => AdminUserScreen(userId: s.pathParameters['id']!)),
       GoRoute(path: '/queue', builder: (_, _) => const QueueScreen()),
-      // "Alle foto's": every photo the user made, from every album.
-      GoRoute(path: '/photos', builder: (_, _) => const AllPhotosScreen()),
+      // "Alle foto's" is a tab of the home: links to /photos open the home on it.
+      GoRoute(path: '/photos', redirect: (_, _) => '/?tab=photos'),
       GoRoute(path: '/group/:id', builder: (_, s) => GalleryScreen(groupId: s.pathParameters['id']!)),
       GoRoute(
         path: '/group/:id/invite',

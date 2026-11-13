@@ -59,6 +59,39 @@ class PhotoSelection {
   }
 }
 
+/// Top row in selection mode: close, "3 geselecteerd", "Alles selecteren".
+/// Shared by the album gallery and "Alle foto's".
+class SelectionHeader extends StatelessWidget {
+  const SelectionHeader({super.key, required this.count, required this.allSelected, required this.onClose, required this.onToggleAll});
+
+  final int count;
+  final bool allSelected;
+  final VoidCallback onClose;
+
+  /// Null when there is nothing to select.
+  final VoidCallback? onToggleAll;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return Row(children: [
+      IconButton(key: const Key('sel-close'), tooltip: l.close, onPressed: onClose, icon: const Icon(Icons.close)),
+      Expanded(
+        child: Text(
+          count == 0 ? l.choosePhotos : l.selectedCount(count),
+          textAlign: TextAlign.center,
+          style: CT.text(15, weight: FontWeight.w600),
+        ),
+      ),
+      TextButton(
+        key: const Key('sel-all'),
+        onPressed: onToggleAll,
+        child: Text(allSelected ? l.selectNone : l.selectAll, style: CT.text(14, color: CT.accent, weight: FontWeight.w600)),
+      ),
+    ]);
+  }
+}
+
 /// Bottom bar in selection mode: Opslaan / Favoriet / Verbergen / Verwijderen.
 class SelectionActionBar extends StatelessWidget {
   const SelectionActionBar({

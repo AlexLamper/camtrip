@@ -2061,7 +2061,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get allPhotosTitle => 'Todas as fotos';
 
   @override
-  String get allPhotosSubtitle => 'Tudo o que tiraste, de cada álbum';
+  String get homeTabAlbums => 'Álbuns';
 
   @override
   String get allPhotosEmptyTitle => 'Ainda não há fotos';
@@ -2069,12 +2069,6 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get allPhotosEmptyMessage =>
       'Abre a câmara e tira a tua primeira foto.';
-
-  @override
-  String get allPhotosOpenCamera => 'Abrir a câmara';
-
-  @override
-  String get allPhotosChooseAlbum => 'Escolher álbum';
 
   @override
   String get allPhotosLoadFailed => 'Não foi possível carregar as tuas fotos';
@@ -2141,6 +2135,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get cameraFlashCycleHint => 'Toca para alternar entre não, sim e auto';
+
+  @override
+  String get cameraFlip => 'Alternar entre câmara frontal e traseira';
+
+  @override
+  String get cameraFlipHint => 'Toca duas vezes no visor para virar a câmara';
 
   @override
   String cameraPickerPaywallStyles(int count, String styles) {
@@ -4208,19 +4208,13 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   String get allPhotosTitle => 'Todas as fotos';
 
   @override
-  String get allPhotosSubtitle => 'Tudo o que você tirou, de cada álbum';
+  String get homeTabAlbums => 'Álbuns';
 
   @override
   String get allPhotosEmptyTitle => 'Nenhuma foto ainda';
 
   @override
   String get allPhotosEmptyMessage => 'Abra a câmera e tire sua primeira foto.';
-
-  @override
-  String get allPhotosOpenCamera => 'Abrir a câmera';
-
-  @override
-  String get allPhotosChooseAlbum => 'Escolher álbum';
 
   @override
   String get allPhotosLoadFailed => 'Não foi possível carregar suas fotos';
@@ -4289,6 +4283,12 @@ class AppLocalizationsPtBr extends AppLocalizationsPt {
   @override
   String get cameraFlashCycleHint =>
       'Toque para alternar entre não, sim e auto';
+
+  @override
+  String get cameraFlip => 'Alternar entre câmera frontal e traseira';
+
+  @override
+  String get cameraFlipHint => 'Toque duas vezes no visor para virar a câmera';
 
   @override
   String cameraPickerPaywallStyles(int count, String styles) {

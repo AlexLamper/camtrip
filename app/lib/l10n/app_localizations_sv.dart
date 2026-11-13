@@ -2048,19 +2048,13 @@ class AppLocalizationsSv extends AppLocalizations {
   String get allPhotosTitle => 'Alla foton';
 
   @override
-  String get allPhotosSubtitle => 'Allt du själv har tagit, från varje album';
+  String get homeTabAlbums => 'Album';
 
   @override
   String get allPhotosEmptyTitle => 'Inga foton än';
 
   @override
   String get allPhotosEmptyMessage => 'Öppna kameran och ta ditt första foto.';
-
-  @override
-  String get allPhotosOpenCamera => 'Öppna kameran';
-
-  @override
-  String get allPhotosChooseAlbum => 'Välj album';
 
   @override
   String get allPhotosLoadFailed => 'Dina foton kunde inte laddas';
@@ -2128,6 +2122,12 @@ class AppLocalizationsSv extends AppLocalizations {
   @override
   String get cameraFlashCycleHint =>
       'Tryck för att växla mellan av, på och auto';
+
+  @override
+  String get cameraFlip => 'Växla mellan främre och bakre kamera';
+
+  @override
+  String get cameraFlipHint => 'Dubbeltryck på sökaren för att vända kameran';
 
   @override
   String cameraPickerPaywallStyles(int count, String styles) {

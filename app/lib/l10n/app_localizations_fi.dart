@@ -2046,20 +2046,13 @@ class AppLocalizationsFi extends AppLocalizations {
   String get allPhotosTitle => 'Kaikki kuvat';
 
   @override
-  String get allPhotosSubtitle =>
-      'Kaikki itse ottamasi kuvat jokaisesta albumista';
+  String get homeTabAlbums => 'Albumit';
 
   @override
   String get allPhotosEmptyTitle => 'Ei vielä kuvia';
 
   @override
   String get allPhotosEmptyMessage => 'Avaa kamera ja ota ensimmäinen kuvasi.';
-
-  @override
-  String get allPhotosOpenCamera => 'Avaa kamera';
-
-  @override
-  String get allPhotosChooseAlbum => 'Valitse albumi';
 
   @override
   String get allPhotosLoadFailed => 'Kuviasi ei voitu ladata';
@@ -2126,6 +2119,12 @@ class AppLocalizationsFi extends AppLocalizations {
   @override
   String get cameraFlashCycleHint =>
       'Napauta vaihtaaksesi: pois, päällä ja auto';
+
+  @override
+  String get cameraFlip => 'Vaihda etu- ja takakameran välillä';
+
+  @override
+  String get cameraFlipHint => 'Kaksoisnapauta etsintä kääntääksesi kameran';
 
   @override
   String cameraPickerPaywallStyles(int count, String styles) {

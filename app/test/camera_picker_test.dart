@@ -82,21 +82,23 @@ void main() {
       addTearDown(tester.view.reset);
       CameraStyle? result;
       var done = false;
-      await tester.pumpWidget(localizedApp(
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: Center(
-              child: CameraPickerButton(
-                style: CameraStyle.instant,
-                onTap: () async {
-                  result = await showCameraPicker(context, current: CameraStyle.instant, gate: gate);
-                  done = true;
-                },
+      await tester.pumpWidget(
+        localizedApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: CameraPickerButton(
+                  style: CameraStyle.instant,
+                  onTap: () async {
+                    result = await showCameraPicker(context, current: CameraStyle.instant, gate: gate);
+                    done = true;
+                  },
+                ),
               ),
             ),
           ),
         ),
-      ));
+      );
       await tester.tap(find.byType(CameraPickerButton));
       await tester.pumpAndSettle();
       expect(find.text('Kies je camera'), findsOneWidget);
@@ -123,31 +125,107 @@ void main() {
     });
 
     testWidgets('locks only show without Pro', (tester) async {
-      await tester.pumpWidget(localizedApp(
-        home: Scaffold(body: CameraPickerSheet(current: CameraStyle.film, gate: const ProGate(personal: true))),
-      ));
+      await tester.pumpWidget(
+        localizedApp(
+          home: Scaffold(
+            body: CameraPickerSheet(current: CameraStyle.film, gate: const ProGate(personal: true)),
+          ),
+        ),
+      );
       await tester.pump();
       expect(find.byIcon(Icons.lock_rounded), findsNothing);
-      await tester.pumpWidget(localizedApp(
-        home: Scaffold(body: CameraPickerSheet(current: CameraStyle.film, gate: const ProGate(personal: false))),
-      ));
+      await tester.pumpWidget(
+        localizedApp(
+          home: Scaffold(
+            body: CameraPickerSheet(current: CameraStyle.film, gate: const ProGate(personal: false)),
+          ),
+        ),
+      );
       await tester.pump();
       expect(find.byIcon(Icons.lock_rounded), findsWidgets);
     });
+    test('3 columns on phones, 2 on very narrow ones, 4 on tablets', () {
+      expect(cameraPickerColumns(320 - 28), 2);
+      expect(cameraPickerColumns(360 - 28), 3);
+      expect(cameraPickerColumns(375 - 28), 3);
+      expect(cameraPickerColumns(430 - 28), 3);
+      expect(cameraPickerColumns(768 - 28), 4);
+    });
+
+    testWidgets('compact grid: 3 per row and at least 9 cameras on a small phone', (tester) async {
+      tester.view.physicalSize = const Size(375, 667) * 2;
+      tester.view.devicePixelRatio = 2;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        localizedApp(
+          home: Scaffold(
+            body: CameraPickerSheet(current: CameraStyle.film, gate: const ProGate(personal: false)),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      final cards = find.byType(CameraCard);
+      final rects = [for (var i = 0; i < cards.evaluate().length; i++) tester.getRect(cards.at(i))];
+      // first row: three cards side by side
+      expect(rects[0].top, rects[1].top);
+      expect(rects[1].top, rects[2].top);
+      expect(rects[3].top, greaterThan(rects[0].top));
+      final fullyVisible = rects.where((r) => r.bottom <= 667).length;
+      expect(fullyVisible, greaterThanOrEqualTo(9));
+      // still a comfortable tap target
+      expect(rects[0].width, greaterThanOrEqualTo(44));
+      expect(rects[0].height, greaterThanOrEqualTo(44));
+    });
+
+    testWidgets('the description is in the semantics and shows on long-press', (tester) async {
+      tester.view.physicalSize = const Size(390, 844) * 3;
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        localizedApp(
+          home: Scaffold(
+            body: CameraPickerSheet(current: CameraStyle.film, gate: const ProGate(personal: false)),
+          ),
+        ),
+      );
+      await tester.pump();
+      final film = CameraStyle.film;
+      final card = find.widgetWithText(CameraCard, film.name);
+      expect(find.text(film.description), findsNothing);
+      expect(
+        tester.getSemantics(card),
+        matchesSemantics(
+          label: '${film.name}. ${film.description}. Gekozen',
+          isButton: true,
+          isSelected: true,
+          hasSelectedState: true,
+          hasTapAction: true,
+        ),
+      );
+      await tester.longPress(card);
+      await tester.pumpAndSettle();
+      expect(find.text(film.description), findsOneWidget);
+      handle.dispose();
+    });
+
     testWidgets('the form row opens the picker', (tester) async {
       tester.view.physicalSize = const Size(390, 844) * 3;
       tester.view.devicePixelRatio = 3;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(localizedApp(
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: CameraSelectRow(
-              style: CameraStyle.film,
-              onTap: () => showCameraPicker(context, current: CameraStyle.film, gate: const ProGate(personal: false)),
+      await tester.pumpWidget(
+        localizedApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: CameraSelectRow(
+                style: CameraStyle.film,
+                onTap: () => showCameraPicker(context, current: CameraStyle.film, gate: const ProGate(personal: false)),
+              ),
             ),
           ),
         ),
-      ));
+      );
       expect(find.text('Film'), findsOneWidget);
       await tester.tap(find.byType(CameraSelectRow));
       await tester.pumpAndSettle();

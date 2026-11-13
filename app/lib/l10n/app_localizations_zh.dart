@@ -1958,19 +1958,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get allPhotosTitle => '所有照片';
 
   @override
-  String get allPhotosSubtitle => '你在每个相册里亲自拍的所有照片';
+  String get homeTabAlbums => '相册';
 
   @override
   String get allPhotosEmptyTitle => '还没有照片';
 
   @override
   String get allPhotosEmptyMessage => '打开相机，拍下你的第一张照片。';
-
-  @override
-  String get allPhotosOpenCamera => '打开相机';
-
-  @override
-  String get allPhotosChooseAlbum => '选择相册';
 
   @override
   String get allPhotosLoadFailed => '无法加载你的照片';
@@ -2036,6 +2030,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get cameraFlashCycleHint => '轻点可在关、开和自动之间切换';
+
+  @override
+  String get cameraFlip => '切换前置/后置摄像头';
+
+  @override
+  String get cameraFlipHint => '双击取景器即可切换摄像头';
 
   @override
   String cameraPickerPaywallStyles(int count, String styles) {

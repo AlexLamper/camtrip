@@ -10,16 +10,28 @@ import '../../models/models.dart';
 import '../auth/auth_controller.dart';
 import '../gallery/all_photos_controller.dart';
 import '../gallery/all_photos_screen.dart';
+import '../gallery/photo_actions.dart';
 import '../upload/upload_queue.dart';
 import 'group_actions.dart';
 import 'groups_controller.dart';
 import 'join_sheet.dart';
 
-/// Home: all groups as instant prints, the active one marked. Long-press an
-/// album for Archiveren / Verlaten / Verwijderen. Groups the user archived sit
-/// collapsed under "Gearchiveerd" at the bottom; swipe one to put it back.
+/// The two tabs of the home screen.
+enum HomeTab { albums, photos }
+
+/// Home. Tab "Albums": all groups as instant prints, the active one marked.
+/// Long-press an album for Archiveren / Verlaten / Verwijderen. Groups the
+/// user archived sit collapsed under "Gearchiveerd" at the bottom; swipe one
+/// to put it back. Tab "Alle foto's": every photo the user made, as a grid
+/// ([AllPhotosView]). /photos opens the home on that tab.
 class AlbumsScreen extends ConsumerStatefulWidget {
-  const AlbumsScreen({super.key});
+  const AlbumsScreen({super.key, this.initialTab = HomeTab.albums, this.photoThumbBuilder});
+
+  final HomeTab initialTab;
+
+  /// Draws a tile in "Alle foto's". Null = the cached network thumbnail. For previews/tests.
+  @visibleForTesting
+  final Widget Function(Photo photo)? photoThumbBuilder;
 
   @override
   ConsumerState<AlbumsScreen> createState() => _AlbumsScreenState();
@@ -27,130 +39,210 @@ class AlbumsScreen extends ConsumerStatefulWidget {
 
 class _AlbumsScreenState extends ConsumerState<AlbumsScreen> {
   bool _showArchived = false;
+  late HomeTab _tab = widget.initialTab;
+  final _sel = PhotoSelection();
+
+  /// The photos tab is built the first time it is shown, then kept (scroll position too).
+  late bool _photosBuilt = _tab == HomeTab.photos;
+
+  @override
+  void didUpdateWidget(AlbumsScreen old) {
+    super.didUpdateWidget(old);
+    // A link to /photos (or back to /) while the home is already open.
+    if (widget.initialTab != old.initialTab) _setTab(widget.initialTab);
+  }
+
+  void _setTab(HomeTab tab) => setState(() {
+        _tab = tab;
+        if (tab == HomeTab.photos) _photosBuilt = true;
+        _sel.exit();
+      });
 
   @override
   Widget build(BuildContext context) {
     final groups = ref.watch(groupsProvider);
-    final user = ref.watch(authProvider).value;
-    final activeId = ref.watch(activeGroupIdProvider);
-    final pending = ref.watch(uploadQueueProvider).length;
+    final mine = (groups.value ?? const <Group>[]).where((g) => !g.archived);
+    final canShoot = mine.any((g) => !g.isClosed);
+    final l = context.l10n;
+    final selecting = _sel.active && _tab == HomeTab.photos;
 
+    return PopScope(
+      // Back first leaves selection mode, then goes back to the albums tab.
+      canPop: !selecting && _tab == HomeTab.albums,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (selecting) {
+          setState(_sel.exit);
+        } else {
+          _setTab(HomeTab.albums);
+        }
+      },
+      child: Scaffold(
+        body: Column(children: [
+          SafeArea(bottom: false, child: _titleRow()),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 12),
+            child: SizedBox(
+              height: 44,
+              child: selecting
+                  ? _selectionHeader()
+                  : Center(
+                      child: CTSegmented<HomeTab>(
+                        segments: [
+                          (HomeTab.albums, l.homeTabAlbums, const Key('home-tab-albums')),
+                          (HomeTab.photos, l.allPhotosTitle, const Key('home-tab-photos')),
+                        ],
+                        selected: _tab,
+                        onChanged: (t) => t == _tab ? null : _setTab(t),
+                      ),
+                    ),
+            ),
+          ),
+          Expanded(
+            child: IndexedStack(
+              index: _tab.index,
+              sizing: StackFit.expand,
+              children: [
+                _albums(groups),
+                if (_photosBuilt)
+                  AllPhotosView(selection: _sel, onSelectionChanged: () => setState(() {}), thumbBuilder: widget.photoThumbBuilder)
+                else
+                  const SizedBox.shrink(),
+              ],
+            ),
+          ),
+        ]),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        floatingActionButton: !canShoot || selecting
+            ? null
+            : Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+                child: CTButton(l.camera, kind: CTButtonKind.primary, icon: Icons.photo_camera, onTap: () => context.push('/camera')),
+              ),
+      ),
+    );
+  }
+
+  /// Title (follows the tab), upload queue and the avatar that opens Instellingen.
+  Widget _titleRow() {
+    final user = ref.watch(authProvider).value;
+    final pending = ref.watch(uploadQueueProvider).length;
+    final l = context.l10n;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(22, 14, 16, 0),
+      child: Row(children: [
+        Expanded(
+          child: Text(
+            _tab == HomeTab.albums ? l.yourAlbums : l.allPhotosTitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: CT.title(30),
+          ),
+        ),
+        if (pending > 0)
+          IconButton(
+            tooltip: l.uploadQueue,
+            onPressed: () => context.push('/queue'),
+            icon: Badge(label: Text('$pending'), backgroundColor: CT.accent, child: const Icon(Icons.cloud_upload_outlined)),
+          ),
+        GestureDetector(
+          onTap: () => context.push('/settings'),
+          child: user == null || user.name.isEmpty
+              ? const CircleAvatar(radius: 17, backgroundColor: CT.cream, child: Icon(Icons.person, size: 18, color: CT.muted))
+              : Avatar(initial: user.initial, color: user.color, size: 36),
+        ),
+      ]),
+    );
+  }
+
+  /// Same top row as an album gallery in selection mode.
+  Widget _selectionHeader() {
+    final ids = ref.watch(allPhotosProvider.select((s) => s.photos)).map((p) => p.id);
+    return SelectionHeader(
+      count: _sel.count,
+      allSelected: _sel.allSelected(ids),
+      onClose: () => setState(_sel.exit),
+      onToggleAll: ids.isEmpty ? null : () => setState(() => _sel.toggleAll(ids)),
+    );
+  }
+
+  Widget _albums(AsyncValue<List<Group>> groups) {
+    final activeId = ref.watch(activeGroupIdProvider);
     final list = groups.value ?? const <Group>[];
     // Open groups first, then ones an admin closed; my archived ones apart.
     final mine = list.where((g) => !g.archived).toList();
     final active = [...mine.where((g) => !g.isClosed), ...mine.where((g) => g.isClosed)];
     final archived = list.where((g) => g.archived).toList();
-    final canShoot = mine.any((g) => !g.isClosed);
     final l = context.l10n;
 
-    return Scaffold(
-      body: RefreshIndicator(
-        color: CT.ink,
-        onRefresh: () => Future.wait([
-          ref.read(groupsProvider.notifier).reload(),
-          ref.read(allPhotosProvider.notifier).refresh(),
-        ]),
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverSafeArea(
-              bottom: false,
-              sliver: SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 14, 16, 0),
-                  child: Row(children: [
-                    Expanded(child: Text(l.yourAlbums, style: CT.title(30))),
-                    if (pending > 0)
-                      IconButton(
-                        tooltip: l.uploadQueue,
-                        onPressed: () => context.push('/queue'),
-                        icon: Badge(label: Text('$pending'), backgroundColor: CT.accent, child: const Icon(Icons.cloud_upload_outlined)),
-                      ),
-                    GestureDetector(
-                      onTap: () => context.push('/settings'),
-                      child: user == null || user.name.isEmpty
-                          ? const CircleAvatar(radius: 17, backgroundColor: CT.cream, child: Icon(Icons.person, size: 18, color: CT.muted))
-                          : Avatar(initial: user.initial, color: user.color, size: 36),
-                    ),
-                  ]),
-                ),
+    return RefreshIndicator(
+      color: CT.ink,
+      onRefresh: () => ref.read(groupsProvider.notifier).reload(),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          if (groups.isLoading && list.isEmpty)
+            const SliverFillRemaining(child: Center(child: CircularProgressIndicator(color: CT.ink)))
+          else if (groups.hasError && list.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: EmptyState(
+                title: l.noConnection,
+                message: l.albumsOfflineMessage,
+                action: SizedBox(width: 200, child: CTButton(l.retry, onTap: () => ref.read(groupsProvider.notifier).reload())),
               ),
+            )
+          else if (list.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: EmptyState(
+                title: l.noAlbumsTitle,
+                message: l.noAlbumsMessage,
+                action: Column(children: [
+                  SizedBox(width: 240, child: CTButton(l.newGroup, kind: CTButtonKind.primary, onTap: () => context.push('/new'))),
+                  const SizedBox(height: 10),
+                  SizedBox(width: 240, child: CTButton(l.haveCode, kind: CTButtonKind.outline, onTap: () => showJoinSheet(context))),
+                ]),
+              ),
+            )
+          else ...[
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+              sliver: _grid(context, ref, [...active, null], activeId),
             ),
-            if (groups.isLoading && list.isEmpty)
-              const SliverFillRemaining(child: Center(child: CircularProgressIndicator(color: CT.ink)))
-            else if (groups.hasError && list.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: EmptyState(
-                  title: l.noConnection,
-                  message: l.albumsOfflineMessage,
-                  action: SizedBox(width: 200, child: CTButton(l.retry, onTap: () => ref.read(groupsProvider.notifier).reload())),
+            if (archived.isNotEmpty) ...[
+              SliverToBoxAdapter(child: _archivedHeader(archived.length)),
+              if (_showArchived)
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(24, 4, 24, 0),
+                  sliver: SliverList.list(children: [for (final g in archived) _archivedRow(g)]),
                 ),
-              )
-            else if (list.isEmpty)
-              SliverFillRemaining(
-                hasScrollBody: false,
-                child: EmptyState(
-                  title: l.noAlbumsTitle,
-                  message: l.noAlbumsMessage,
-                  action: Column(children: [
-                    SizedBox(width: 240, child: CTButton(l.newGroup, kind: CTButtonKind.primary, onTap: () => context.push('/new'))),
-                    const SizedBox(height: 10),
-                    SizedBox(width: 240, child: CTButton(l.haveCode, kind: CTButtonKind.outline, onTap: () => showJoinSheet(context))),
-                  ]),
-                ),
-              )
-            else ...[
-              // "Alle foto's": every photo you made, from every album.
-              const SliverPadding(
-                padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
-                sliver: SliverToBoxAdapter(child: AllPhotosEntryCard()),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(24, 18, 24, 0),
-                sliver: _grid(context, ref, [...active, null], activeId),
-              ),
-              if (archived.isNotEmpty) ...[
-                SliverToBoxAdapter(child: _archivedHeader(archived.length)),
-                if (_showArchived)
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(24, 4, 24, 0),
-                    sliver: SliverList.list(children: [for (final g in archived) _archivedRow(g)]),
-                  ),
-              ],
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 26, 24, 0),
-                  child: GestureDetector(
-                    onTap: () => showJoinSheet(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0xFFD5D2CB), width: 1.5),
-                      ),
-                      child: Row(children: [
-                        const Icon(Icons.qr_code_scanner),
-                        const SizedBox(width: 12),
-                        Expanded(child: Text(l.joinWithCode, style: CT.text(15, weight: FontWeight.w600))),
-                        const Icon(Icons.chevron_right),
-                      ]),
-                    ),
-                  ),
-                ),
-              ),
-              const SliverToBoxAdapter(child: SizedBox(height: 120)),
             ],
-          ],
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: !canShoot
-          ? null
-          : Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 22),
-              child: CTButton(l.camera, kind: CTButtonKind.primary, icon: Icons.photo_camera, onTap: () => context.push('/camera')),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 26, 24, 0),
+                child: GestureDetector(
+                  onTap: () => showJoinSheet(context),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFD5D2CB), width: 1.5),
+                    ),
+                    child: Row(children: [
+                      const Icon(Icons.qr_code_scanner),
+                      const SizedBox(width: 12),
+                      Expanded(child: Text(l.joinWithCode, style: CT.text(15, weight: FontWeight.w600))),
+                      const Icon(Icons.chevron_right),
+                    ]),
+                  ),
+                ),
+              ),
             ),
+            const SliverToBoxAdapter(child: SizedBox(height: 120)),
+          ],
+        ],
+      ),
     );
   }
 

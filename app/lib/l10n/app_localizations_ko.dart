@@ -1969,19 +1969,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get allPhotosTitle => '모든 사진';
 
   @override
-  String get allPhotosSubtitle => '모든 앨범에서 내가 직접 찍은 사진';
+  String get homeTabAlbums => '앨범';
 
   @override
   String get allPhotosEmptyTitle => '아직 사진이 없습니다';
 
   @override
   String get allPhotosEmptyMessage => '카메라를 열고 첫 사진을 찍어 보세요.';
-
-  @override
-  String get allPhotosOpenCamera => '카메라 열기';
-
-  @override
-  String get allPhotosChooseAlbum => '앨범 선택';
 
   @override
   String get allPhotosLoadFailed => '사진을 불러오지 못했습니다';
@@ -2047,6 +2041,12 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get cameraFlashCycleHint => '탭하여 끔, 켬, 자동 전환';
+
+  @override
+  String get cameraFlip => '전면/후면 카메라 전환';
+
+  @override
+  String get cameraFlipHint => '뷰파인더를 두 번 탭하여 카메라 전환';
 
   @override
   String cameraPickerPaywallStyles(int count, String styles) {

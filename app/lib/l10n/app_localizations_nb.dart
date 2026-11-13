@@ -2048,19 +2048,13 @@ class AppLocalizationsNb extends AppLocalizations {
   String get allPhotosTitle => 'Alle bilder';
 
   @override
-  String get allPhotosSubtitle => 'Alt du selv har tatt, fra hvert album';
+  String get homeTabAlbums => 'Album';
 
   @override
   String get allPhotosEmptyTitle => 'Ingen bilder ennå';
 
   @override
   String get allPhotosEmptyMessage => 'Åpne kameraet og ta ditt første bilde.';
-
-  @override
-  String get allPhotosOpenCamera => 'Åpne kameraet';
-
-  @override
-  String get allPhotosChooseAlbum => 'Velg album';
 
   @override
   String get allPhotosLoadFailed => 'Bildene dine kunne ikke lastes inn';
@@ -2127,6 +2121,12 @@ class AppLocalizationsNb extends AppLocalizations {
 
   @override
   String get cameraFlashCycleHint => 'Trykk for å bytte mellom av, på og auto';
+
+  @override
+  String get cameraFlip => 'Bytt mellom front- og bakkamera';
+
+  @override
+  String get cameraFlipHint => 'Dobbelttrykk på søkeren for å snu kameraet';
 
   @override
   String cameraPickerPaywallStyles(int count, String styles) {

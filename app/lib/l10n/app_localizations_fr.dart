@@ -2073,8 +2073,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get allPhotosTitle => 'Toutes les photos';
 
   @override
-  String get allPhotosSubtitle =>
-      'Tout ce que tu as pris toi-même, dans chaque album';
+  String get homeTabAlbums => 'Albums';
 
   @override
   String get allPhotosEmptyTitle => 'Pas encore de photos';
@@ -2082,12 +2081,6 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get allPhotosEmptyMessage =>
       'Ouvre l\'appareil photo et prends ta première photo.';
-
-  @override
-  String get allPhotosOpenCamera => 'Ouvrir l\'appareil photo';
-
-  @override
-  String get allPhotosChooseAlbum => 'Choisir un album';
 
   @override
   String get allPhotosLoadFailed => 'Impossible de charger tes photos';
@@ -2155,6 +2148,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get cameraFlashCycleHint => 'Touche pour passer de non à oui à auto';
+
+  @override
+  String get cameraFlip => 'Basculer entre caméra avant et arrière';
+
+  @override
+  String get cameraFlipHint =>
+      'Touche deux fois le viseur pour retourner la caméra';
 
   @override
   String cameraPickerPaywallStyles(int count, String styles) {

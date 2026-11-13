@@ -2047,7 +2047,7 @@ class AppLocalizationsDa extends AppLocalizations {
   String get allPhotosTitle => 'Alle billeder';
 
   @override
-  String get allPhotosSubtitle => 'Alt, du selv har taget, fra hvert album';
+  String get homeTabAlbums => 'Albummer';
 
   @override
   String get allPhotosEmptyTitle => 'Ingen billeder endnu';
@@ -2055,12 +2055,6 @@ class AppLocalizationsDa extends AppLocalizations {
   @override
   String get allPhotosEmptyMessage =>
       'Åbn kameraet, og tag dit første billede.';
-
-  @override
-  String get allPhotosOpenCamera => 'Åbn kameraet';
-
-  @override
-  String get allPhotosChooseAlbum => 'Vælg album';
 
   @override
   String get allPhotosLoadFailed => 'Dine billeder kunne ikke indlæses';
@@ -2128,6 +2122,12 @@ class AppLocalizationsDa extends AppLocalizations {
   @override
   String get cameraFlashCycleHint =>
       'Tryk for at skifte mellem fra, til og auto';
+
+  @override
+  String get cameraFlip => 'Skift mellem front- og bagkamera';
+
+  @override
+  String get cameraFlipHint => 'Dobbelttryk på søgeren for at vende kameraet';
 
   @override
   String cameraPickerPaywallStyles(int count, String styles) {

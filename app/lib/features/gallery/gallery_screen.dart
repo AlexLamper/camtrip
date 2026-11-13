@@ -291,24 +291,12 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   }
 
   /// Replaces the top row while selecting: close, count, "Alles selecteren".
-  Widget _selectionHeader(List<Photo> photos) {
-    final all = _sel.allSelected(photos.map((p) => p.id));
-    return Row(children: [
-      IconButton(key: const Key('sel-close'), tooltip: context.l10n.close, onPressed: () => setState(_sel.exit), icon: const Icon(Icons.close)),
-      Expanded(
-        child: Text(
-          _sel.count == 0 ? context.l10n.choosePhotos : context.l10n.selectedCount(_sel.count),
-          textAlign: TextAlign.center,
-          style: CT.text(15, weight: FontWeight.w600),
-        ),
-      ),
-      TextButton(
-        key: const Key('sel-all'),
-        onPressed: photos.isEmpty ? null : () => setState(() => _sel.toggleAll(photos.map((p) => p.id))),
-        child: Text(all ? context.l10n.selectNone : context.l10n.selectAll, style: CT.text(14, color: CT.accent, weight: FontWeight.w600)),
-      ),
-    ]);
-  }
+  Widget _selectionHeader(List<Photo> photos) => SelectionHeader(
+        count: _sel.count,
+        allSelected: _sel.allSelected(photos.map((p) => p.id)),
+        onClose: () => setState(_sel.exit),
+        onToggleAll: photos.isEmpty ? null : () => setState(() => _sel.toggleAll(photos.map((p) => p.id))),
+      );
 
   void _openCamera(Group group) {
     ref.read(activeGroupIdProvider.notifier).set(group.id);

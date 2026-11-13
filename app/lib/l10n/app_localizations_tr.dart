@@ -2049,19 +2049,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get allPhotosTitle => 'Tüm fotoğraflar';
 
   @override
-  String get allPhotosSubtitle => 'Her albümden kendi çektiğin her şey';
+  String get homeTabAlbums => 'Albümler';
 
   @override
   String get allPhotosEmptyTitle => 'Henüz fotoğraf yok';
 
   @override
   String get allPhotosEmptyMessage => 'Kamerayı aç ve ilk fotoğrafını çek.';
-
-  @override
-  String get allPhotosOpenCamera => 'Kamerayı aç';
-
-  @override
-  String get allPhotosChooseAlbum => 'Albüm seç';
 
   @override
   String get allPhotosLoadFailed => 'Fotoğrafların yüklenemedi';
@@ -2129,6 +2123,12 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get cameraFlashCycleHint =>
       'Kapalı, açık ve otomatik arasında geçmek için dokun';
+
+  @override
+  String get cameraFlip => 'Ön ve arka kamera arasında geçiş yap';
+
+  @override
+  String get cameraFlipHint => 'Kamerayı çevirmek için vizöre iki kez dokun';
 
   @override
   String cameraPickerPaywallStyles(int count, String styles) {

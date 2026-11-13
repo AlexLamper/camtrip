@@ -1962,19 +1962,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get allPhotosTitle => 'すべての写真';
 
   @override
-  String get allPhotosSubtitle => 'すべてのアルバムから、自分で撮った写真';
+  String get homeTabAlbums => 'アルバム';
 
   @override
   String get allPhotosEmptyTitle => 'まだ写真がありません';
 
   @override
   String get allPhotosEmptyMessage => 'カメラを開いて、最初の1枚を撮りましょう。';
-
-  @override
-  String get allPhotosOpenCamera => 'カメラを開く';
-
-  @override
-  String get allPhotosChooseAlbum => 'アルバムを選択';
 
   @override
   String get allPhotosLoadFailed => '写真を読み込めませんでした';
@@ -2040,6 +2034,12 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get cameraFlashCycleHint => 'タップでオフ・オン・自動を切り替え';
+
+  @override
+  String get cameraFlip => 'フロント/背面カメラを切り替え';
+
+  @override
+  String get cameraFlipHint => 'ファインダーをダブルタップでカメラを切り替え';
 
   @override
   String cameraPickerPaywallStyles(int count, String styles) {

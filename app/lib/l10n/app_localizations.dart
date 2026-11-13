@@ -3399,11 +3399,11 @@ abstract class AppLocalizations {
   /// **'All photos'**
   String get allPhotosTitle;
 
-  /// No description provided for @allPhotosSubtitle.
+  /// Home screen segmented control: the albums tab (the other tab is "Alle foto's")
   ///
   /// In en, this message translates to:
-  /// **'Everything you shot yourself, from every album'**
-  String get allPhotosSubtitle;
+  /// **'Albums'**
+  String get homeTabAlbums;
 
   /// No description provided for @allPhotosEmptyTitle.
   ///
@@ -3416,18 +3416,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open the camera and take your first photo.'**
   String get allPhotosEmptyMessage;
-
-  /// No description provided for @allPhotosOpenCamera.
-  ///
-  /// In en, this message translates to:
-  /// **'Open the camera'**
-  String get allPhotosOpenCamera;
-
-  /// Accessibility label of the album switcher pill on the Alle foto's screen
-  ///
-  /// In en, this message translates to:
-  /// **'Choose album'**
-  String get allPhotosChooseAlbum;
 
   /// No description provided for @allPhotosLoadFailed.
   ///
@@ -3554,6 +3542,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap to switch between off, on and auto'**
   String get cameraFlashCycleHint;
+
+  /// No description provided for @cameraFlip.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch between front and back camera'**
+  String get cameraFlip;
+
+  /// No description provided for @cameraFlipHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Double-tap the viewfinder to flip the camera'**
+  String get cameraFlipHint;
 
   /// No description provided for @cameraPickerPaywallStyles.
   ///

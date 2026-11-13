@@ -2080,7 +2080,7 @@ class AppLocalizationsCs extends AppLocalizations {
   String get allPhotosTitle => 'Všechny fotky';
 
   @override
-  String get allPhotosSubtitle => 'Vše, co jsi sám vyfotil, ze všech alb';
+  String get homeTabAlbums => 'Alba';
 
   @override
   String get allPhotosEmptyTitle => 'Zatím žádné fotky';
@@ -2088,12 +2088,6 @@ class AppLocalizationsCs extends AppLocalizations {
   @override
   String get allPhotosEmptyMessage =>
       'Otevři fotoaparát a pořiď svou první fotku.';
-
-  @override
-  String get allPhotosOpenCamera => 'Otevřít fotoaparát';
-
-  @override
-  String get allPhotosChooseAlbum => 'Vybrat album';
 
   @override
   String get allPhotosLoadFailed => 'Tvoje fotky se nepodařilo načíst';
@@ -2160,6 +2154,13 @@ class AppLocalizationsCs extends AppLocalizations {
   @override
   String get cameraFlashCycleHint =>
       'Klepnutím přepínáš mezi vyp., zap. a auto';
+
+  @override
+  String get cameraFlip => 'Přepnout mezi předním a zadním fotoaparátem';
+
+  @override
+  String get cameraFlipHint =>
+      'Dvojitým klepnutím na hledáček otočíš fotoaparát';
 
   @override
   String cameraPickerPaywallStyles(int count, String styles) {

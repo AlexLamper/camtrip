@@ -2061,20 +2061,13 @@ class AppLocalizationsNl extends AppLocalizations {
   String get allPhotosTitle => 'Alle foto\'s';
 
   @override
-  String get allPhotosSubtitle =>
-      'Alles wat je zelf hebt gemaakt, uit elk album';
+  String get homeTabAlbums => 'Albums';
 
   @override
   String get allPhotosEmptyTitle => 'Nog geen foto\'s';
 
   @override
   String get allPhotosEmptyMessage => 'Open de camera en maak je eerste foto.';
-
-  @override
-  String get allPhotosOpenCamera => 'Open de camera';
-
-  @override
-  String get allPhotosChooseAlbum => 'Kies album';
 
   @override
   String get allPhotosLoadFailed => 'Je foto\'s konden niet geladen worden';
@@ -2141,6 +2134,12 @@ class AppLocalizationsNl extends AppLocalizations {
   @override
   String get cameraFlashCycleHint =>
       'Tik om te wisselen tussen uit, aan en auto';
+
+  @override
+  String get cameraFlip => 'Wissel tussen voor- en achtercamera';
+
+  @override
+  String get cameraFlipHint => 'Dubbeltik op de zoeker om de camera te draaien';
 
   @override
   String cameraPickerPaywallStyles(int count, String styles) {
